@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Tauri / Rust
+src-tauri/target
+
+# one-off icon source for `npx tauri icon` (optional)
+/app-icon.png

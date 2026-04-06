@@ -1,0 +1,55 @@
+# 编写器：独立软件与仓库边界
+
+## 仓库名与位置
+
+- **本编写器产品**使用仓库 / 文件夹 **`oclive-pack-editor`**（可与 `oclivenewnew` 同级放在 D 盘等任意路径）。
+- **运行时（玩家端）**在另一仓库 **`oclivenewnew`**；两仓 **不** 互相作为子模块、**不** 共享 `package.json`。
+- **唯一对接面**：本地磁盘上的角色包目录（或 zip），结构与 oclivenewnew 的 `creator-docs/`、`roles/README_MANIFEST.md` 一致。
+
+在 Cursor / VS Code 中可用多根工作区同时打开两项目；编写器仓内 **不要** 复制或依赖 oclivenewnew 源码，README 链到契约文档即可。
+
+## 「本地独立运行」的几种形态
+
+| 形态 | 说明 | 前后端 |
+|------|------|--------|
+| **A. Tauri 桌面（当前主路径）** | **Tauri 1.x** 包一层 WebView，加载本仓库 `npm run build` 产出的 `dist/`；选 **roles 根** 与写盘走 **Tauri 对话框 + IPC**（`invoke`），与浏览器 File System Access 无关 | 仍是一套 Vue 前端 + `src-tauri` Rust 壳 |
+| **B. 纯浏览器** | `npm run dev` / 静态托管；zip 下载；在支持 **File System Access** 的 Chromium 中可 **写入文件夹** | 无独立后端 |
+| **C. 本机前后端（可选未来）** | `client/` + `server/`（Node）仅在本仓库内演进 | **不要** 把 server 放进 oclivenewnew |
+
+与 oclivenewnew **仍不搅在一起**：无论 A/B/C，代码与 CI 都在 **`oclive-pack-editor` 本仓库** 内完成。
+
+## 离线能力（编写器）
+
+- **不依赖外网**：编辑、JSON **运行全部检查**、打 zip、桌面版写入 `OCLIVE_ROLES_DIR` 选定的目录树。  
+- **不包含**：云端 API、内嵌 LLM、oclivenewnew 运行时进程。
+
+## `OCLIVE_ROLES_DIR` 与写入语义
+
+- 用户通过 **「写入文件夹（roles 根）」** 选择的是 **roles 根**：其下应直接出现 `{roleId}/manifest.json`（与 zip 解压后结构一致）。  
+- 将该目录路径配置为运行时的 **`OCLIVE_ROLES_DIR`** 后，oclivenewnew 从该根下发现各角色包。
+
+## 环境依赖（桌面）
+
+- **Rust**（stable）与 **Node.js**：开发与 `tauri build` 必备。  
+- **Windows**：WebView2；C++ 构建工具链（MSVC）用于 `tauri build`。  
+- **Linux**：WebKitGTK 等（CI 与 [Tauri 前置说明](https://v1.tauri.app/v1/guides/getting-started/prerequisites) 一致）。  
+- 详细命令见根目录 **README.md**。
+
+## 若采用「前后端」时的建议目录（仅约定，未强制迁移）
+
+在 **本仓库内** 演进即可，例如：
+
+```
+oclive-pack-editor/
+  client/          # 现有 Vue 可逐步迁入，或保留根目录为 client
+  server/          # Node：端口、CORS 仅 localhost
+  docs/
+```
+
+根 `package.json` 可用 `npm-run-all` 或 pnpm workspace 同时起 `dev:client` / `dev:server`。
+
+## 小结
+
+- **项目文件夹就是 `oclive-pack-editor`**，便于只改编写器、不动运行时。  
+- **桌面主路径**为 **Tauri**；浏览器为辅助或静态部署。  
+- 与 oclivenewnew 的联调步骤见根 **README.md**。

@@ -1,48 +1,51 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { DEFAULT_MANIFEST_JSON, DEFAULT_SETTINGS_JSON } from './defaults'
 import {
   buildRolePackZipBlob,
-  mergedSceneIds,
   suggestedZipName,
   triggerDownload,
 } from './lib/exportPack'
-import { writePackToRolesRoot, isFolderExportSupported } from './lib/exportFolder'
-import type { ManifestInput, SettingsInput } from './lib/validation'
-import { validateEditorPack } from './lib/validation'
+import { pickRolesRootAndWritePack, isFolderExportSupported } from './lib/exportFolder'
+import { parseJson, runAllPackChecks } from './lib/packChecks'
+
+const STORAGE_REQUIRE_CHECKS = 'oclive-pack-editor-require-checks-before-export'
 
 const manifestText = ref(DEFAULT_MANIFEST_JSON)
 const settingsText = ref(DEFAULT_SETTINGS_JSON)
 const validationErrors = ref<string[]>([])
 const lastMessage = ref('')
+const requireChecksBeforeExport = ref(true)
 
-const folderExportOk = computed(() => isFolderExportSupported())
-
-function parseJson<T>(raw: string, label: string): { ok: true; value: T } | { ok: false; error: string } {
+onMounted(() => {
   try {
-    return { ok: true, value: JSON.parse(raw) as T }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    return { ok: false, error: `${label} 不是合法 JSON：${msg}` }
+    const v = localStorage.getItem(STORAGE_REQUIRE_CHECKS)
+    if (v === 'false') requireChecksBeforeExport.value = false
+  } catch {
+    /* ignore */
+  }
+})
+
+function persistRequireChecks(): void {
+  try {
+    localStorage.setItem(STORAGE_REQUIRE_CHECKS, requireChecksBeforeExport.value ? 'true' : 'false')
+  } catch {
+    /* ignore */
   }
 }
 
-function runValidate(): boolean {
-  validationErrors.value = []
-  const m = parseJson<ManifestInput>(manifestText.value, 'manifest.json')
-  if (!m.ok) {
-    validationErrors.value = [m.error]
-    return false
-  }
-  const s = parseJson<SettingsInput>(settingsText.value, 'settings.json')
-  if (!s.ok) {
-    validationErrors.value = [s.error]
-    return false
-  }
-  const scenes = mergedSceneIds(m.value.scenes, [])
-  const errs = validateEditorPack(m.value, s.value, scenes)
-  validationErrors.value = errs
-  return errs.length === 0
+const folderExportOk = computed(() => isFolderExportSupported())
+
+function runValidate(): void {
+  const r = runAllPackChecks(manifestText.value, settingsText.value)
+  validationErrors.value = r.errors
+}
+
+function checksPassForExport(): boolean {
+  if (!requireChecksBeforeExport.value) return true
+  const r = runAllPackChecks(manifestText.value, settingsText.value)
+  validationErrors.value = r.errors
+  return r.ok
 }
 
 function manifestObject(): Record<string, unknown> | null {
@@ -57,8 +60,8 @@ function settingsObject(): Record<string, unknown> | null {
 
 async function exportZip(ocpak: boolean) {
   lastMessage.value = ''
-  if (!runValidate()) {
-    lastMessage.value = '请先修正校验错误再导出。'
+  if (!checksPassForExport()) {
+    lastMessage.value = '请先通过全部检查或关闭「导出前必须通过全部检查」后再导出。'
     return
   }
   const manifest = manifestObject()
@@ -76,8 +79,8 @@ async function exportZip(ocpak: boolean) {
 
 async function exportFolder() {
   lastMessage.value = ''
-  if (!runValidate()) {
-    lastMessage.value = '请先修正校验错误再导出。'
+  if (!checksPassForExport()) {
+    lastMessage.value = '请先通过全部检查或关闭「导出前必须通过全部检查」后再导出。'
     return
   }
   const manifest = manifestObject()
@@ -89,11 +92,10 @@ async function exportFolder() {
     return
   }
   try {
-    const dir = await window.showDirectoryPicker({ mode: 'readwrite' })
-    await writePackToRolesRoot(dir, roleId, manifest, settings)
+    const wrote = await pickRolesRootAndWritePack(roleId, manifest, settings)
+    if (!wrote) return
     lastMessage.value = `已写入 ${roleId}/ 到所选目录。请将该目录作为 OCLIVE_ROLES_DIR（roles 根）。`
   } catch (e) {
-    if ((e as Error).name === 'AbortError') return
     lastMessage.value = `写入失败：${e instanceof Error ? e.message : String(e)}`
   }
 }
@@ -109,6 +111,24 @@ async function exportFolder() {
       </p>
     </header>
 
+    <section class="panel checks">
+      <h2>角色包检查</h2>
+      <p class="check-desc">
+        聚合 JSON 解析、<code>validateEditorPack</code> 与场景键 / topic_weights 一致性。
+      </p>
+      <div class="check-row">
+        <button type="button" @click="runValidate">运行全部检查</button>
+        <label class="chk">
+          <input
+            v-model="requireChecksBeforeExport"
+            type="checkbox"
+            @change="persistRequireChecks"
+          />
+          导出前必须通过全部检查
+        </label>
+      </div>
+    </section>
+
     <section class="grid">
       <div class="panel">
         <h2>manifest.json</h2>
@@ -121,7 +141,6 @@ async function exportFolder() {
     </section>
 
     <div class="actions">
-      <button type="button" @click="runValidate">校验</button>
       <button type="button" @click="exportZip(true)">导出 .ocpak（zip）</button>
       <button type="button" @click="exportZip(false)">导出 .zip</button>
       <button
@@ -135,12 +154,12 @@ async function exportFolder() {
     </div>
 
     <div v-if="validationErrors.length" class="errors" role="alert">
-      <strong>校验</strong>
+      <strong>检查结果</strong>
       <ul>
         <li v-for="(e, i) in validationErrors" :key="i">{{ e }}</li>
       </ul>
     </div>
-    <p v-else class="hint muted">点击「校验」检查必填字段与 topic_weights 场景键。</p>
+    <p v-else class="hint muted">点击「运行全部检查」查看错误列表；无错误时此处为空。</p>
 
     <p v-if="lastMessage" class="okmsg">{{ lastMessage }}</p>
   </div>
@@ -165,6 +184,37 @@ async function exportFolder() {
 }
 code {
   font-size: 0.88em;
+}
+.checks {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+}
+.checks h2 {
+  font-size: 1rem;
+  margin: 0 0 0.35rem;
+}
+.check-desc {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+  color: #555;
+  line-height: 1.45;
+}
+.check-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+.chk {
+  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  user-select: none;
 }
 .grid {
   display: grid;
