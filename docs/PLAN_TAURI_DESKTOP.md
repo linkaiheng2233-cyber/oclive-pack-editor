@@ -51,8 +51,9 @@
 1. ✅ 在仓库根接入 Tauri（`beforeDevCommand` / `beforeBuildCommand`、Vite `dist`）。  
 2. ✅ 离线「选 roles 根目录 → 写入 `{roleId}/**`」（IPC + `buildRolePackFiles`）。  
 3. ✅ 「运行全部检查」面板 + 错误列表 + 可选导出前强制校验。  
-4. ✅ 编写器 **CI**：`npm test` + `npm run build` + `cargo build`。  
-5. ✅ 根 `README` 与 **STANDALONE.md**（本文档同步）：离线范围、`OCLIVE_ROLES_DIR`、Rust/Tauri 前置。
+4. ✅ 编写器 **CI**：`npm test` + `npm run build` + Playwright 冒烟 + `cargo build`（Linux + Tauri 系统库；`workflow_dispatch`；Rust 依赖缓存）。  
+5. ✅ 根 `README` 与 **STANDALONE.md**：离线范围、`OCLIVE_ROLES_DIR`、Rust/Tauri 前置、源码布局、联调自检、简单/高级/导入/导出校验与 zip 安全导入说明。  
+6. ✅ 前端结构：`usePackEditor` + `components/pack/`；`exportPrepare` 统一导出前置解析；`importPack` 路径校验与单测。
 
 ---
 

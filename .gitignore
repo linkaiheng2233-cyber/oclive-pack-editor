@@ -23,6 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
+# Playwright
+/playwright-report/
+/test-results/
+/blob-report/
+
 # Tauri / Rust
 src-tauri/target
 

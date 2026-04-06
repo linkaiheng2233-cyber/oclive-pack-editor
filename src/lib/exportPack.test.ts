@@ -14,6 +14,7 @@ describe('buildRolePackFiles', () => {
     const files = buildRolePackFiles('myrole', manifest, settings)
     const mj = files.get('myrole/manifest.json')
     expect(mj).toBeDefined()
+    expect(files.get('myrole/core_personality.txt')).toBeDefined()
     const parsed = JSON.parse(mj!) as { id: string }
     expect(parsed.id).toBe('myrole')
   })

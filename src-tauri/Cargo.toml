@@ -1,6 +1,6 @@
 [package]
 name = "oclive-pack-editor-tauri"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "oclive role pack editor — Tauri shell"
@@ -15,6 +15,7 @@ tauri-build = { version = "1.5", features = [] }
 [dependencies]
 tauri = { version = "1.5", features = ["protocol-asset", "dialog-open"] }
 serde = { version = "1.0", features = ["derive"] }
+base64 = "0.22"
 
 [profile.release]
 opt-level = "z"

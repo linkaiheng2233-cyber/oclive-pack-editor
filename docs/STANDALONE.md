@@ -13,20 +13,21 @@
 | 形态 | 说明 | 前后端 |
 |------|------|--------|
 | **A. Tauri 桌面（当前主路径）** | **Tauri 1.x** 包一层 WebView，加载本仓库 `npm run build` 产出的 `dist/`；选 **roles 根** 与写盘走 **Tauri 对话框 + IPC**（`invoke`），与浏览器 File System Access 无关 | 仍是一套 Vue 前端 + `src-tauri` Rust 壳 |
-| **B. 纯浏览器** | `npm run dev` / 静态托管；zip 下载；在支持 **File System Access** 的 Chromium 中可 **写入文件夹** | 无独立后端 |
+| **B. 纯浏览器** | `npm run dev` / 静态托管；zip 下载到本机**任意目录**，再手动将 `{roleId}/` 复制进 oclive 的 **roles 根**；在支持 **File System Access** 的 Chromium 中可 **直接写入文件夹** 作为 roles 根 | 无独立后端 |
 | **C. 本机前后端（可选未来）** | `client/` + `server/`（Node）仅在本仓库内演进 | **不要** 把 server 放进 oclivenewnew |
 
 与 oclivenewnew **仍不搅在一起**：无论 A/B/C，代码与 CI 都在 **`oclive-pack-editor` 本仓库** 内完成。
 
 ## 离线能力（编写器）
 
-- **不依赖外网**：编辑、JSON **运行全部检查**、打 zip、桌面版写入 `OCLIVE_ROLES_DIR` 选定的目录树。  
+- **不依赖外网**：编辑、JSON **运行全部检查**、打 zip、桌面版写入用户选定的 **roles 根** 目录树；可选 **导出前校验**（可关闭以便半成品或插件包到 oclive 实测）。  
 - **不包含**：云端 API、内嵌 LLM、oclivenewnew 运行时进程。
 
 ## `OCLIVE_ROLES_DIR` 与写入语义
 
-- 用户通过 **「写入文件夹（roles 根）」** 选择的是 **roles 根**：其下应直接出现 `{roleId}/manifest.json`（与 zip 解压后结构一致）。  
-- 将该目录路径配置为运行时的 **`OCLIVE_ROLES_DIR`** 后，oclivenewnew 从该根下发现各角色包。
+- 用户通过 **「写入文件夹（自选 roles 根目录）」** 选择的是 **roles 根**：其下应直接出现 `{roleId}/manifest.json`（与 zip 解压后结构一致）。  
+- 将该目录路径配置为运行时的 **`OCLIVE_ROLES_DIR`** 后，oclivenewnew 从该根下发现各角色包。  
+- 若仅下载 zip，解压后把 **`{roleId}` 文件夹** 放进上述 roles 根即可（不要多套一层）。
 
 ## 环境依赖（桌面）
 
@@ -53,3 +54,10 @@ oclive-pack-editor/
 - **项目文件夹就是 `oclive-pack-editor`**，便于只改编写器、不动运行时。  
 - **桌面主路径**为 **Tauri**；浏览器为辅助或静态部署。  
 - 与 oclivenewnew 的联调步骤见根 **README.md**。
+
+## 测试与「启动器」（桌面壳）备忘
+
+- **浏览器**：仓库根执行 `npm run dev`，验证简单/高级创作、导入 zip、导出 zip、检查开关即可。  
+- **Tauri 窗口（本机启动器形态）**：`npm run tauri:dev`；正式安装包用 `npm run tauri:build`，产物在 `src-tauri/target/release/bundle/`（依平台而异）。  
+- **自动化**：`npm test`（单测）、`npm run test:e2e`（需先 `npm run build` 且已 `npx playwright install`）与 CI 一致；日常手测不必强依赖 E2E。  
+- 编写器与 oclive **仍通过磁盘角色包对接**：测试链路以「导出 → 放入 roles 根 → 运行时 `load_role`」为准。

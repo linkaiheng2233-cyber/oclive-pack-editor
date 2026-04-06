@@ -1,104 +1,33 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { DEFAULT_MANIFEST_JSON, DEFAULT_SETTINGS_JSON } from './defaults'
-import {
-  buildRolePackZipBlob,
-  suggestedZipName,
-  triggerDownload,
-} from './lib/exportPack'
-import { pickRolesRootAndWritePack, isFolderExportSupported } from './lib/exportFolder'
-import { parseJson, runAllPackChecks } from './lib/packChecks'
+import AdvancedCreationPanel from './components/pack/AdvancedCreationPanel.vue'
+import PackChecksSection from './components/pack/PackChecksSection.vue'
+import SimpleCreationPanel from './components/pack/SimpleCreationPanel.vue'
+import { usePackEditor } from './composables/usePackEditor'
 
-const STORAGE_REQUIRE_CHECKS = 'oclive-pack-editor-require-checks-before-export'
-
-const manifestText = ref(DEFAULT_MANIFEST_JSON)
-const settingsText = ref(DEFAULT_SETTINGS_JSON)
-const validationErrors = ref<string[]>([])
-const lastMessage = ref('')
-const requireChecksBeforeExport = ref(true)
-
-onMounted(() => {
-  try {
-    const v = localStorage.getItem(STORAGE_REQUIRE_CHECKS)
-    if (v === 'false') requireChecksBeforeExport.value = false
-  } catch {
-    /* ignore */
-  }
-})
-
-function persistRequireChecks(): void {
-  try {
-    localStorage.setItem(STORAGE_REQUIRE_CHECKS, requireChecksBeforeExport.value ? 'true' : 'false')
-  } catch {
-    /* ignore */
-  }
-}
-
-const folderExportOk = computed(() => isFolderExportSupported())
-
-function runValidate(): void {
-  const r = runAllPackChecks(manifestText.value, settingsText.value)
-  validationErrors.value = r.errors
-}
-
-function checksPassForExport(): boolean {
-  if (!requireChecksBeforeExport.value) return true
-  const r = runAllPackChecks(manifestText.value, settingsText.value)
-  validationErrors.value = r.errors
-  return r.ok
-}
-
-function manifestObject(): Record<string, unknown> | null {
-  const m = parseJson<Record<string, unknown>>(manifestText.value, 'manifest')
-  return m.ok ? m.value : null
-}
-
-function settingsObject(): Record<string, unknown> | null {
-  const s = parseJson<Record<string, unknown>>(settingsText.value, 'settings')
-  return s.ok ? s.value : null
-}
-
-async function exportZip(ocpak: boolean) {
-  lastMessage.value = ''
-  if (!checksPassForExport()) {
-    lastMessage.value = '请先通过全部检查或关闭「导出前必须通过全部检查」后再导出。'
-    return
-  }
-  const manifest = manifestObject()
-  const settings = settingsObject()
-  if (!manifest || !settings) return
-  const roleId = String(manifest.id ?? '').trim()
-  if (!roleId) {
-    lastMessage.value = 'manifest.id 为空'
-    return
-  }
-  const blob = await buildRolePackZipBlob(roleId, manifest, settings)
-  triggerDownload(blob, suggestedZipName(roleId, ocpak))
-  lastMessage.value = `已下载 ${suggestedZipName(roleId, ocpak)}。解压后使文件夹内出现「${roleId}/manifest.json」，将**含该文件夹的父目录**设为 OCLIVE_ROLES_DIR（父目录即为 roles 根）。`
-}
-
-async function exportFolder() {
-  lastMessage.value = ''
-  if (!checksPassForExport()) {
-    lastMessage.value = '请先通过全部检查或关闭「导出前必须通过全部检查」后再导出。'
-    return
-  }
-  const manifest = manifestObject()
-  const settings = settingsObject()
-  if (!manifest || !settings) return
-  const roleId = String(manifest.id ?? '').trim()
-  if (!roleId) {
-    lastMessage.value = 'manifest.id 为空'
-    return
-  }
-  try {
-    const wrote = await pickRolesRootAndWritePack(roleId, manifest, settings)
-    if (!wrote) return
-    lastMessage.value = `已写入 ${roleId}/ 到所选目录。请将该目录作为 OCLIVE_ROLES_DIR（roles 根）。`
-  } catch (e) {
-    lastMessage.value = `写入失败：${e instanceof Error ? e.message : String(e)}`
-  }
-}
+const {
+  manifestText,
+  settingsText,
+  corePersonalityText,
+  worldviewMarkdown,
+  validationErrors,
+  lastMessage,
+  requireChecksBeforeExport,
+  syncFormWarning,
+  creationMode,
+  advancedTab,
+  simpleM,
+  simpleS,
+  multiRelationWarning,
+  emotionImageSummary,
+  folderExportOk,
+  runValidate,
+  onImportPack,
+  onEmotionFilesPick,
+  onEmotionFilesAppend,
+  clearEmotionImages,
+  exportZip,
+  exportFolder,
+} = usePackEditor()
 </script>
 
 <template>
@@ -106,39 +35,87 @@ async function exportFolder() {
     <header class="hdr">
       <h1>oclive 角色包编写器</h1>
       <p class="sub">
-        独立工具，仅产出与运行时兼容的目录树；契约原文见 oclivenewnew 仓库
+        独立工具，仅产出与运行时兼容的目录树；契约见 oclivenewnew 仓库
         <code>creator-docs/</code> 与 <code>roles/README_MANIFEST.md</code>。
       </p>
     </header>
 
-    <section class="panel checks">
-      <h2>角色包检查</h2>
-      <p class="check-desc">
-        聚合 JSON 解析、<code>validateEditorPack</code> 与场景键 / topic_weights 一致性。
-      </p>
-      <div class="check-row">
-        <button type="button" @click="runValidate">运行全部检查</button>
-        <label class="chk">
-          <input
-            v-model="requireChecksBeforeExport"
-            type="checkbox"
-            @change="persistRequireChecks"
-          />
-          导出前必须通过全部检查
-        </label>
-      </div>
+    <section class="import-bar">
+      <label class="import-btn">
+        <input
+          type="file"
+          accept=".zip,.ocpak,application/zip"
+          class="sr-only"
+          @change="onImportPack"
+        />
+        导入角色包（.zip / .ocpak）
+      </label>
+      <span class="import-hint">导入后可编辑全部内容并另存为新包。</span>
     </section>
 
-    <section class="grid">
-      <div class="panel">
-        <h2>manifest.json</h2>
-        <textarea v-model="manifestText" spellcheck="false" class="ta" aria-label="manifest.json" />
+    <section class="mode-bar" aria-label="创作模式">
+      <span class="mode-label">创作方式</span>
+      <div class="mode-toggle" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="creationMode === 'simple'"
+          :class="{ active: creationMode === 'simple' }"
+          @click="creationMode = 'simple'"
+        >
+          简单创作
+        </button>
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="creationMode === 'advanced'"
+          :class="{ active: creationMode === 'advanced' }"
+          @click="creationMode = 'advanced'"
+        >
+          高级创作
+        </button>
       </div>
-      <div class="panel">
-        <h2>settings.json</h2>
-        <textarea v-model="settingsText" spellcheck="false" class="ta" aria-label="settings.json" />
-      </div>
+      <p class="mode-hint">
+        <template v-if="creationMode === 'simple'">
+          基础只需<strong>人设描述</strong>与<strong>情绪图片</strong>；场景、身份、世界观、受影响程度等在「进阶」中填写。
+        </template>
+        <template v-else>
+          直接编辑 manifest / settings 与文本资源，适合插件字段、多身份与完整包结构；可导入已有包修改。
+        </template>
+      </p>
     </section>
+
+    <PackChecksSection
+      v-model:require-checks-before-export="requireChecksBeforeExport"
+      @run-validate="runValidate"
+    />
+
+    <SimpleCreationPanel
+      v-if="creationMode === 'simple'"
+      v-model:core-personality="corePersonalityText"
+      v-model:worldview-markdown="worldviewMarkdown"
+      :simple-m="simpleM"
+      :simple-s="simpleS"
+      :multi-relation-warning="multiRelationWarning"
+      :sync-form-warning="syncFormWarning"
+      :emotion-summary="emotionImageSummary"
+      @emotion-pick="onEmotionFilesPick"
+      @emotion-append="onEmotionFilesAppend"
+      @emotion-clear="clearEmotionImages"
+    />
+
+    <AdvancedCreationPanel
+      v-else
+      v-model:manifest-text="manifestText"
+      v-model:settings-text="settingsText"
+      v-model:core-personality="corePersonalityText"
+      v-model:worldview-markdown="worldviewMarkdown"
+      v-model:advanced-tab="advancedTab"
+      :emotion-summary="emotionImageSummary"
+      @emotion-pick="onEmotionFilesPick"
+      @emotion-append="onEmotionFilesAppend"
+      @emotion-clear="clearEmotionImages"
+    />
 
     <div class="actions">
       <button type="button" @click="exportZip(true)">导出 .ocpak（zip）</button>
@@ -149,17 +126,19 @@ async function exportFolder() {
         class="secondary"
         @click="exportFolder"
       >
-        写入文件夹（roles 根）
+        写入文件夹（自选 roles 根目录）
       </button>
     </div>
 
-    <div v-if="validationErrors.length" class="errors" role="alert">
+    <div v-if="validationErrors.length" class="errors-block" role="alert">
       <strong>检查结果</strong>
       <ul>
         <li v-for="(e, i) in validationErrors" :key="i">{{ e }}</li>
       </ul>
     </div>
-    <p v-else class="hint muted">点击「运行全部检查」查看错误列表；无错误时此处为空。</p>
+    <p v-else class="hint muted post-actions-hint">
+      点击「运行全部检查」查看错误列表；无错误时此处为空。
+    </p>
 
     <p v-if="lastMessage" class="okmsg">{{ lastMessage }}</p>
   </div>
@@ -185,63 +164,85 @@ async function exportFolder() {
 code {
   font-size: 0.88em;
 }
-.checks {
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.import-bar {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+.import-btn {
+  display: inline-block;
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #2a6a9e;
+  background: #e8f2fa;
+  color: #0d3a5c;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.import-btn:hover {
+  background: #dcecf8;
+}
+.import-hint {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.mode-bar {
   margin-top: 1rem;
   padding: 0.85rem 1rem;
   border: 1px solid #ddd;
   border-radius: 8px;
-  background: #fafafa;
+  background: #f8f8fb;
 }
-.checks h2 {
-  font-size: 1rem;
-  margin: 0 0 0.35rem;
+.mode-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #555;
+  margin-bottom: 0.4rem;
 }
-.check-desc {
-  margin: 0 0 0.65rem;
-  font-size: 0.88rem;
+.mode-toggle {
+  display: inline-flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #ccc;
+}
+.mode-toggle button {
+  padding: 0.45rem 1rem;
+  border: none;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.mode-toggle button.active {
+  background: #1a1a1a;
+  color: #fff;
+}
+.mode-toggle button:not(.active):hover {
+  background: #eee;
+}
+.mode-hint {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
   color: #555;
   line-height: 1.45;
 }
-.check-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1rem;
-}
-.chk {
-  font-size: 0.88rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  cursor: pointer;
-  user-select: none;
-}
-.grid {
-  display: grid;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-@media (min-width: 800px) {
-  .grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-.panel h2 {
-  font-size: 0.95rem;
-  margin: 0 0 0.35rem;
-}
-.ta {
-  width: 100%;
-  min-height: 280px;
-  padding: 0.6rem 0.65rem;
-  font-family: ui-monospace, monospace;
-  font-size: 12px;
-  line-height: 1.4;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  resize: vertical;
-  box-sizing: border-box;
-}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -249,7 +250,7 @@ code {
   margin-top: 0.85rem;
   align-items: center;
 }
-button {
+.actions button {
   padding: 0.45rem 0.85rem;
   border-radius: 6px;
   border: 1px solid #333;
@@ -258,14 +259,14 @@ button {
   cursor: pointer;
   font-size: 0.9rem;
 }
-button.secondary {
+.actions button.secondary {
   background: #fff;
   color: #1a1a1a;
 }
-button:hover {
+.actions button:hover {
   opacity: 0.92;
 }
-.errors {
+.errors-block {
   margin-top: 0.85rem;
   padding: 0.65rem 0.85rem;
   background: #fff4f4;
@@ -273,13 +274,15 @@ button:hover {
   border-radius: 6px;
   font-size: 0.88rem;
 }
-.errors ul {
+.errors-block ul {
   margin: 0.35rem 0 0 1.1rem;
   padding: 0;
 }
 .hint.muted {
   color: #666;
   font-size: 0.88rem;
+}
+.post-actions-hint {
   margin-top: 0.65rem;
 }
 .okmsg {

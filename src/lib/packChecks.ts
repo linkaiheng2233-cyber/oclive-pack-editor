@@ -14,6 +14,20 @@ export function parseJson<T>(
   }
 }
 
+/** 解析 manifest / settings 文本，供导出等路径统一报错（避免无效 JSON 时静默失败）。 */
+export function parsePackDocuments(
+  manifestText: string,
+  settingsText: string,
+):
+  | { ok: true; manifest: Record<string, unknown>; settings: Record<string, unknown> }
+  | { ok: false; errors: string[] } {
+  const m = parseJson<Record<string, unknown>>(manifestText, 'manifest.json')
+  if (!m.ok) return { ok: false, errors: [m.error] }
+  const s = parseJson<Record<string, unknown>>(settingsText, 'settings.json')
+  if (!s.ok) return { ok: false, errors: [s.error] }
+  return { ok: true, manifest: m.value, settings: s.value }
+}
+
 /** JSON 可解析、validateEditorPack、场景键与 topic_weights 一致（由校验函数覆盖）。 */
 export function runAllPackChecks(
   manifestText: string,

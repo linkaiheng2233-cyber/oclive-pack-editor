@@ -1,5 +1,28 @@
 import { describe, expect, it } from 'vitest'
-import { runAllPackChecks } from './packChecks'
+import { parsePackDocuments, runAllPackChecks } from './packChecks'
+
+describe('parsePackDocuments', () => {
+  it('returns errors when manifest JSON invalid', () => {
+    const r = parsePackDocuments('{', '{}')
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errors[0]).toContain('manifest')
+  })
+
+  it('returns errors when settings JSON invalid', () => {
+    const r = parsePackDocuments('{}', '{')
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errors[0]).toContain('settings')
+  })
+
+  it('returns objects when both parse', () => {
+    const r = parsePackDocuments('{"a":1}', '{"b":2}')
+    expect(r.ok).toBe(true)
+    if (r.ok) {
+      expect(r.manifest).toEqual({ a: 1 })
+      expect(r.settings).toEqual({ b: 2 })
+    }
+  })
+})
 
 describe('runAllPackChecks', () => {
   it('reports JSON errors', () => {

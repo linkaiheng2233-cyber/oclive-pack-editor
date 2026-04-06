@@ -1,5 +1,9 @@
 /** Minimal valid starter; align with `roles/manifest.template.json` / `settings.template.json` in oclivenewnew. */
 
+/** 简单创作默认人设长文（写入 `core_personality.txt`）。 */
+export const DEFAULT_CORE_PERSONALITY_TEXT = `在这里写角色的性格、说话习惯、口癖、与玩家的关系基调。
+运行时优先于 manifest 里的一句话简介，用于主对话人设。`
+
 export const DEFAULT_MANIFEST_JSON = `{
   "id": "my_role_id",
   "name": "示例角色",
