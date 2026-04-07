@@ -33,7 +33,7 @@
 
   --fluent-radius: 4px;
   --fluent-radius-lg: 8px;
-  --fluent-font: 'Segoe UI', 'Segoe UI Variable', system-ui, -apple-system, sans-serif;
+  --fluent-font: 'Segoe UI', 'Segoe UI Variable', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   --fluent-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
 
   font-family: var(--fluent-font);
