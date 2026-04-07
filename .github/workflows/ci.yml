@@ -16,16 +16,21 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: npm
 
       - name: Install Linux dependencies for Tauri
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.0-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf
@@ -39,16 +44,18 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Test
+      - name: Test (Vitest)
         run: npm test
 
       - name: Build frontend
         run: npm run build
 
       - name: Install Playwright (Chromium)
+        if: runner.os == 'Linux'
         run: npx playwright install --with-deps chromium
 
       - name: E2E smoke
+        if: runner.os == 'Linux'
         run: npm run test:e2e
 
       - name: Cargo build (Tauri crate)
