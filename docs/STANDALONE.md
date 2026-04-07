@@ -57,8 +57,8 @@ oclive-pack-editor/
 
 ## 测试与「启动器」（桌面壳）备忘
 
-- **浏览器**：仓库根执行 `npm run dev`，验证简单/高级创作、导入 zip、导出 zip、检查开关即可。  
-- **Tauri 窗口（本机启动器形态）**：`npm run tauri:dev`；正式安装包用 `npm run tauri:build`，产物在 `src-tauri/target/release/bundle/`（依平台而异）。  
+- **浏览器**：`npm run dev:browser`（自动打开页签）或 `npm run dev` 后手动打开 `http://localhost:5173/`；Windows 也可用 **`start.bat`** 选「仅浏览器」或 `start.bat web`。  
+- **Tauri 窗口（本机启动器形态）**：`npm run tauri:dev`，或 Windows 根目录 **`start.bat`**（默认即 Tauri）；正式安装包用 `npm run tauri:build`，产物在 `src-tauri/target/release/bundle/`（依平台而异）。  
 - **自动化**：`npm test`（单测）、`npm run test:e2e`（需先 `npm run build` 且已 `npx playwright install`）与 CI 一致；日常手测不必强依赖 E2E。  
 - **无障碍（简要）**：高级创作下 Tab 列表可聚焦后，用 **← / →**、**Home** / **End** 切换分区（与 Fluent 类桌面习惯一致）。  
 - 编写器与 oclive **仍通过磁盘角色包对接**：测试链路以「导出 → 放入 roles 根 → 运行时 `load_role`」为准。
