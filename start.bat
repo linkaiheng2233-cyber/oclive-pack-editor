@@ -29,35 +29,35 @@ goto :usage
 
 :menu
 echo.
-echo  oclive 角色包编写器 — 选择打开方式
-echo    [1] Tauri 桌面窗口 ^(推荐；需已安装 Rust^)
-echo    [2] 仅浏览器 ^(Vite，自动打开浏览器；无需 Rust^)
+echo  oclive pack editor — choose how to run
+echo    [1] Tauri desktop ^(needs Rust^)
+echo    [2] Browser only ^(Vite + open browser; no Rust^)
 echo.
 set "MODE="
-set /p MODE=请输入 1 或 2 ^(直接回车默认为 1^): 
+set /p MODE=Enter 1 or 2 ^(default 1^): 
 if "!MODE!"=="" set "MODE=1"
 if "!MODE!"=="1" goto :tauridev
 if "!MODE!"=="2" goto :webdev
-echo 无效输入，请只输入 1 或 2。
+echo Invalid input. Type 1 or 2 only.
 goto :menu
 
 :tauridev
 echo.
-echo [oclive-pack-editor] 启动 Tauri ^(npm run tauri:dev^)...
-echo Vite 仅在后台服务，不会自动弹出系统浏览器；结束请关闭窗口或在此按 Ctrl+C。
+echo [oclive-pack-editor] Starting Tauri ^(npm run tauri:dev^)...
+echo Vite runs in the background; no extra browser tab. Close the app or press Ctrl+C here to stop.
 call npm run tauri:dev
 exit /b %errorlevel%
 
 :webdev
 echo.
-echo [oclive-pack-editor] 仅浏览器 ^(npm run dev:browser^)...
-echo 控制台保持运行属正常；结束请按 Ctrl+C。
+echo [oclive-pack-editor] Browser only ^(npm run dev:browser^)...
+echo This window stays open while the dev server runs. Press Ctrl+C to stop.
 call npm run dev:browser
 exit /b %errorlevel%
 
 :usage
 echo Usage:
-echo   start.bat              - 交互选择：Tauri 或 浏览器
-echo   start.bat tauri        - 直接 Tauri 开发窗口
-echo   start.bat web          - 直接仅浏览器 ^(含自动打开^)
+echo   start.bat              - interactive menu: Tauri or browser
+echo   start.bat tauri        - Tauri dev window
+echo   start.bat web          - browser + Vite ^(opens tab^)
 exit /b 0
