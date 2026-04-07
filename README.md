@@ -1,5 +1,7 @@
 # oclive-pack-editor
 
+[![CI](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml)
+
 独立 **角色包编写器**（Vite + Vue 3 + TypeScript + 可选 **Tauri 1.x** 桌面壳）：编辑并导出与 **oclivenewnew** 运行时兼容的 **`roles/{角色id}/`** 目录树或 zip（`.zip` / `.ocpak`，均为 zip 格式）。**不包含**对话引擎或运行时源码；两应用的唯一纽带是磁盘上的角色包。
 
 **当前版本：0.1.0**（`package.json`、`src-tauri/tauri.conf.json`、`Cargo.toml` 已对齐）。
