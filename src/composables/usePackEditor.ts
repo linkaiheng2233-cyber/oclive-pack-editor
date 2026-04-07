@@ -39,6 +39,8 @@ export function usePackEditor() {
 
   const validationErrors = ref<string[]>([])
   const lastMessage = ref('')
+  /** 与 lastMessage 配套：错误类文案为 true，成功提示为 false */
+  const lastMessageIsError = ref(false)
   const requireChecksBeforeExport = ref(true)
   /** 简单模式表单与 JSON 不一致时（JSON 无法解析）提示 */
   const syncFormWarning = ref('')
@@ -71,11 +73,11 @@ export function usePackEditor() {
   function syncFormsFromJson(): void {
     syncFormWarning.value = ''
     const errs: string[] = []
-    const m = parseJson<Record<string, unknown>>(manifestText.value, 'manifest')
+    const m = parseJson<Record<string, unknown>>(manifestText.value, 'manifest.json')
     if (!m.ok) errs.push(m.error)
     else Object.assign(simpleM, manifestRecordToSimpleForm(m.value))
 
-    const s = parseJson<Record<string, unknown>>(settingsText.value, 'settings')
+    const s = parseJson<Record<string, unknown>>(settingsText.value, 'settings.json')
     if (!s.ok) errs.push(s.error)
     else Object.assign(simpleS, settingsRecordToSimpleForm(s.value))
 
@@ -155,7 +157,7 @@ export function usePackEditor() {
   async function onImportPack(e: Event): Promise<void> {
     const inp = e.target as HTMLInputElement
     const f = inp.files?.[0]
-    lastMessage.value = ''
+    setFeedback('', false)
     if (!f) return
     try {
       const imp = await importRolePackFromZip(f)
@@ -166,9 +168,9 @@ export function usePackEditor() {
       worldviewMarkdown.value = imp.worldviewMarkdown
       emotionImageFiles.value = imp.emotionImageFiles
       syncFormsFromJson()
-      lastMessage.value = `已导入角色「${imp.roleId}」。可继续编辑后导出。`
+      setFeedback(`已导入角色「${imp.roleId}」。可继续编辑后导出。`, false)
     } catch (err) {
-      lastMessage.value = `导入失败：${err instanceof Error ? err.message : String(err)}`
+      setFeedback(`导入失败：${err instanceof Error ? err.message : String(err)}`, true)
     }
     inp.value = ''
   }
@@ -200,50 +202,66 @@ export function usePackEditor() {
     emotionImageFiles.value = []
   }
 
-  async function exportZip(ocpak: boolean): Promise<void> {
-    lastMessage.value = ''
+  /**
+   * 导出前：简单模式写回 JSON →（可选）全量检查 → 解析 payload。
+   * 与 zip / 写文件夹共用，避免两处复制粘贴。
+   */
+  function tryBuildExportPayload():
+    | { ok: true; roleId: string; manifest: Record<string, unknown>; settings: Record<string, unknown> }
+    | { ok: false; message: string } {
     if (creationMode.value === 'simple') applySimpleToJson()
     if (!checksPassForExport()) {
-      lastMessage.value =
-        '请先通过全部检查，或关闭「导出前校验包内容」后再导出。'
+      return {
+        ok: false,
+        message: '请先通过全部检查，或关闭「导出前校验包内容」后再导出。',
+      }
+    }
+    return prepareExportPayload(manifestText.value, settingsText.value)
+  }
+
+  function setFeedback(text: string, isError: boolean): void {
+    lastMessage.value = text
+    lastMessageIsError.value = isError
+  }
+
+  async function exportZip(ocpak: boolean): Promise<void> {
+    setFeedback('', false)
+    const built = tryBuildExportPayload()
+    if (!built.ok) {
+      setFeedback(built.message, true)
       return
     }
-    const payload = prepareExportPayload(manifestText.value, settingsText.value)
-    if (!payload.ok) {
-      lastMessage.value = payload.message
-      return
-    }
-    const { roleId, manifest, settings } = payload
+    const { roleId, manifest, settings } = built
     try {
       const blob = await buildRolePackZipBlob(roleId, manifest, settings, packExtra())
       const name = suggestedZipName(roleId, ocpak)
       triggerDownload(blob, name)
-      lastMessage.value = `已下载 ${name}。将解压出的「${roleId}」文件夹放入本机 oclive 的 roles 目录即可测试。`
+      setFeedback(
+        `已下载 ${name}。将解压出的「${roleId}」文件夹放入本机 oclive 的 roles 目录即可测试。`,
+        false,
+      )
     } catch (e) {
-      lastMessage.value = `导出 zip 失败：${e instanceof Error ? e.message : String(e)}`
+      setFeedback(`导出 zip 失败：${e instanceof Error ? e.message : String(e)}`, true)
     }
   }
 
   async function exportFolder(): Promise<void> {
-    lastMessage.value = ''
-    if (creationMode.value === 'simple') applySimpleToJson()
-    if (!checksPassForExport()) {
-      lastMessage.value =
-        '请先通过全部检查，或关闭「导出前校验包内容」后再导出。'
+    setFeedback('', false)
+    const built = tryBuildExportPayload()
+    if (!built.ok) {
+      setFeedback(built.message, true)
       return
     }
-    const payload = prepareExportPayload(manifestText.value, settingsText.value)
-    if (!payload.ok) {
-      lastMessage.value = payload.message
-      return
-    }
-    const { roleId, manifest, settings } = payload
+    const { roleId, manifest, settings } = built
     try {
       const wrote = await pickRolesRootAndWritePack(roleId, manifest, settings, packExtra())
       if (!wrote) return
-      lastMessage.value = `已写入 ${roleId}/ 到所选目录（作为 roles 根）。可直接启动 oclive 测试。`
+      setFeedback(
+        `已写入 ${roleId}/ 到所选目录（作为 roles 根）。可直接启动 oclive 测试。`,
+        false,
+      )
     } catch (e) {
-      lastMessage.value = `写入失败：${e instanceof Error ? e.message : String(e)}`
+      setFeedback(`写入失败：${e instanceof Error ? e.message : String(e)}`, true)
     }
   }
 
@@ -255,6 +273,7 @@ export function usePackEditor() {
     emotionImageFiles,
     validationErrors,
     lastMessage,
+    lastMessageIsError,
     requireChecksBeforeExport,
     syncFormWarning,
     creationMode,

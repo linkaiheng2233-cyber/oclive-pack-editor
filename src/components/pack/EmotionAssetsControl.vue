@@ -41,31 +41,45 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
+.emotion-row > label:first-child {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fluent-text-primary);
+  margin-bottom: 0.35rem;
+}
 .emotion-row .emotion-actions {
   margin-top: 0.25rem;
 }
 .emotion-sum {
-  margin: 0.35rem 0 0;
-  font-size: 0.82rem;
-  color: #555;
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
 }
 .btn-lite {
   display: inline-block;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid #aaa;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+  min-height: 28px;
+  border: 1px solid var(--fluent-border-control);
+  border-radius: var(--fluent-radius);
+  background: var(--fluent-bg-card);
+  color: var(--fluent-text-primary);
+  font-size: 0.8125rem;
+  font-family: var(--fluent-font);
   cursor: pointer;
   margin-right: 0.35rem;
   margin-bottom: 0.35rem;
+  box-shadow: var(--fluent-shadow-soft);
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 .btn-lite.ghost {
-  border-color: #ccc;
-  color: #444;
+  border-color: var(--fluent-border-stroke);
+  color: var(--fluent-text-secondary);
+  box-shadow: none;
 }
 .btn-lite:hover {
-  background: #f3f3f3;
+  background: var(--fluent-bg-subtle);
+  border-color: var(--fluent-text-secondary);
 }
 .sr-only {
   position: absolute;

@@ -11,6 +11,7 @@ const {
   worldviewMarkdown,
   validationErrors,
   lastMessage,
+  lastMessageIsError,
   requireChecksBeforeExport,
   syncFormWarning,
   creationMode,
@@ -140,7 +141,14 @@ const {
       点击「运行全部检查」查看错误列表；无错误时此处为空。
     </p>
 
-    <p v-if="lastMessage" class="okmsg">{{ lastMessage }}</p>
+    <p
+      v-if="lastMessage"
+      class="feedback-msg"
+      :class="{ 'feedback-msg--ok': !lastMessageIsError, 'feedback-msg--err': lastMessageIsError }"
+      role="status"
+    >
+      {{ lastMessage }}
+    </p>
   </div>
 </template>
 
@@ -148,21 +156,27 @@ const {
 .app {
   max-width: 960px;
   margin: 0 auto;
-  padding: 1.25rem 1rem 2rem;
-  font-family: system-ui, sans-serif;
+  padding: 1.25rem 1rem 2.5rem;
+  font-family: var(--fluent-font);
+  color: var(--fluent-text-primary);
+}
+
+.hdr {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--fluent-border-stroke);
+  margin-bottom: 0.25rem;
 }
 .hdr h1 {
-  font-size: 1.35rem;
-  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
 }
 .sub {
   margin: 0;
-  color: #444;
-  font-size: 0.9rem;
-  line-height: 1.45;
-}
-code {
-  font-size: 0.88em;
+  color: var(--fluent-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .sr-only {
@@ -178,7 +192,7 @@ code {
 }
 
 .import-bar {
-  margin-top: 0.75rem;
+  margin-top: 1rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -186,109 +200,158 @@ code {
 }
 .import-btn {
   display: inline-block;
-  padding: 0.45rem 0.85rem;
-  border-radius: 6px;
-  border: 1px solid #2a6a9e;
-  background: #e8f2fa;
-  color: #0d3a5c;
+  padding: 0.5rem 1rem;
+  border-radius: var(--fluent-radius);
+  border: 1px solid var(--fluent-accent);
+  background: var(--fluent-bg-card);
+  color: var(--fluent-accent);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--fluent-shadow-soft);
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 .import-btn:hover {
-  background: #dcecf8;
+  background: var(--fluent-accent-subtle);
+  border-color: var(--fluent-accent-hover);
+  color: var(--fluent-accent-hover);
 }
 .import-hint {
-  font-size: 0.85rem;
-  color: #555;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
 }
 
 .mode-bar {
   margin-top: 1rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #f8f8fb;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--fluent-border-stroke);
+  border-radius: var(--fluent-radius-lg);
+  background: var(--fluent-bg-card);
+  box-shadow: var(--fluent-shadow-card);
 }
 .mode-label {
   display: block;
-  font-size: 0.8rem;
-  color: #555;
-  margin-bottom: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fluent-text-secondary);
+  margin-bottom: 0.5rem;
 }
 .mode-toggle {
   display: inline-flex;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #ccc;
+  padding: 2px;
+  border-radius: var(--fluent-radius);
+  background: var(--fluent-bg-subtle);
+  border: 1px solid var(--fluent-border-stroke);
+  gap: 2px;
 }
 .mode-toggle button {
-  padding: 0.45rem 1rem;
+  padding: 0.4rem 1rem;
   border: none;
-  background: #fff;
-  color: #333;
+  border-radius: calc(var(--fluent-radius) - 1px);
+  background: transparent;
+  color: var(--fluent-text-primary);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 .mode-toggle button.active {
-  background: #1a1a1a;
-  color: #fff;
+  background: var(--fluent-bg-card);
+  color: var(--fluent-accent);
+  box-shadow: var(--fluent-shadow-soft);
 }
 .mode-toggle button:not(.active):hover {
-  background: #eee;
+  background: rgba(0, 0, 0, 0.04);
+}
+@media (prefers-color-scheme: dark) {
+  .mode-toggle button:not(.active):hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
 }
 .mode-hint {
-  margin: 0.6rem 0 0;
-  font-size: 0.85rem;
-  color: #555;
-  line-height: 1.45;
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.5;
+}
+.mode-hint strong {
+  color: var(--fluent-text-primary);
+  font-weight: 600;
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.85rem;
+  margin-top: 1rem;
   align-items: center;
 }
 .actions button {
-  padding: 0.45rem 0.85rem;
-  border-radius: 6px;
-  border: 1px solid #333;
-  background: #1a1a1a;
+  padding: 0.5rem 1rem;
+  min-height: 32px;
+  border-radius: var(--fluent-radius);
+  border: 1px solid transparent;
+  background: var(--fluent-accent);
   color: #fff;
   cursor: pointer;
-  font-size: 0.9rem;
-}
-.actions button.secondary {
-  background: #fff;
-  color: #1a1a1a;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--fluent-font);
+  transition: background 0.15s ease;
 }
 .actions button:hover {
-  opacity: 0.92;
+  background: var(--fluent-accent-hover);
+}
+.actions button.secondary {
+  background: var(--fluent-bg-card);
+  color: var(--fluent-text-primary);
+  border-color: var(--fluent-border-control);
+  box-shadow: var(--fluent-shadow-soft);
+}
+.actions button.secondary:hover {
+  background: var(--fluent-bg-subtle);
+  border-color: var(--fluent-text-secondary);
 }
 .errors-block {
-  margin-top: 0.85rem;
-  padding: 0.65rem 0.85rem;
-  background: #fff4f4;
-  border: 1px solid #e8a0a0;
-  border-radius: 6px;
-  font-size: 0.88rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--fluent-danger-bg);
+  border: 1px solid var(--fluent-danger-border);
+  border-radius: var(--fluent-radius-lg);
+  font-size: 0.875rem;
+  color: var(--fluent-danger-text);
+}
+.errors-block strong {
+  color: var(--fluent-danger-text);
 }
 .errors-block ul {
   margin: 0.35rem 0 0 1.1rem;
   padding: 0;
 }
 .hint.muted {
-  color: #666;
-  font-size: 0.88rem;
+  color: var(--fluent-text-secondary);
+  font-size: 0.875rem;
 }
 .post-actions-hint {
-  margin-top: 0.65rem;
-}
-.okmsg {
   margin-top: 0.75rem;
-  font-size: 0.88rem;
-  color: #1a6b2c;
-  line-height: 1.45;
+}
+.feedback-msg {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--fluent-radius-lg);
+}
+.feedback-msg--ok {
+  color: var(--fluent-success-text);
+  background: rgba(16, 124, 16, 0.08);
+  border: 1px solid rgba(16, 124, 16, 0.35);
+}
+.feedback-msg--err {
+  color: var(--fluent-danger-text);
+  background: var(--fluent-danger-bg);
+  border: 1px solid var(--fluent-danger-border);
 }
 </style>

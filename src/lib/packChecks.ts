@@ -28,20 +28,21 @@ export function parsePackDocuments(
   return { ok: true, manifest: m.value, settings: s.value }
 }
 
-/** JSON 可解析、validateEditorPack、场景键与 topic_weights 一致（由校验函数覆盖）。 */
+/**
+ * JSON 可解析、validateEditorPack、场景键与 topic_weights 一致。
+ * 与 `prepareExportPayload` / `parsePackDocuments` 共用同一次 manifest/settings 解析，避免重复 `JSON.parse`。
+ */
 export function runAllPackChecks(
   manifestText: string,
   settingsText: string,
 ): { ok: boolean; errors: string[] } {
-  const m = parseJson<ManifestInput>(manifestText, 'manifest.json')
-  if (!m.ok) {
-    return { ok: false, errors: [m.error] }
+  const p = parsePackDocuments(manifestText, settingsText)
+  if (!p.ok) {
+    return { ok: false, errors: p.errors }
   }
-  const s = parseJson<SettingsInput>(settingsText, 'settings.json')
-  if (!s.ok) {
-    return { ok: false, errors: [s.error] }
-  }
-  const scenes = mergedSceneIds(m.value.scenes, [])
-  const errors = validateEditorPack(m.value, s.value, scenes)
+  const m = p.manifest as ManifestInput
+  const s = p.settings as SettingsInput
+  const scenes = mergedSceneIds(m.scenes, [])
+  const errors = validateEditorPack(m, s, scenes)
   return { ok: errors.length === 0, errors }
 }

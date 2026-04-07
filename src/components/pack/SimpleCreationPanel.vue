@@ -263,12 +263,12 @@ const emit = defineEmits<{
 <style scoped>
 .sync-warn {
   margin: 0 0 0.75rem;
-  padding: 0.5rem 0.65rem;
-  font-size: 0.82rem;
-  color: #7a4a00;
-  background: #fff8e6;
-  border: 1px solid #e8c96d;
-  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--fluent-warning-text);
+  background: var(--fluent-warning-bg);
+  border: 1px solid var(--fluent-warning-border);
+  border-radius: var(--fluent-radius-lg);
   line-height: 1.45;
 }
 code {
@@ -276,33 +276,38 @@ code {
 }
 .base-panel {
   margin-top: 1rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid #c8d8e8;
-  border-radius: 8px;
-  background: #f6f9fc;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--fluent-border-stroke);
+  border-radius: var(--fluent-radius-lg);
+  background: var(--fluent-bg-card);
+  box-shadow: var(--fluent-shadow-card);
 }
 .base-panel h2 {
   font-size: 1rem;
-  margin: 0 0 0.35rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
 }
 .base-desc {
-  margin: 0 0 0.65rem;
-  font-size: 0.85rem;
-  color: #444;
-  line-height: 1.45;
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.5;
 }
 .adv-details {
   margin-top: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 0.65rem 1rem 1rem;
-  background: #fff;
+  border: 1px solid var(--fluent-border-stroke);
+  border-radius: var(--fluent-radius-lg);
+  padding: 0.75rem 1rem 1rem;
+  background: var(--fluent-bg-card);
+  box-shadow: var(--fluent-shadow-card);
 }
 .adv-details summary {
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9375rem;
+  color: var(--fluent-text-primary);
   padding: 0.25rem 0;
+  list-style-position: outside;
 }
 .adv-details[open] summary {
   margin-bottom: 0.75rem;
@@ -317,23 +322,32 @@ code {
     align-items: start;
   }
 }
+.form-panel {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--fluent-border-stroke);
+  border-radius: var(--fluent-radius-lg);
+  background: var(--fluent-bg-subtle);
+}
 .form-panel h2 {
   font-size: 1rem;
+  font-weight: 600;
   margin: 0 0 0.65rem;
 }
 .form-panel .h3 {
-  font-size: 0.92rem;
+  font-size: 0.875rem;
+  font-weight: 600;
   margin: 1rem 0 0.5rem;
-  color: #333;
+  color: var(--fluent-text-primary);
 }
 .form-row {
   margin-bottom: 0.65rem;
 }
 .form-row label {
   display: block;
-  font-size: 0.82rem;
-  color: #444;
-  margin-bottom: 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--fluent-text-secondary);
+  margin-bottom: 0.25rem;
 }
 .form-row input[type='text'],
 .form-row input[type='number'],
@@ -341,14 +355,24 @@ code {
 .form-row .txt {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.4rem 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  padding: 0.45rem 0.6rem;
+  min-height: 32px;
+  border: 1px solid var(--fluent-border-control);
+  border-radius: var(--fluent-radius);
+  font-size: 0.875rem;
+  font-family: var(--fluent-font);
+  background: var(--fluent-bg-input);
+  color: var(--fluent-text-primary);
+}
+.form-row input:focus-visible,
+.form-row select:focus-visible,
+.form-row .txt:focus-visible {
+  outline: 2px solid var(--fluent-border-focus);
+  outline-offset: -1px;
 }
 .form-row .txt.mono {
-  font-family: ui-monospace, monospace;
-  font-size: 0.82rem;
+  font-family: var(--fluent-mono);
+  font-size: 0.8125rem;
 }
 .form-row.two {
   display: grid;
@@ -374,23 +398,25 @@ code {
   align-items: center;
   gap: 0.35rem;
   cursor: pointer;
-  font-size: 0.88rem;
+  font-size: 0.875rem;
+  color: var(--fluent-text-primary);
 }
 .warn-banner {
-  font-size: 0.82rem;
-  color: #8a4b00;
-  background: #fff8e6;
-  border: 1px solid #e8c96d;
-  padding: 0.45rem 0.55rem;
-  border-radius: 6px;
+  font-size: 0.8125rem;
+  color: var(--fluent-warning-text);
+  background: var(--fluent-warning-bg);
+  border: 1px solid var(--fluent-warning-border);
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--fluent-radius-lg);
   margin: 0 0 0.65rem;
+  line-height: 1.45;
 }
 .future-note {
-  font-size: 0.82rem;
-  color: #555;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
   line-height: 1.45;
   margin: 1rem 0 0;
   padding-top: 0.75rem;
-  border-top: 1px solid #e8e8e8;
+  border-top: 1px solid var(--fluent-border-stroke);
 }
 </style>

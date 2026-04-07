@@ -30,39 +30,63 @@ const emit = defineEmits<{
 <style scoped>
 .checks {
   margin-top: 1rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fafafa;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--fluent-border-stroke);
+  border-radius: var(--fluent-radius-lg);
+  background: var(--fluent-bg-card);
+  box-shadow: var(--fluent-shadow-card);
 }
 .checks h2 {
   font-size: 1rem;
-  margin: 0 0 0.35rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
 }
 .check-desc {
-  margin: 0 0 0.65rem;
-  font-size: 0.88rem;
-  color: #555;
-  line-height: 1.45;
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.5;
 }
 .check-sub {
-  margin: 0.5rem 0 0;
-  font-size: 0.82rem;
-  color: #666;
-  line-height: 1.45;
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.5;
 }
 .check-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem 1rem;
+  gap: 0.75rem 1.25rem;
+}
+.check-row button {
+  padding: 0.5rem 1rem;
+  min-height: 32px;
+  border-radius: var(--fluent-radius);
+  border: none;
+  background: var(--fluent-accent);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--fluent-font);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.check-row button:hover {
+  background: var(--fluent-accent-hover);
 }
 .chk {
-  font-size: 0.88rem;
+  font-size: 0.875rem;
+  color: var(--fluent-text-primary);
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
   cursor: pointer;
   user-select: none;
+}
+.chk input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--fluent-accent);
 }
 </style>

@@ -53,7 +53,8 @@
 3. ✅ 「运行全部检查」面板 + 错误列表 + 可选导出前强制校验。  
 4. ✅ 编写器 **CI**：`npm test` + `npm run build` + Playwright 冒烟 + `cargo build`（Linux + Tauri 系统库；`workflow_dispatch`；Rust 依赖缓存）。  
 5. ✅ 根 `README` 与 **STANDALONE.md**：离线范围、`OCLIVE_ROLES_DIR`、Rust/Tauri 前置、源码布局、联调自检、简单/高级/导入/导出校验与 zip 安全导入说明。  
-6. ✅ 前端结构：`usePackEditor` + `components/pack/`；`exportPrepare` 统一导出前置解析；`importPack` 路径校验与单测。
+6. ✅ 前端结构：`usePackEditor` + `components/pack/`；`exportPrepare` 统一导出前置解析；`importPack` 路径校验与单测。  
+7. ✅ 校验与导出共用 `parsePackDocuments`；`tryBuildExportPayload` 去重；操作反馈成功/失败分色；高级 Tab 键盘导航。
 
 ---
 

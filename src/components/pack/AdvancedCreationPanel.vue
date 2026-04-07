@@ -18,11 +18,47 @@ const emit = defineEmits<{
   emotionAppend: [e: Event]
   emotionClear: []
 }>()
+
+const TAB_ORDER = ['manifest', 'settings', 'core', 'world', 'images'] as const
+
+function onToolbarKeydown(e: KeyboardEvent): void {
+  if (
+    e.key !== 'ArrowLeft' &&
+    e.key !== 'ArrowRight' &&
+    e.key !== 'Home' &&
+    e.key !== 'End'
+  ) {
+    return
+  }
+  e.preventDefault()
+  const order = TAB_ORDER
+  const i = order.indexOf(advancedTab.value)
+  if (i < 0) return
+  if (e.key === 'Home') {
+    advancedTab.value = order[0]!
+    return
+  }
+  if (e.key === 'End') {
+    advancedTab.value = order[order.length - 1]!
+    return
+  }
+  if (e.key === 'ArrowLeft') {
+    advancedTab.value = order[(i - 1 + order.length) % order.length]!
+  } else {
+    advancedTab.value = order[(i + 1) % order.length]!
+  }
+}
 </script>
 
 <template>
   <div>
-    <div class="adv-toolbar" role="tablist" aria-label="高级编辑分区">
+    <div
+      class="adv-toolbar"
+      role="tablist"
+      aria-label="高级编辑分区"
+      tabindex="0"
+      @keydown="onToolbarKeydown"
+    >
       <button
         type="button"
         role="tab"
@@ -109,47 +145,72 @@ code {
   font-size: 0.88em;
 }
 .base-desc {
-  margin: 0 0 0.65rem;
-  font-size: 0.85rem;
-  color: #444;
-  line-height: 1.45;
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.5;
 }
 .adv-toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-top: 1rem;
+  padding: 2px;
+  border-radius: var(--fluent-radius-lg);
+  background: var(--fluent-bg-subtle);
+  border: 1px solid var(--fluent-border-stroke);
 }
 .adv-toolbar button {
-  padding: 0.4rem 0.65rem;
-  border-radius: 6px;
-  border: 1px solid #bbb;
-  background: #fff;
+  padding: 0.4rem 0.75rem;
+  min-height: 30px;
+  border-radius: calc(var(--fluent-radius-lg) - 2px);
+  border: none;
+  background: transparent;
+  color: var(--fluent-text-primary);
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: 0.8125rem;
+  font-family: var(--fluent-font);
+  font-weight: 500;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 .adv-toolbar button.on {
-  background: #1a1a1a;
-  color: #fff;
-  border-color: #1a1a1a;
+  background: var(--fluent-bg-card);
+  color: var(--fluent-accent);
+  box-shadow: var(--fluent-shadow-soft);
+}
+.adv-toolbar button:not(.on):hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+@media (prefers-color-scheme: dark) {
+  .adv-toolbar button:not(.on):hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
 }
 .adv-single {
-  margin-top: 0.65rem;
+  margin-top: 0.75rem;
+  padding: 0 0.25rem;
 }
 .adv-single h2 {
-  font-size: 0.95rem;
-  margin: 0 0 0.35rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
 }
 .ta {
   width: 100%;
   min-height: min(52vh, 420px);
-  padding: 0.6rem 0.65rem;
-  font-family: ui-monospace, monospace;
+  padding: 0.65rem 0.75rem;
+  font-family: var(--fluent-mono);
   font-size: 12px;
-  line-height: 1.4;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  line-height: 1.45;
+  border: 1px solid var(--fluent-border-control);
+  border-radius: var(--fluent-radius);
   resize: vertical;
   box-sizing: border-box;
+  background: var(--fluent-bg-input);
+  color: var(--fluent-text-primary);
+}
+.ta:focus-visible {
+  outline: 2px solid var(--fluent-border-focus);
+  outline-offset: -1px;
 }
 </style>
