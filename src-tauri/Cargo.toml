@@ -10,7 +10,7 @@ default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
 
 [build-dependencies]
-tauri-build = { version = "1.5", features = [] }
+tauri-build = { version = "2.2", features = [] }
 
 [dependencies]
 tauri = { version = "1.5", features = ["protocol-asset", "dialog-open"] }
