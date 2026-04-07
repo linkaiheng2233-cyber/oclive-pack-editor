@@ -1,6 +1,6 @@
 # oclive-pack-editor
 
-[![CI](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml)
+[![CI](https://github.com/supermumu/oclive-pack-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/supermumu/oclive-pack-editor/actions/workflows/ci.yml)
 
 独立 **角色包编写器**（Vite + Vue 3 + TypeScript + 可选 **Tauri 1.x** 桌面壳）：编辑并导出与 **oclivenewnew** 运行时兼容的 **`roles/{角色id}/`** 目录树或 zip（`.zip` / `.ocpak`，均为 zip 格式）。**不包含**对话引擎或运行时源码；两应用的唯一纽带是磁盘上的角色包。
 
@@ -14,6 +14,17 @@
 | **oclivenewnew** | 加载、校验与对话；契约原文在其仓库 **`creator-docs/`** 与 **`roles/README_MANIFEST.md`** |
 
 路径约定（Windows 示例）：与 `oclivenewnew` **同级**放置本仓库，例如 `D:\oclive-pack-editor` 与 `D:\oclivenewnew`。
+
+## 新用户：从下载到第一次对话（与另两仓库的关系）
+
+| 步骤 | 说明 |
+|------|------|
+| 1 | 安装 **Node.js**，按需安装 **Ollama**（试聊 / 完整运行时需要）。 |
+| 2 | 克隆 **[oclivenewnew](https://github.com/supermumu/oclivenewnew)**（运行时）与本 **编写器**；可选 **[oclive-launcher](https://github.com/supermumu/oclive-launcher)** 统一管理路径与 **`OCLIVE_ROLES_DIR`**。 |
+| 3 | 在本编写器中编辑或导入角色包，**导出 .zip / .ocpak** 或使用桌面版 **「写入文件夹」**，使 **`{角色id}/manifest.json`** 出现在某一 **roles 根** 下（该根路径即运行时的 **`OCLIVE_ROLES_DIR`**）。也可使用 **oclive-launcher** 的 **「从 zip 安装角色包」** 解压到该根并选择本机 **Ollama 模型**（见 [启动器 README](https://github.com/supermumu/oclive-launcher/blob/main/README.md)）。 |
+| 4 | 启动 **oclivenewnew**，在应用内从该 roles 根加载角色并开始对话；试聊页见下文「试聊」。 |
+
+权威说明：`oclivenewnew` 仓库 **[creator-docs/getting-started/CREATOR_WORKFLOW.md](https://github.com/supermumu/oclivenewnew/blob/main/creator-docs/getting-started/CREATOR_WORKFLOW.md)**；启动器上手路径见 **[oclive-launcher README](https://github.com/supermumu/oclive-launcher#新用户从下载到第一次对话推荐路径)**。
 
 界面风格参考 **Fluent Design**（与常见 Fluent 桌面工具如 **qfluentwidgets** 一脉：浅色页背景、卡片层次、主色强调按钮），在 `src/style.css` 中通过 CSS 变量统一，并支持系统深色偏好。
 
