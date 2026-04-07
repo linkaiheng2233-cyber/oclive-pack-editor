@@ -2,6 +2,7 @@
  * 从 .zip / .ocpak 导入角色包，用于编辑或另存为新包。
  */
 import JSZip from 'jszip'
+import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
 
 export type ImportedRolePack = {
   roleId: string
@@ -9,6 +10,7 @@ export type ImportedRolePack = {
   settingsJson: string
   corePersonality: string
   worldviewMarkdown: string
+  knowledgeMarkdownFiles: KnowledgeMarkdownFile[]
   /** 从包内 assets/images 解压出的文件，便于再次导出 */
   emotionImageFiles: File[]
 }
@@ -89,15 +91,25 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
 
   const corePersonality = await readText('core_personality.txt')
 
-  let worldviewMarkdown = ''
-  const worldCandidates = ['knowledge/world.md', 'knowledge/lore.md']
-  for (const c of worldCandidates) {
-    const t = await readText(c)
-    if (t.trim()) {
-      worldviewMarkdown = t
-      break
-    }
+  const knowledgeMarkdownFiles: KnowledgeMarkdownFile[] = []
+  for (const n of names) {
+    const path = normalizeZipPath(n)
+    if (!path.startsWith(`${roleId}/knowledge/`) || !path.endsWith('.md')) continue
+    if (!isSafePathUnderRole(path, roleId)) continue
+    const entry = zip.file(path)
+    if (!entry) continue
+    const content = (await entry.async('string')) as string
+    knowledgeMarkdownFiles.push({
+      path: normalizeKnowledgePath(path.slice(`${roleId}/`.length)),
+      content: content.endsWith('\n') ? content : `${content}\n`,
+    })
   }
+  knowledgeMarkdownFiles.sort((a, b) => a.path.localeCompare(b.path))
+  const worldMain =
+    knowledgeMarkdownFiles.find((x) => x.path === 'knowledge/world.md') ??
+    knowledgeMarkdownFiles.find((x) => x.path === 'knowledge/lore.md') ??
+    knowledgeMarkdownFiles[0]
+  const worldviewMarkdown = worldMain?.content ?? ''
 
   const emotionImageFiles: File[] = []
   const prefix = `${roleId}/assets/images/`
@@ -117,6 +129,7 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
     settingsJson: settingsJson.endsWith('\n') ? settingsJson : `${settingsJson}\n`,
     corePersonality,
     worldviewMarkdown,
+    knowledgeMarkdownFiles,
     emotionImageFiles,
   }
 }

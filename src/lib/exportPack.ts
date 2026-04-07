@@ -1,5 +1,6 @@
 import JSZip from 'jszip'
 import { mergedSceneIds, rolePackRelativePaths } from './packLayout'
+import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
 
 export type ExportableManifest = Record<string, unknown>
 export type ExportableSettings = Record<string, unknown>
@@ -17,8 +18,10 @@ function minimalSceneJson(displayName: string): string {
 export type PackExtraFiles = {
   /** 对应 roles/{id}/core_personality.txt */
   corePersonality: string
-  /** 有内容时写入 knowledge/world.md（含 front matter） */
+  /** 兼容旧路径：有内容时写入 knowledge/world.md（含 front matter） */
   worldviewMarkdown: string
+  /** 多知识文件（world.md + lore/*.md 等）；优先于 worldviewMarkdown */
+  knowledgeMarkdownFiles: KnowledgeMarkdownFile[]
   /** 置于 assets/images/ 下，文件名应与 oclive 情绪资源命名一致（如 happy.png） */
   emotionImages: File[]
 }
@@ -53,10 +56,22 @@ export function buildRolePackFiles(
   )
 
   const world = worldMdBody(extra?.worldviewMarkdown ?? '')
-  if (world) {
+  const docs = extra?.knowledgeMarkdownFiles ?? []
+  if (docs.length > 0) {
+    for (const d of docs) {
+      const p = normalizeKnowledgePath(d.path)
+      const body = worldMdBody(d.content)
+      if (!body.trim()) continue
+      files.set(`${id}/${p}`, body)
+    }
+  } else if (world) {
     files.set(`${id}/knowledge/world.md`, world)
-  } else {
+  }
+  if (![...files.keys()].some((k) => k.startsWith(`${id}/knowledge/`) && k.endsWith('.md'))) {
+    // keep directory semantic for empty knowledge packs
     files.set(`${id}/knowledge/.oclive_placeholder.txt`, KNOWLEDGE_PLACEHOLDER)
+  } else {
+    files.delete(`${id}/knowledge/.oclive_placeholder.txt`)
   }
 
   for (const sid of scenes) {

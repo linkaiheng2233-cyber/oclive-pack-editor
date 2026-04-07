@@ -25,13 +25,13 @@ describe('parsePackDocuments', () => {
 })
 
 describe('runAllPackChecks', () => {
-  it('reports JSON errors', () => {
-    const r = runAllPackChecks('{', '{}')
+  it('reports JSON errors', async () => {
+    const r = await runAllPackChecks('{', '{}')
     expect(r.ok).toBe(false)
     expect(r.errors.some((e) => e.includes('manifest'))).toBe(true)
   })
 
-  it('passes for minimal valid pack', () => {
+  it('passes for minimal valid pack', async () => {
     const manifest = JSON.stringify({
       id: 'r1',
       name: 'Role',
@@ -42,7 +42,7 @@ describe('runAllPackChecks', () => {
     const settings = JSON.stringify({
       memory_config: { topic_weights: { s1: { a: 1 } } },
     })
-    const r = runAllPackChecks(manifest, settings)
+    const r = await runAllPackChecks(manifest, settings)
     expect(r.ok).toBe(true)
     expect(r.errors).toEqual([])
   })

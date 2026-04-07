@@ -99,19 +99,19 @@ export async function writePackToRolesRootPath(
   }
 }
 
-/** 选 roles 根并写入完整包；取消对话框时返回 false。 */
+/** 选 roles 根并写入完整包；取消对话框时 `wrote: false`。成功时返回 `rolesRootPath` 供试聊等使用。 */
 export async function pickRolesRootAndWritePack(
   roleId: string,
   manifest: ExportableManifest,
   settings: ExportableSettings,
   extra?: Partial<PackExtraFiles>,
-): Promise<boolean> {
+): Promise<{ wrote: boolean; rolesRootPath?: string }> {
   if (isTauriRuntime()) {
     const selected = await open({ directory: true, multiple: false })
-    if (selected === null) return false
+    if (selected === null) return { wrote: false }
     const path = Array.isArray(selected) ? selected[0] : selected
     await writePackToRolesRootPath(path, roleId, manifest, settings, extra)
-    return true
+    return { wrote: true, rolesRootPath: path }
   }
   if (!isFolderExportSupported()) {
     throw new Error('当前环境不支持选择文件夹写入，请使用桌面版或支持 File System Access 的浏览器。')
@@ -119,9 +119,9 @@ export async function pickRolesRootAndWritePack(
   try {
     const dir = await window.showDirectoryPicker({ mode: 'readwrite' })
     await writePackToRolesRoot(dir, roleId, manifest, settings, extra)
-    return true
+    return { wrote: true }
   } catch (e) {
-    if ((e as Error).name === 'AbortError') return false
+    if ((e as Error).name === 'AbortError') return { wrote: false }
     throw e
   }
 }

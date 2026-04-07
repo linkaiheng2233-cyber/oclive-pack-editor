@@ -15,6 +15,8 @@ import { importRolePackFromZip } from '../lib/importPack'
 import { filterEmotionImageFiles } from '../lib/emotionAssets'
 import { prepareExportPayload } from '../lib/exportPrepare'
 import { parseJson, runAllPackChecks } from '../lib/packChecks'
+import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from '../lib/knowledgeFiles'
+import { validateKnowledgeFiles } from '../lib/knowledgeFrontMatter'
 import {
   applySimpleManifestToJson,
   applySimpleSettingsToJson,
@@ -35,15 +37,20 @@ export function usePackEditor() {
   const settingsText = ref(DEFAULT_SETTINGS_JSON)
   const corePersonalityText = ref(DEFAULT_CORE_PERSONALITY_TEXT)
   const worldviewMarkdown = ref('')
+  const knowledgeMarkdownFiles = ref<KnowledgeMarkdownFile[]>([])
   const emotionImageFiles = ref<File[]>([])
 
   const validationErrors = ref<string[]>([])
+  /** 最近一次检查是否用 wasm；`null` 表示本会话尚未跑过检查 */
+  const validationLastUsedWasm = ref<boolean | null>(null)
   const lastMessage = ref('')
   /** 与 lastMessage 配套：错误类文案为 true，成功提示为 false */
   const lastMessageIsError = ref(false)
   const requireChecksBeforeExport = ref(true)
   /** 简单模式表单与 JSON 不一致时（JSON 无法解析）提示 */
   const syncFormWarning = ref('')
+  /** 最近一次「写入文件夹」的 roles 根路径（桌面版 Tauri），供试聊默认角色目录 */
+  const lastExportedRolesRoot = ref('')
 
   const creationMode = ref<'simple' | 'advanced'>('simple')
   const advancedTab = ref<'manifest' | 'settings' | 'core' | 'world' | 'images'>('manifest')
@@ -63,12 +70,39 @@ export function usePackEditor() {
   })
 
   function packExtra(): Partial<PackExtraFiles> {
+    const docs = knowledgeMarkdownFiles.value.filter((d) => d.content.trim())
     return {
       corePersonality: corePersonalityText.value,
       worldviewMarkdown: worldviewMarkdown.value,
+      knowledgeMarkdownFiles: docs,
       emotionImages: emotionImageFiles.value,
     }
   }
+
+  function syncKnowledgeFilesFromWorldview(): void {
+    const world = worldviewMarkdown.value
+    const idx = knowledgeMarkdownFiles.value.findIndex((d) => d.path === 'knowledge/world.md')
+    if (!world.trim()) {
+      if (idx >= 0) {
+        const next = [...knowledgeMarkdownFiles.value]
+        next.splice(idx, 1)
+        knowledgeMarkdownFiles.value = next
+      }
+      return
+    }
+    if (idx >= 0) {
+      const next = [...knowledgeMarkdownFiles.value]
+      next[idx] = { ...next[idx], content: world }
+      knowledgeMarkdownFiles.value = next
+    } else {
+      knowledgeMarkdownFiles.value = [
+        { path: 'knowledge/world.md', content: world },
+        ...knowledgeMarkdownFiles.value,
+      ]
+    }
+  }
+
+  watch(worldviewMarkdown, syncKnowledgeFilesFromWorldview)
 
   function syncFormsFromJson(): void {
     syncFormWarning.value = ''
@@ -127,6 +161,12 @@ export function usePackEditor() {
 
   onMounted(() => {
     loadPersistedChecks()
+    try {
+      const lr = localStorage.getItem('oclive-pack-editor-last-roles-root')
+      if (lr) lastExportedRolesRoot.value = lr
+    } catch {
+      /* ignore */
+    }
     syncFormsFromJson()
   })
 
@@ -142,16 +182,28 @@ export function usePackEditor() {
 
   const folderExportOk = computed(() => isFolderExportSupported())
 
-  function runValidate(): void {
-    const r = runAllPackChecks(manifestText.value, settingsText.value)
-    validationErrors.value = r.errors
+  /** manifest.json 顶层 `id`，供试聊默认路径等 */
+  const manifestRoleId = computed(() => {
+    const m = parseJson<Record<string, unknown>>(manifestText.value, 'manifest.json')
+    if (!m.ok) return ''
+    const id = m.value.id
+    return typeof id === 'string' ? id : ''
+  })
+
+  async function runValidate(): Promise<void> {
+    const r = await runAllPackChecks(manifestText.value, settingsText.value)
+    const kErrs = validateKnowledgeFiles(knowledgeMarkdownFiles.value)
+    validationErrors.value = [...r.errors, ...kErrs]
+    validationLastUsedWasm.value = r.wasmUsed
   }
 
-  function checksPassForExport(): boolean {
+  async function checksPassForExport(): Promise<boolean> {
     if (!requireChecksBeforeExport.value) return true
-    const r = runAllPackChecks(manifestText.value, settingsText.value)
-    validationErrors.value = r.errors
-    return r.ok
+    const r = await runAllPackChecks(manifestText.value, settingsText.value)
+    const kErrs = validateKnowledgeFiles(knowledgeMarkdownFiles.value)
+    validationErrors.value = [...r.errors, ...kErrs]
+    validationLastUsedWasm.value = r.wasmUsed
+    return r.ok && kErrs.length === 0
   }
 
   async function onImportPack(e: Event): Promise<void> {
@@ -166,6 +218,7 @@ export function usePackEditor() {
       corePersonalityText.value =
         imp.corePersonality.trim() || DEFAULT_CORE_PERSONALITY_TEXT
       worldviewMarkdown.value = imp.worldviewMarkdown
+      knowledgeMarkdownFiles.value = imp.knowledgeMarkdownFiles
       emotionImageFiles.value = imp.emotionImageFiles
       syncFormsFromJson()
       setFeedback(`已导入角色「${imp.roleId}」。可继续编辑后导出。`, false)
@@ -202,15 +255,42 @@ export function usePackEditor() {
     emotionImageFiles.value = []
   }
 
+  function addKnowledgeFile(path = 'knowledge/lore.md'): void {
+    const p = normalizeKnowledgePath(path)
+    if (knowledgeMarkdownFiles.value.some((x) => x.path === p)) return
+    knowledgeMarkdownFiles.value = [...knowledgeMarkdownFiles.value, { path: p, content: '' }]
+  }
+
+  function updateKnowledgeFile(index: number, patch: Partial<KnowledgeMarkdownFile>): void {
+    const prev = knowledgeMarkdownFiles.value[index]
+    if (!prev) return
+    const path = patch.path !== undefined ? normalizeKnowledgePath(patch.path) : prev.path
+    const content = patch.content !== undefined ? patch.content : prev.content
+    const next = [...knowledgeMarkdownFiles.value]
+    next[index] = { path, content }
+    knowledgeMarkdownFiles.value = next
+    if (path === 'knowledge/world.md') worldviewMarkdown.value = content
+  }
+
+  function removeKnowledgeFile(index: number): void {
+    const prev = knowledgeMarkdownFiles.value[index]
+    if (!prev) return
+    const next = [...knowledgeMarkdownFiles.value]
+    next.splice(index, 1)
+    knowledgeMarkdownFiles.value = next
+    if (prev.path === 'knowledge/world.md') worldviewMarkdown.value = ''
+  }
+
   /**
    * 导出前：简单模式写回 JSON →（可选）全量检查 → 解析 payload。
-   * 与 zip / 写文件夹共用，避免两处复制粘贴。
    */
-  function tryBuildExportPayload():
-    | { ok: true; roleId: string; manifest: Record<string, unknown>; settings: Record<string, unknown> }
-    | { ok: false; message: string } {
+  async function tryBuildExportPayload():
+    Promise<
+      | { ok: true; roleId: string; manifest: Record<string, unknown>; settings: Record<string, unknown> }
+      | { ok: false; message: string }
+    > {
     if (creationMode.value === 'simple') applySimpleToJson()
-    if (!checksPassForExport()) {
+    if (!(await checksPassForExport())) {
       return {
         ok: false,
         message: '请先通过全部检查，或关闭「导出前校验包内容」后再导出。',
@@ -226,7 +306,7 @@ export function usePackEditor() {
 
   async function exportZip(ocpak: boolean): Promise<void> {
     setFeedback('', false)
-    const built = tryBuildExportPayload()
+    const built = await tryBuildExportPayload()
     if (!built.ok) {
       setFeedback(built.message, true)
       return
@@ -247,15 +327,23 @@ export function usePackEditor() {
 
   async function exportFolder(): Promise<void> {
     setFeedback('', false)
-    const built = tryBuildExportPayload()
+    const built = await tryBuildExportPayload()
     if (!built.ok) {
       setFeedback(built.message, true)
       return
     }
     const { roleId, manifest, settings } = built
     try {
-      const wrote = await pickRolesRootAndWritePack(roleId, manifest, settings, packExtra())
-      if (!wrote) return
+      const result = await pickRolesRootAndWritePack(roleId, manifest, settings, packExtra())
+      if (!result.wrote) return
+      if (result.rolesRootPath) {
+        lastExportedRolesRoot.value = result.rolesRootPath
+        try {
+          localStorage.setItem('oclive-pack-editor-last-roles-root', result.rolesRootPath)
+        } catch {
+          /* ignore */
+        }
+      }
       setFeedback(
         `已写入 ${roleId}/ 到所选目录（作为 roles 根）。可直接启动 oclive 测试。`,
         false,
@@ -270,8 +358,11 @@ export function usePackEditor() {
     settingsText,
     corePersonalityText,
     worldviewMarkdown,
+    knowledgeMarkdownFiles,
     emotionImageFiles,
     validationErrors,
+    validationLastUsedWasm,
+    lastExportedRolesRoot,
     lastMessage,
     lastMessageIsError,
     requireChecksBeforeExport,
@@ -283,11 +374,15 @@ export function usePackEditor() {
     multiRelationWarning,
     emotionImageSummary,
     folderExportOk,
+    manifestRoleId,
     runValidate,
     onImportPack,
     onEmotionFilesPick,
     onEmotionFilesAppend,
     clearEmotionImages,
+    addKnowledgeFile,
+    updateKnowledgeFile,
+    removeKnowledgeFile,
     exportZip,
     exportFolder,
   }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AdvancedCreationPanel from './components/pack/AdvancedCreationPanel.vue'
+import ChatPanel from './components/pack/ChatPanel.vue'
 import PackChecksSection from './components/pack/PackChecksSection.vue'
 import SimpleCreationPanel from './components/pack/SimpleCreationPanel.vue'
 import { usePackEditor } from './composables/usePackEditor'
@@ -10,7 +11,9 @@ const {
   settingsText,
   corePersonalityText,
   worldviewMarkdown,
+  knowledgeMarkdownFiles,
   validationErrors,
+  validationLastUsedWasm,
   lastMessage,
   lastMessageIsError,
   requireChecksBeforeExport,
@@ -22,16 +25,21 @@ const {
   multiRelationWarning,
   emotionImageSummary,
   folderExportOk,
+  manifestRoleId,
+  lastExportedRolesRoot,
   runValidate,
   onImportPack,
   onEmotionFilesPick,
   onEmotionFilesAppend,
   clearEmotionImages,
+  addKnowledgeFile,
+  updateKnowledgeFile,
+  removeKnowledgeFile,
   exportZip,
   exportFolder,
 } = usePackEditor()
 
-type EditorViewId = 'start' | 'simple' | 'advanced' | 'check'
+type EditorViewId = 'start' | 'simple' | 'advanced' | 'check' | 'chat'
 
 const editorView = ref<EditorViewId>('start')
 
@@ -40,6 +48,7 @@ const editorNav: { id: EditorViewId; label: string; icon: string }[] = [
   { id: 'simple', label: '简单', icon: '📝' },
   { id: 'advanced', label: '高级', icon: '⚙️' },
   { id: 'check', label: '检查', icon: '✓' },
+  { id: 'chat', label: '试聊', icon: '💬' },
 ]
 
 function goEditorView(id: EditorViewId) {
@@ -54,6 +63,7 @@ const viewTitle = computed(() => {
     simple: '简单创作',
     advanced: '高级创作',
     check: '检查与导出',
+    chat: '试聊',
   }
   return m[editorView.value]
 })
@@ -138,6 +148,11 @@ const viewTitle = computed(() => {
               <span class="quick-tile-title">检查与导出</span>
               <span class="quick-tile-desc">校验契约、导出 zip / 写入文件夹</span>
             </button>
+            <button type="button" class="quick-tile" @click="goEditorView('chat')">
+              <span class="quick-tile-ico" aria-hidden="true">💬</span>
+              <span class="quick-tile-title">试聊</span>
+              <span class="quick-tile-desc">连接本机 oclive HTTP API，快速对话</span>
+            </button>
           </div>
         </section>
       </div>
@@ -164,19 +179,28 @@ const viewTitle = computed(() => {
           v-model:manifest-text="manifestText"
           v-model:settings-text="settingsText"
           v-model:core-personality="corePersonalityText"
-          v-model:worldview-markdown="worldviewMarkdown"
+          v-model:knowledge-files="knowledgeMarkdownFiles"
           v-model:advanced-tab="advancedTab"
           :emotion-summary="emotionImageSummary"
+          @add-knowledge-file="addKnowledgeFile"
+          @update-knowledge-file="updateKnowledgeFile"
+          @remove-knowledge-file="removeKnowledgeFile"
           @emotion-pick="onEmotionFilesPick"
           @emotion-append="onEmotionFilesAppend"
           @emotion-clear="clearEmotionImages"
         />
       </div>
 
+      <!-- 试聊 -->
+      <div v-show="editorView === 'chat'" class="view-stack">
+        <ChatPanel :role-id="manifestRoleId" :last-roles-root="lastExportedRolesRoot" />
+      </div>
+
       <!-- 检查与导出 -->
       <div v-show="editorView === 'check'" class="view-stack view-stack--check">
         <PackChecksSection
           v-model:require-checks-before-export="requireChecksBeforeExport"
+          :validation-last-used-wasm="validationLastUsedWasm"
           @run-validate="runValidate"
         />
 
