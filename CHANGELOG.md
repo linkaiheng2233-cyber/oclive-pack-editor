@@ -2,7 +2,7 @@
 
 本文件随 **Git 标签 / Release** 更新；维护者发版步骤见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-## 0.1.0（当前开发线，待打 tag）
+## 0.2.0
 
 ### 编写与导出
 

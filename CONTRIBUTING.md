@@ -35,7 +35,7 @@
    - 更新根目录 [CHANGELOG.md](./CHANGELOG.md) 对应版本小节（可与 tag 同步）。
 
 6. **Release 资产**  
-   - 推送 **`v*`** 标签（如 `v0.1.0`）会触发 [.github/workflows/release.yml](./.github/workflows/release.yml)，在 Windows 上执行 **`npm run tauri:build`** 并上传 **`bundle/`** 为 Artifact（亦可于 Actions 里 **手动运行** 该 workflow）。  
+   - 推送 **`v*`** 标签（如 `v0.2.0`）会触发 [.github/workflows/release.yml](./.github/workflows/release.yml)，在 Windows 上执行 **`npm run tauri:build`** 并上传 **`bundle/`** 为 Artifact（亦可于 Actions 里 **手动运行** 该 workflow）。  
    - 另可将构建产物手动上传到 GitHub **Releases**；资产命名可与 README 或仓库惯例对齐（如带平台与版本前缀）。
 
 7. **冒烟**  
