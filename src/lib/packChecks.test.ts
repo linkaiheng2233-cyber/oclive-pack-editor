@@ -49,6 +49,9 @@ describe('runAllPackChecks', () => {
     const manifest = JSON.stringify({
       id: 'r1',
       name: 'Role',
+      version: '1',
+      author: 't',
+      description: 'd',
       scenes: ['s1'],
       user_relations: { u: {} },
       memory_config: { topic_weights: { s1: { a: 1 } } },

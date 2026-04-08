@@ -10,6 +10,8 @@ import { mergeManifestWithSettings } from './mergeManifest'
 export type WasmValidationResult = { usedWasm: boolean; error: string | null }
 
 let wasmInitDone = false
+/** Node/Vitest 等环境无法 `fetch` 包内 `.wasm` 时跳过一次后永久回退 TS（浏览器打包后正常）。 */
+let wasmLoadSkipped = false
 
 /**
  * 若 wasm 可用且非占位，调用 `validateManifestWasm`；占位或失败时返回 `usedWasm: false` 以便走 TS。
@@ -18,10 +20,18 @@ export async function validateWithWasmIfAvailable(
   mergedManifestJson: string,
   mergedSceneIdsJson: string,
 ): Promise<WasmValidationResult> {
+  if (wasmLoadSkipped) {
+    return { usedWasm: false, error: null }
+  }
   try {
     if (!wasmInitDone) {
-      await init()
-      wasmInitDone = true
+      try {
+        await init()
+        wasmInitDone = true
+      } catch {
+        wasmLoadSkipped = true
+        return { usedWasm: false, error: null }
+      }
     }
     validateManifestWasm(mergedManifestJson, mergedSceneIdsJson, HOST_RUNTIME_VERSION)
     return { usedWasm: true, error: null }
