@@ -67,6 +67,11 @@ export async function fetchRuntimeHealth(baseUrl: string): Promise<string> {
     ) {
       throw new Error(`检测请求超时（>${HEALTH_FETCH_MS / 1000}s）`)
     }
+    if (e instanceof TypeError) {
+      throw new Error(
+        `无法连接 ${base}/health（${e.message}）。请确认 oclive 已用 --api 启动且端口与上方一致；浏览器试聊需本机 CORS 已放行。`,
+      )
+    }
     throw e
   } finally {
     clearTimeout(t)
@@ -132,6 +137,11 @@ export async function fetchRuntimeChat(
       (e as Error).name === 'AbortError'
     ) {
       throw new Error(`请求超时（>${CHAT_FETCH_MS / 1000}s）`)
+    }
+    if (e instanceof TypeError) {
+      throw new Error(
+        `无法连接 ${base}/chat（${e.message}）。请确认 oclive 已用 --api 启动、角色路径正确；浏览器试聊需访问 127.0.0.1 且 CORS 可用。`,
+      )
     }
     throw e
   } finally {

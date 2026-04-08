@@ -1,0 +1,64 @@
+# 打标签 push（v*）或手动运行时，在 Windows 上完整 wasm + 测试 + tauri build，并上传 bundle。
+# 需与 CI 相同：浅克隆 oclivenewnew 以构建校验 wasm。
+
+name: Release build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Add wasm target
+        run: rustup target add wasm32-unknown-unknown
+
+      - uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: 'latest'
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri
+
+      - run: npm ci
+
+      - name: Clone oclivenewnew (validation crate)
+        run: |
+          cd "${{ github.workspace }}/.."
+          git clone --depth 1 https://github.com/linkaiheng2233-cyber/oclivenewnew.git oclivenewnew
+
+      - run: npm run contract:json-keys
+
+      - run: npm run wasm:build
+
+      - run: npm test
+
+      - name: Tauri build
+        run: npm run tauri:build
+
+      - name: Upload bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: oclive-pack-editor-${{ github.ref_name }}-${{ github.run_id }}
+          path: src-tauri/target/release/bundle/
+          if-no-files-found: warn

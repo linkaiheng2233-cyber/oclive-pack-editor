@@ -15,4 +15,12 @@ test.describe('oclive-pack-editor smoke', () => {
     await expect(page.getByRole('tab', { name: '高级创作' })).toBeVisible()
     await expect(page.getByRole('heading', { name: '角色包检查' })).toBeVisible()
   })
+
+  test('简单创作进阶区含知识库表单项', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('tab', { name: '简单创作' }).click()
+    await page.locator('details.adv-details').click()
+    await expect(page.getByRole('heading', { name: '知识库检索（manifest / settings）' })).toBeVisible()
+    await expect(page.getByLabel('glob 模式')).toBeVisible()
+  })
 })

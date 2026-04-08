@@ -26,6 +26,9 @@ export const PERSONALITY_LABELS_ZH: Record<(typeof PERSONALITY_KEYS)[number], st
 export type PluginBackendOpt = 'builtin' | 'builtin_v2' | 'remote'
 export type LlmBackendOpt = 'ollama' | 'remote'
 
+/** 与 `KnowledgePackConfigDisk` / PACK_VERSIONING 默认一致 */
+export const DEFAULT_KNOWLEDGE_GLOB = 'knowledge/**/*.md'
+
 export type SimpleManifestForm = {
   id: string
   name: string
@@ -42,6 +45,10 @@ export type SimpleManifestForm = {
   relationPromptHint: string
   relationInitialFavorability: number
   relationFavorMultiplier: number
+  /** manifest/settings 合并后 `knowledge.enabled`（settings 优先） */
+  knowledgeEnabled: boolean
+  /** 须以 `knowledge/` 开头；见 PACK_VERSIONING */
+  knowledgeGlob: string
 }
 
 export type SimpleSettingsForm = {
@@ -76,7 +83,37 @@ export function defaultSimpleManifestForm(): SimpleManifestForm {
     relationPromptHint: '你们是好朋友',
     relationInitialFavorability: 50,
     relationFavorMultiplier: 1,
+    knowledgeEnabled: true,
+    knowledgeGlob: DEFAULT_KNOWLEDGE_GLOB,
   }
+}
+
+function readKnowledgeBlock(rec: Record<string, unknown>): { enabled: boolean; glob: string } | null {
+  const k = rec.knowledge
+  if (k === null || typeof k !== 'object' || Array.isArray(k)) return null
+  const o = k as Record<string, unknown>
+  const enabled = typeof o.enabled === 'boolean' ? o.enabled : true
+  const g = typeof o.glob === 'string' ? o.glob.trim() : ''
+  const glob = g || DEFAULT_KNOWLEDGE_GLOB
+  return { enabled, glob }
+}
+
+/** settings.knowledge 覆盖 manifest.knowledge（与 mergeManifestWithSettings 一致） */
+export function knowledgeFromPackRecords(
+  manifest: Record<string, unknown>,
+  settings: Record<string, unknown>,
+): { enabled: boolean; glob: string } {
+  return (
+    readKnowledgeBlock(settings) ??
+    readKnowledgeBlock(manifest) ?? { enabled: true, glob: DEFAULT_KNOWLEDGE_GLOB }
+  )
+}
+
+export function normalizeKnowledgeGlob(raw: string): string {
+  const t = raw.trim()
+  if (!t) return DEFAULT_KNOWLEDGE_GLOB
+  if (t.startsWith('knowledge/')) return t
+  return `knowledge/${t.replace(/^\/+/, '')}`
 }
 
 export function defaultSimpleSettingsForm(): SimpleSettingsForm {
@@ -117,6 +154,8 @@ export function manifestRecordToSimpleForm(m: Record<string, unknown>): SimpleMa
     : [...DEFAULT_PERSONALITY]
   const scenes = Array.isArray(m.scenes) ? (m.scenes as string[]).map((s) => String(s).trim()).filter(Boolean) : ['home']
 
+  const kOnly = knowledgeFromPackRecords(m, {})
+
   return {
     id: String(m.id ?? '').trim() || 'my_role_id',
     name: String(m.name ?? '').trim() || '示例角色',
@@ -136,6 +175,8 @@ export function manifestRecordToSimpleForm(m: Record<string, unknown>): SimpleMa
     relationFavorMultiplier: Number.isFinite(ur.favor_multiplier as number)
       ? Math.max(0.01, Number(ur.favor_multiplier))
       : 1,
+    knowledgeEnabled: kOnly.enabled,
+    knowledgeGlob: kOnly.glob,
   }
 }
 
@@ -204,10 +245,19 @@ export function applySimpleManifestToJson(currentJson: string, form: SimpleManif
     },
   }
 
+  base.knowledge = {
+    enabled: form.knowledgeEnabled,
+    glob: normalizeKnowledgeGlob(form.knowledgeGlob),
+  }
+
   return JSON.stringify(base, null, 2) + '\n'
 }
 
-export function applySimpleSettingsToJson(currentJson: string, form: SimpleSettingsForm): string {
+export function applySimpleSettingsToJson(
+  currentJson: string,
+  form: SimpleSettingsForm,
+  knowledge: { enabled: boolean; glob: string },
+): string {
   let base: Record<string, unknown>
   try {
     base = JSON.parse(currentJson) as Record<string, unknown>
@@ -248,6 +298,11 @@ export function applySimpleSettingsToJson(currentJson: string, form: SimpleSetti
     event: form.pluginEvent,
     prompt: form.pluginPrompt,
     llm: form.pluginLlm,
+  }
+
+  base.knowledge = {
+    enabled: knowledge.enabled,
+    glob: normalizeKnowledgeGlob(knowledge.glob),
   }
 
   return JSON.stringify(base, null, 2) + '\n'

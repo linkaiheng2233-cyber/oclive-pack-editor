@@ -166,6 +166,29 @@ const emit = defineEmits<{
               placeholder="可选。有内容时会生成 world.md；留空则使用占位说明。"
             />
           </div>
+          <h3 class="h3">知识库检索（manifest / settings）</h3>
+          <p class="knowledge-lead">
+            与运行时 <code>knowledge</code> 块一致；导出时写入 <code>manifest.json</code> 与
+            <code>settings.json</code>（合并加载时 settings 优先）。<code>glob</code> 须以
+            <code>knowledge/</code> 开头。
+          </p>
+          <div class="form-row chk-row">
+            <label>
+              <input v-model="simpleM.knowledgeEnabled" type="checkbox" />
+              启用知识库 Markdown 检索
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="f-kglob">glob 模式</label>
+            <input
+              id="f-kglob"
+              v-model="simpleM.knowledgeGlob"
+              type="text"
+              spellcheck="false"
+              placeholder="knowledge/**/*.md"
+              autocomplete="off"
+            />
+          </div>
         </section>
 
         <section class="panel form-panel">
@@ -482,5 +505,14 @@ code {
   font-size: 0.78rem;
   color: var(--fluent-text-secondary);
   line-height: 1.45;
+}
+.knowledge-lead {
+  margin: -0.25rem 0 0.5rem;
+  font-size: 0.78rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.5;
+}
+.knowledge-lead code {
+  font-size: 0.76rem;
 }
 </style>

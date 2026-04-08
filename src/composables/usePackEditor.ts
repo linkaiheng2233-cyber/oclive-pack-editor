@@ -23,6 +23,7 @@ import {
   countUserRelationKeys,
   defaultSimpleManifestForm,
   defaultSimpleSettingsForm,
+  knowledgeFromPackRecords,
   manifestRecordToSimpleForm,
   settingsRecordToSimpleForm,
   type SimpleManifestForm,
@@ -68,6 +69,12 @@ export function usePackEditor() {
       ? '未选择'
       : `已选 ${n} 个文件（导出至 manifest.id 对应目录下的 assets/images/）`
   })
+
+  /** 与 manifest 同步写入 settings.knowledge；运行时合并以 settings 为准 */
+  const simpleKnowledgeForSettings = computed(() => ({
+    enabled: simpleM.knowledgeEnabled,
+    glob: simpleM.knowledgeGlob,
+  }))
 
   function packExtra(): Partial<PackExtraFiles> {
     const docs = knowledgeMarkdownFiles.value.filter((d) => d.content.trim())
@@ -115,12 +122,22 @@ export function usePackEditor() {
     if (!s.ok) errs.push(s.error)
     else Object.assign(simpleS, settingsRecordToSimpleForm(s.value))
 
+    if (m.ok && s.ok) {
+      const k = knowledgeFromPackRecords(m.value, s.value)
+      simpleM.knowledgeEnabled = k.enabled
+      simpleM.knowledgeGlob = k.glob
+    }
+
     if (errs.length) syncFormWarning.value = errs.join(' ')
   }
 
   function applySimpleToJson(): void {
     manifestText.value = applySimpleManifestToJson(manifestText.value, simpleM)
-    settingsText.value = applySimpleSettingsToJson(settingsText.value, simpleS)
+    settingsText.value = applySimpleSettingsToJson(
+      settingsText.value,
+      simpleS,
+      simpleKnowledgeForSettings.value,
+    )
   }
 
   function updateJsonFromSimple(): void {

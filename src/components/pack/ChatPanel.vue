@@ -277,6 +277,9 @@ async function send(): Promise<void> {
       <code>roles根/角色id</code>。输入框内 <strong>Enter</strong> 发送，<strong>Shift+Enter</strong> 换行；自动启动首次会要求确认
       可执行文件路径。
     </p>
+    <p v-if="defaultRolePath" class="path-hint" role="status">
+      已从「写入文件夹」推断角色目录（可改填下方手动路径）：<code>{{ defaultRolePath }}</code>
+    </p>
 
     <div class="grid">
       <label class="field">
@@ -383,6 +386,16 @@ async function send(): Promise<void> {
   background: var(--fluent-bg-subtle);
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
+}
+.path-hint {
+  margin: 0 0 1rem;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.5;
+}
+.path-hint code {
+  font-size: 0.78rem;
+  word-break: break-all;
 }
 .grid {
   display: grid;

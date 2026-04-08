@@ -15,7 +15,8 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "cargo:build": "cargo build --manifest-path src-tauri/Cargo.toml",
-    "wasm:build": "node scripts/wasm-pack-build.mjs"
+    "wasm:build": "node scripts/wasm-pack-build.mjs",
+    "contract:json-keys": "node scripts/diff-json-keys.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "1.5.6",

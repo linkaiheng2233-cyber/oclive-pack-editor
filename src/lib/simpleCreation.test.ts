@@ -4,7 +4,10 @@ import {
   applySimpleSettingsToJson,
   countUserRelationKeys,
   defaultSimpleManifestForm,
+  defaultSimpleSettingsForm,
+  knowledgeFromPackRecords,
   manifestRecordToSimpleForm,
+  normalizeKnowledgeGlob,
 } from './simpleCreation'
 
 describe('simpleCreation', () => {
@@ -50,5 +53,33 @@ describe('simpleCreation', () => {
 
   it('countUserRelationKeys', () => {
     expect(countUserRelationKeys('{"user_relations":{"a":{},"b":{}}}')).toBe(2)
+  })
+
+  it('knowledgeFromPackRecords prefers settings over manifest', () => {
+    const m = { knowledge: { enabled: true, glob: 'knowledge/**/*.md' } }
+    const s = { knowledge: { enabled: false, glob: 'knowledge/a/*.md' } }
+    expect(knowledgeFromPackRecords(m as Record<string, unknown>, s as Record<string, unknown>)).toEqual({
+      enabled: false,
+      glob: 'knowledge/a/*.md',
+    })
+  })
+
+  it('normalizeKnowledgeGlob prepends knowledge/', () => {
+    expect(normalizeKnowledgeGlob('**/*.md')).toBe('knowledge/**/*.md')
+    expect(normalizeKnowledgeGlob('')).toBe('knowledge/**/*.md')
+  })
+
+  it('applySimple writes knowledge to manifest and settings', () => {
+    const mForm = defaultSimpleManifestForm()
+    mForm.knowledgeEnabled = false
+    mForm.knowledgeGlob = 'knowledge/custom/*.md'
+    const sForm = defaultSimpleSettingsForm()
+    const mOut = applySimpleManifestToJson('{}', mForm)
+    const sOut = applySimpleSettingsToJson('{}', sForm, {
+      enabled: mForm.knowledgeEnabled,
+      glob: mForm.knowledgeGlob,
+    })
+    expect(JSON.parse(mOut).knowledge).toEqual({ enabled: false, glob: 'knowledge/custom/*.md' })
+    expect(JSON.parse(sOut).knowledge).toEqual({ enabled: false, glob: 'knowledge/custom/*.md' })
   })
 })

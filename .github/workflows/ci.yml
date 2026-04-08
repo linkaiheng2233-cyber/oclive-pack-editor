@@ -56,6 +56,9 @@ jobs:
           cd "${{ github.workspace }}/.."
           git clone --depth 1 https://github.com/linkaiheng2233-cyber/oclivenewnew.git oclivenewnew
 
+      - name: Check json keys vs oclivenewnew
+        run: npm run contract:json-keys
+
       - name: Build validation wasm
         run: npm run wasm:build
 
