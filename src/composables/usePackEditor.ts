@@ -17,6 +17,7 @@ import { prepareExportPayload } from '../lib/exportPrepare'
 import { parseJson, runAllPackChecks } from '../lib/packChecks'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from '../lib/knowledgeFiles'
 import { validateKnowledgeFiles } from '../lib/knowledgeFrontMatter'
+import { mergeMarketComposeIntoEditor, parseMarketComposeV1 } from '../lib/marketComposeImport'
 import {
   applySimpleManifestToJson,
   applySimpleSettingsToJson,
@@ -370,6 +371,32 @@ export function usePackEditor() {
     lastMessageIsError.value = isError
   }
 
+  /**
+   * 粘贴 oclive-plugin-market「模块组合」页复制的 JSON，合并进简单创作（人设长文 / 世界观 / 身份提示）。
+   */
+  function applyMarketComposeJson(raw: string): { ok: boolean; message: string } {
+    const p = parseMarketComposeV1(raw.trim())
+    if (!p.ok) {
+      setFeedback(p.error, true)
+      return { ok: false, message: p.error }
+    }
+    const merged = mergeMarketComposeIntoEditor(p.data, {
+      corePersonalityText: corePersonalityText.value,
+      worldviewMarkdown: worldviewMarkdown.value,
+      relationPromptHint: simpleM.relationPromptHint,
+    })
+    corePersonalityText.value = merged.corePersonalityText
+    worldviewMarkdown.value = merged.worldviewMarkdown
+    simpleM.relationPromptHint = merged.relationPromptHint
+    creationMode.value = 'simple'
+    flushSimpleToJson()
+    setFeedback(
+      '已从市场模块组合合并到简单创作（追加到人设、世界观与身份提示）。请到「简单」页继续编辑并导出。',
+      false,
+    )
+    return { ok: true, message: '已应用。' }
+  }
+
   async function exportZip(ocpak: boolean): Promise<void> {
     setFeedback('', false)
     const built = await tryBuildExportPayload()
@@ -453,5 +480,7 @@ export function usePackEditor() {
     exportFolder,
     /** 简单模式：立即同步表单 → JSON（供切页前调用） */
     flushSimpleToJson,
+    /** 市场「模块组合」JSON → 合并进简单创作 */
+    applyMarketComposeJson,
   }
 }

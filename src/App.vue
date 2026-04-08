@@ -38,7 +38,18 @@ const {
   exportZip,
   exportFolder,
   flushSimpleToJson,
+  applyMarketComposeJson,
 } = usePackEditor()
+
+const marketComposePaste = ref('')
+
+function onApplyMarketCompose() {
+  const r = applyMarketComposeJson(marketComposePaste.value)
+  if (r.ok) {
+    marketComposePaste.value = ''
+    goEditorView('simple')
+  }
+}
 
 type EditorViewId = 'start' | 'simple' | 'advanced' | 'check' | 'chat'
 
@@ -129,6 +140,24 @@ const viewTitle = computed(() => {
               导入角色包（.zip / .ocpak）
             </label>
             <span class="import-hint">导入后可编辑全部内容并另存为新包。</span>
+          </div>
+        </section>
+
+        <section class="market-compose-wrap" aria-label="从 OCLive 市场导入模块组合">
+          <p class="section-kicker">与社区站联动</p>
+          <h2 class="mc-h2">从市场「模块组合」导入</h2>
+          <p class="mc-lead">
+            在 <strong>OCLive 市场</strong> 的「角色包 → 模块组合」中选好片段后，点<strong>复制组合 JSON</strong>，回到此处粘贴到下方文本框，再点<strong>应用到简单创作</strong>。内容会<strong>追加</strong>到人设长文、世界观（Markdown）与「语气与关系提示」，不覆盖你已有正文。
+          </p>
+          <textarea
+            v-model="marketComposePaste"
+            class="mc-textarea"
+            rows="8"
+            spellcheck="false"
+            placeholder='粘贴形如 {"version":1,"source":"oclive-plugin-market",...} 的整段 JSON'
+          />
+          <div class="mc-actions">
+            <button type="button" class="mc-btn primary" @click="onApplyMarketCompose">应用到简单创作</button>
           </div>
         </section>
 
@@ -428,6 +457,69 @@ const viewTitle = computed(() => {
 .import-hint {
   font-size: 0.8125rem;
   color: var(--fluent-text-secondary);
+}
+
+.market-compose-wrap {
+  margin-top: 1rem;
+  padding: 1rem 1.125rem 1.2rem;
+  border-radius: var(--fluent-radius-lg);
+  background: var(--fluent-bg-card);
+  border: 1px solid var(--fluent-border-stroke);
+  box-shadow: var(--fluent-shadow-soft);
+}
+
+.mc-h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--fluent-text-primary);
+}
+
+.mc-lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.55;
+  max-width: 62ch;
+}
+
+.mc-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.78rem;
+  font-family: ui-monospace, monospace;
+  line-height: 1.45;
+  border-radius: var(--fluent-radius);
+  border: 1px solid var(--fluent-border-control);
+  background: var(--fluent-bg-subtle);
+  color: var(--fluent-text-primary);
+  resize: vertical;
+  min-height: 140px;
+}
+
+.mc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mc-btn.primary {
+  padding: 0.5rem 1rem;
+  min-height: 32px;
+  border-radius: var(--fluent-radius);
+  border: none;
+  background: var(--fluent-accent);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--fluent-font);
+}
+
+.mc-btn.primary:hover {
+  background: var(--fluent-accent-hover);
 }
 
 .quick-card {
