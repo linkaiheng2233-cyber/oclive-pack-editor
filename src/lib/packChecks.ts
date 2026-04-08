@@ -1,6 +1,7 @@
 import { mergedSceneIds } from './packLayout'
+import { validateManifestTopLevelKeys, validateSettingsTopLevelKeys } from './jsonKeys'
 import type { ManifestInput, SettingsInput } from './validation'
-import { validateEditorPack } from './validation'
+import { validateEditorPack, validateMinRuntimeVersion } from './validation'
 import { buildMergedManifestJson, validateWithWasmIfAvailable } from './wasmValidation'
 
 export function parseJson<T>(
@@ -50,6 +51,14 @@ export async function runAllPackChecks(
   const m = p.manifest as ManifestInput
   const s = p.settings as SettingsInput
   const scenes = mergedSceneIds(m.scenes, [])
+  const keyErrors = [
+    ...validateManifestTopLevelKeys(p.manifest),
+    ...validateSettingsTopLevelKeys(p.settings),
+  ]
+  if (keyErrors.length > 0) {
+    return { ok: false, errors: keyErrors, wasmUsed: false }
+  }
+
   const mergedJson = buildMergedManifestJson(p.manifest, p.settings)
   const wasmRes = await validateWithWasmIfAvailable(mergedJson, JSON.stringify(scenes))
 
@@ -60,6 +69,14 @@ export async function runAllPackChecks(
     return { ok: false, errors: [wasmRes.error], wasmUsed: true }
   }
 
-  const errors = validateEditorPack(m, s, scenes)
+  const errors = [
+    ...validateEditorPack(m, s, scenes),
+    ...(() => {
+      const line = validateMinRuntimeVersion(
+        (p.manifest as { min_runtime_version?: unknown }).min_runtime_version,
+      )
+      return line ? [line] : []
+    })(),
+  ]
   return { ok: errors.length === 0, errors, wasmUsed: false }
 }

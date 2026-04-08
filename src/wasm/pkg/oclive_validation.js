@@ -4,6 +4,6 @@
  */
 export default async function init() {}
 
-export function validateManifestWasm(_manifestJson, _mergedSceneIdsJson) {
+export function validateManifestWasm(_manifestJson, _mergedSceneIdsJson, _hostRuntimeVersion) {
   throw new Error('__OCWASM_NOT_BUILT__')
 }

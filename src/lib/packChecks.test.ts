@@ -31,6 +31,20 @@ describe('runAllPackChecks', () => {
     expect(r.errors.some((e) => e.includes('manifest'))).toBe(true)
   })
 
+  it('rejects unknown top-level manifest key', async () => {
+    const manifest = JSON.stringify({
+      id: 'r1',
+      name: 'Role',
+      not_a_valid_key: true,
+      scenes: ['s1'],
+      user_relations: { u: {} },
+      memory_config: { topic_weights: { s1: { a: 1 } } },
+    })
+    const r = await runAllPackChecks(manifest, '{}')
+    expect(r.ok).toBe(false)
+    expect(r.errors.some((e) => e.includes('未识别'))).toBe(true)
+  })
+
   it('passes for minimal valid pack', async () => {
     const manifest = JSON.stringify({
       id: 'r1',

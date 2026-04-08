@@ -3,6 +3,40 @@
  * `src-tauri/src/domain/role_manifest_validate.rs`). Full truth remains `load_role` in the app.
  */
 
+import { HOST_RUNTIME_VERSION } from './hostRuntimeVersion'
+
+export { HOST_RUNTIME_VERSION }
+
+/** 与 `oclive_validation::validate_min_runtime_version` 对齐（主.次.补丁 semver）。 */
+export function validateMinRuntimeVersion(
+  minReq: unknown,
+  hostVersion: string = HOST_RUNTIME_VERSION,
+): string | null {
+  if (minReq == null) return null
+  const req = String(minReq).trim()
+  if (!req) return null
+  const m = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/.exec(req)
+  if (!m) {
+    return `角色包 manifest：min_runtime_version「${req}」须为语义化版本（例如 0.2.0）`
+  }
+  const major = parseInt(m[1]!, 10)
+  const minor = parseInt(m[2]!, 10)
+  const patch = parseInt(m[3]!, 10)
+  const hm = /^(\d+)\.(\d+)\.(\d+)/.exec(hostVersion.trim())
+  if (!hm) return null
+  const hmaj = parseInt(hm[1]!, 10)
+  const hmin = parseInt(hm[2]!, 10)
+  const hpat = parseInt(hm[3]!, 10)
+  if (
+    hmaj < major ||
+    (hmaj === major && hmin < minor) ||
+    (hmaj === major && hmin === minor && hpat < patch)
+  ) {
+    return `当前编写器按 oclive ${hostVersion} 校验：本包要求最低 ${req}（manifest.min_runtime_version）。请升级 oclive 或使用更低 min_runtime。`
+  }
+  return null
+}
+
 export type UserRelationDisk = {
   display_name?: string
   prompt_hint?: string

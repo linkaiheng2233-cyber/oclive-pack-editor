@@ -4,6 +4,7 @@
  */
 
 import init, { validateManifestWasm } from '../wasm/pkg/oclive_validation.js'
+import { HOST_RUNTIME_VERSION } from './hostRuntimeVersion'
 import { mergeManifestWithSettings } from './mergeManifest'
 
 export type WasmValidationResult = { usedWasm: boolean; error: string | null }
@@ -22,7 +23,7 @@ export async function validateWithWasmIfAvailable(
       await init()
       wasmInitDone = true
     }
-    validateManifestWasm(mergedManifestJson, mergedSceneIdsJson)
+    validateManifestWasm(mergedManifestJson, mergedSceneIdsJson, HOST_RUNTIME_VERSION)
     return { usedWasm: true, error: null }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)

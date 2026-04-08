@@ -196,6 +196,10 @@ function resetAllPreviewWeightOverrides(): void {
 
     <section v-show="advancedTab === 'manifest'" class="panel adv-single">
       <h2>manifest.json</h2>
+      <p class="adv-brain-hint">
+        <strong>版本与键名</strong>：可选 <code>min_runtime_version</code>（semver，如 <code>0.2.0</code>）表示<strong>最低 oclive 宿主版本</strong>，低于则拒绝加载。顶层仅允许契约字段；说明文字请用<strong>下划线</strong>前缀键（如 <code>_note</code>）。详见 oclivenewnew
+        <code>creator-docs/role-pack/PACK_VERSIONING.md</code>。
+      </p>
       <textarea v-model="manifestText" spellcheck="false" class="ta" aria-label="manifest.json" />
     </section>
     <section v-show="advancedTab === 'settings'" class="panel adv-single">
