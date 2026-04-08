@@ -11,7 +11,7 @@ import {
   type PackExtraFiles,
 } from '../lib/exportPack'
 import { pickRolesRootAndWritePack, isFolderExportSupported } from '../lib/exportFolder'
-import { importRolePackFromZip } from '../lib/importPack'
+import { importRolePackFromZip, importedPackBrainHint } from '../lib/importPack'
 import { filterEmotionImageFiles } from '../lib/emotionAssets'
 import { prepareExportPayload } from '../lib/exportPrepare'
 import { parseJson, runAllPackChecks } from '../lib/packChecks'
@@ -221,7 +221,10 @@ export function usePackEditor() {
       knowledgeMarkdownFiles.value = imp.knowledgeMarkdownFiles
       emotionImageFiles.value = imp.emotionImageFiles
       syncFormsFromJson()
-      setFeedback(`已导入角色「${imp.roleId}」。可继续编辑后导出。`, false)
+      setFeedback(
+        `已导入角色「${imp.roleId}」。可继续编辑后导出。 ${importedPackBrainHint(imp.settingsJson)}`,
+        false,
+      )
     } catch (err) {
       setFeedback(`导入失败：${err instanceof Error ? err.message : String(err)}`, true)
     }

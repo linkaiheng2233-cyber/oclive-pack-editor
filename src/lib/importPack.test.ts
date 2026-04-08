@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
-import { importRolePackFromZip, isSafePathUnderRole } from './importPack'
+import { importedPackBrainHint, importRolePackFromZip, isSafePathUnderRole } from './importPack'
 
 async function zipToFile(zip: JSZip, name: string): Promise<File> {
   const blob = await zip.generateAsync({ type: 'blob' })
@@ -20,6 +20,18 @@ describe('isSafePathUnderRole', () => {
 
   it('rejects escape from role prefix', () => {
     expect(isSafePathUnderRole('otherrole/manifest.json', 'myrole')).toBe(false)
+  })
+})
+
+describe('importedPackBrainHint', () => {
+  it('mentions launcher when llm is remote', () => {
+    const j = JSON.stringify({ plugin_backends: { llm: 'remote' } })
+    expect(importedPackBrainHint(j)).toContain('oclive-launcher')
+  })
+
+  it('suggests simple creation when not remote', () => {
+    const j = JSON.stringify({ plugin_backends: { llm: 'ollama' } })
+    expect(importedPackBrainHint(j)).toContain('简单创作')
   })
 })
 

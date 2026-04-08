@@ -133,3 +133,16 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
     emotionImageFiles,
   }
 }
+
+/** 导入成功后附在状态栏的短提示（与 oclive-launcher / 简单创作「对话推理」一致）。 */
+export function importedPackBrainHint(settingsJson: string): string {
+  try {
+    const s = JSON.parse(settingsJson) as { plugin_backends?: { llm?: string } }
+    if (s.plugin_backends?.llm === 'remote') {
+      return '（云端 LLM：运行 oclive 时请在 oclive-launcher 填写 Remote LLM URL。）'
+    }
+  } catch {
+    /* ignore */
+  }
+  return '（推理方式可在简单创作「对话推理」或 oclive-launcher 中调整。）'
+}

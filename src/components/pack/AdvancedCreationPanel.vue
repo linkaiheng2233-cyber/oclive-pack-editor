@@ -200,6 +200,12 @@ function resetAllPreviewWeightOverrides(): void {
     </section>
     <section v-show="advancedTab === 'settings'" class="panel adv-single">
       <h2>settings.json</h2>
+      <p class="adv-brain-hint">
+        <strong>对话推理（大脑）</strong>：<code>model</code> 为本机 Ollama 模型名；
+        <code>plugin_backends.llm</code> 为 <code>ollama</code> 或 <code>remote</code>。运行时可用环境变量
+        <code>OCLIVE_LLM_BACKEND</code> 覆盖（由 oclive-launcher 注入）。云端须配置
+        <code>OCLIVE_REMOTE_LLM_URL</code>，协议见 oclivenewnew <code>REMOTE_PLUGIN_PROTOCOL.md</code>。需要表单化编辑请用<strong>简单创作</strong>中的「对话推理」区块。
+      </p>
       <textarea v-model="settingsText" spellcheck="false" class="ta" aria-label="settings.json" />
     </section>
     <section v-show="advancedTab === 'core'" class="panel adv-single">
@@ -399,6 +405,15 @@ code {
   font-size: 0.875rem;
   color: var(--fluent-text-secondary);
   line-height: 1.5;
+}
+.adv-brain-hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.55;
+}
+.adv-brain-hint strong {
+  color: var(--fluent-text-primary);
 }
 .knowledge-actions {
   margin-bottom: 0.75rem;
