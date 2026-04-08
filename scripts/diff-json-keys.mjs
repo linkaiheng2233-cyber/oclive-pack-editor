@@ -44,10 +44,10 @@ function parseTsKeys(src, constName) {
 }
 
 function compareArrays(label, rustKeys, tsKeys) {
-  const r = new Set(rustKeys)
-  const t = new Set(tsKeys)
-  const onlyRust = rustKeys.filter((k) => !t.has(k))
-  const onlyTs = tsKeys.filter((k) => !r.has(k))
+  const tsSet = new Set(tsKeys)
+  const rustSet = new Set(rustKeys)
+  const onlyRust = rustKeys.filter((k) => !tsSet.has(k))
+  const onlyTs = tsKeys.filter((k) => !rustSet.has(k))
   if (onlyRust.length === 0 && onlyTs.length === 0) return
   console.error(`\n${label} 不一致：`)
   if (onlyRust.length) console.error(`  仅在 Rust: ${onlyRust.join(', ')}`)

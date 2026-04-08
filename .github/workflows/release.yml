@@ -61,4 +61,4 @@ jobs:
         with:
           name: oclive-pack-editor-${{ github.ref_name }}-${{ github.run_id }}
           path: src-tauri/target/release/bundle/
-          if-no-files-found: warn
+          if-no-files-found: error
