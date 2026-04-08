@@ -1,4 +1,4 @@
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import {
   DEFAULT_CORE_PERSONALITY_TEXT,
   DEFAULT_MANIFEST_JSON,
@@ -32,6 +32,9 @@ import {
 
 const STORAGE_REQUIRE_CHECKS = 'oclive-pack-editor-require-checks-before-export'
 const STORAGE_CREATION_MODE = 'oclive-pack-editor-creation-mode'
+
+/** 简单模式表单 → JSON 防抖：避免每次按键都整表序列化，减轻大字段输入卡顿。 */
+const SIMPLE_JSON_DEBOUNCE_MS = 220
 
 export function usePackEditor() {
   const manifestText = ref(DEFAULT_MANIFEST_JSON)
@@ -111,7 +114,35 @@ export function usePackEditor() {
 
   watch(worldviewMarkdown, syncKnowledgeFilesFromWorldview)
 
+  let simpleJsonDebounceTimer: ReturnType<typeof setTimeout> | undefined
+
+  function cancelDebouncedSimpleToJson(): void {
+    if (simpleJsonDebounceTimer !== undefined) {
+      clearTimeout(simpleJsonDebounceTimer)
+      simpleJsonDebounceTimer = undefined
+    }
+  }
+
+  /**
+   * 简单模式：立即将表单写入 manifest/settings 文本（并取消待执行的防抖）。
+   * 导出、运行检查、切到「检查/试聊」前应调用，避免读到未落盘的表单。
+   */
+  function flushSimpleToJson(): void {
+    cancelDebouncedSimpleToJson()
+    if (creationMode.value === 'simple') applySimpleToJson()
+  }
+
+  function scheduleSimpleToJson(): void {
+    if (creationMode.value !== 'simple') return
+    cancelDebouncedSimpleToJson()
+    simpleJsonDebounceTimer = setTimeout(() => {
+      simpleJsonDebounceTimer = undefined
+      applySimpleToJson()
+    }, SIMPLE_JSON_DEBOUNCE_MS)
+  }
+
   function syncFormsFromJson(): void {
+    cancelDebouncedSimpleToJson()
     syncFormWarning.value = ''
     const errs: string[] = []
     const m = parseJson<Record<string, unknown>>(manifestText.value, 'manifest.json')
@@ -140,27 +171,25 @@ export function usePackEditor() {
     )
   }
 
-  function updateJsonFromSimple(): void {
-    if (creationMode.value !== 'simple') return
-    applySimpleToJson()
-  }
-
   watch(
     () => simpleM,
-    updateJsonFromSimple,
+    scheduleSimpleToJson,
     { deep: true },
   )
   watch(
     () => simpleS,
-    updateJsonFromSimple,
+    scheduleSimpleToJson,
     { deep: true },
   )
 
-  watch(creationMode, (mode) => {
+  watch(creationMode, (mode, prev) => {
     try {
       localStorage.setItem(STORAGE_CREATION_MODE, mode)
     } catch {
       /* ignore */
+    }
+    if (prev === 'simple' && mode === 'advanced') {
+      flushSimpleToJson()
     }
     if (mode === 'simple') syncFormsFromJson()
   })
@@ -187,6 +216,10 @@ export function usePackEditor() {
     syncFormsFromJson()
   })
 
+  onBeforeUnmount(() => {
+    cancelDebouncedSimpleToJson()
+  })
+
   function persistRequireChecks(): void {
     try {
       localStorage.setItem(STORAGE_REQUIRE_CHECKS, requireChecksBeforeExport.value ? 'true' : 'false')
@@ -207,20 +240,33 @@ export function usePackEditor() {
     return typeof id === 'string' ? id : ''
   })
 
-  async function runValidate(): Promise<void> {
+  async function collectValidationState(): Promise<{
+    errors: string[]
+    wasmUsed: boolean
+    ok: boolean
+  }> {
+    flushSimpleToJson()
     const r = await runAllPackChecks(manifestText.value, settingsText.value)
     const kErrs = validateKnowledgeFiles(knowledgeMarkdownFiles.value)
-    validationErrors.value = [...r.errors, ...kErrs]
-    validationLastUsedWasm.value = r.wasmUsed
+    return {
+      errors: [...r.errors, ...kErrs],
+      wasmUsed: r.wasmUsed,
+      ok: r.ok && kErrs.length === 0,
+    }
+  }
+
+  async function runValidate(): Promise<void> {
+    const v = await collectValidationState()
+    validationErrors.value = v.errors
+    validationLastUsedWasm.value = v.wasmUsed
   }
 
   async function checksPassForExport(): Promise<boolean> {
     if (!requireChecksBeforeExport.value) return true
-    const r = await runAllPackChecks(manifestText.value, settingsText.value)
-    const kErrs = validateKnowledgeFiles(knowledgeMarkdownFiles.value)
-    validationErrors.value = [...r.errors, ...kErrs]
-    validationLastUsedWasm.value = r.wasmUsed
-    return r.ok && kErrs.length === 0
+    const v = await collectValidationState()
+    validationErrors.value = v.errors
+    validationLastUsedWasm.value = v.wasmUsed
+    return v.ok
   }
 
   async function onImportPack(e: Event): Promise<void> {
@@ -309,7 +355,7 @@ export function usePackEditor() {
       | { ok: true; roleId: string; manifest: Record<string, unknown>; settings: Record<string, unknown> }
       | { ok: false; message: string }
     > {
-    if (creationMode.value === 'simple') applySimpleToJson()
+    flushSimpleToJson()
     if (!(await checksPassForExport())) {
       return {
         ok: false,
@@ -405,5 +451,7 @@ export function usePackEditor() {
     removeKnowledgeFile,
     exportZip,
     exportFolder,
+    /** 简单模式：立即同步表单 → JSON（供切页前调用） */
+    flushSimpleToJson,
   }
 }

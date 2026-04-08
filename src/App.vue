@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import AdvancedCreationPanel from './components/pack/AdvancedCreationPanel.vue'
 import ChatPanel from './components/pack/ChatPanel.vue'
 import PackChecksSection from './components/pack/PackChecksSection.vue'
@@ -37,11 +37,16 @@ const {
   removeKnowledgeFile,
   exportZip,
   exportFolder,
+  flushSimpleToJson,
 } = usePackEditor()
 
 type EditorViewId = 'start' | 'simple' | 'advanced' | 'check' | 'chat'
 
 const editorView = ref<EditorViewId>('start')
+
+watch(editorView, (v) => {
+  if (v === 'check' || v === 'chat') flushSimpleToJson()
+})
 
 const editorNav: { id: EditorViewId; label: string; icon: string }[] = [
   { id: 'start', label: '开始', icon: '🏠' },
