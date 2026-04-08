@@ -160,15 +160,49 @@ const emit = defineEmits<{
 
         <section class="panel form-panel">
           <h2>引擎设置（settings）</h2>
-          <div class="form-row two">
-            <div>
-              <label for="f-sv">schema 版本</label>
-              <input id="f-sv" v-model.number="simpleS.schemaVersion" type="number" min="1" />
+
+          <section class="brain-panel" aria-labelledby="brain-heading">
+            <h3 id="brain-heading" class="h3">对话推理（大脑）</h3>
+            <p class="brain-lead">
+              与 <strong>oclive-launcher</strong>「对话推理」一致：包内声明 <code>plugin_backends.llm</code>；本机走
+              Ollama，云端需在启动 oclive 时配置 <code>OCLIVE_REMOTE_LLM_URL</code>（启动器里填 URL）。
+            </p>
+            <div class="form-row">
+              <label for="f-brain-mode">推理方式</label>
+              <select id="f-brain-mode" v-model="simpleS.pluginLlm">
+                <option value="ollama">本机 Ollama</option>
+                <option value="remote">云端 Remote LLM（HTTP JSON-RPC）</option>
+              </select>
             </div>
-            <div>
-              <label for="f-model">默认模型名</label>
-              <input id="f-model" v-model="simpleS.model" type="text" />
+            <div v-if="simpleS.pluginLlm === 'ollama'" class="form-row">
+              <label for="f-model">Ollama 模型名（<code>model</code>）</label>
+              <input
+                id="f-model"
+                v-model="simpleS.model"
+                type="text"
+                placeholder="qwen2.5:7b"
+                autocomplete="off"
+              />
             </div>
+            <div v-else class="form-row brain-remote-note">
+              <p>
+                导出包将包含 <code>"llm": "remote"</code>。请使用启动器选择「云端 Remote LLM」并填写侧车地址；协议见 oclivenewnew
+                <code>REMOTE_PLUGIN_PROTOCOL.md</code>。
+              </p>
+              <label for="f-model-remote">模型名备注（可选，写入 <code>model</code>）</label>
+              <input
+                id="f-model-remote"
+                v-model="simpleS.model"
+                type="text"
+                placeholder="可选，如文档说明用"
+                autocomplete="off"
+              />
+            </div>
+          </section>
+
+          <div class="form-row">
+            <label for="f-sv">schema 版本</label>
+            <input id="f-sv" v-model.number="simpleS.schemaVersion" type="number" min="1" />
           </div>
           <div class="form-row">
             <label for="f-eif">事件影响系数（角色受影响程度）</label>
@@ -211,7 +245,8 @@ const emit = defineEmits<{
               异地心声默认开启（建议）
             </label>
           </div>
-          <h3 class="h3">插件后端（与运行时 PLUGIN_V1 一致）</h3>
+          <h3 class="h3">其他插件后端（memory / emotion / event / prompt）</h3>
+          <p class="plugin-sub">主对话 LLM 已在上方「对话推理」中选择；此处为记忆、情绪、事件、Prompt 四类后端。</p>
           <div class="form-row">
             <label>memory</label>
             <select v-model="simpleS.pluginMemory">
@@ -241,13 +276,6 @@ const emit = defineEmits<{
             <select v-model="simpleS.pluginPrompt">
               <option value="builtin">builtin</option>
               <option value="builtin_v2">builtin_v2</option>
-              <option value="remote">remote</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label>llm</label>
-            <select v-model="simpleS.pluginLlm">
-              <option value="ollama">ollama</option>
               <option value="remote">remote</option>
             </select>
           </div>
@@ -418,5 +446,31 @@ code {
   margin: 1rem 0 0;
   padding-top: 0.75rem;
   border-top: 1px solid var(--fluent-border-stroke);
+}
+
+.brain-panel {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--fluent-radius-lg);
+  border: 1px solid var(--fluent-border-stroke);
+  background: var(--fluent-bg-page);
+}
+.brain-lead {
+  margin: 0 0 0.65rem;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.55;
+}
+.brain-remote-note p {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.5;
+}
+.plugin-sub {
+  margin: -0.25rem 0 0.5rem;
+  font-size: 0.78rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.45;
 }
 </style>

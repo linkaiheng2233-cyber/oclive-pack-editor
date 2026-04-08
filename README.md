@@ -47,6 +47,7 @@
 - **简单创作**
   - **基础**：人设长文（写入 `core_personality.txt`）与 **情绪图片**（导出至 `assets/images/`，文件名需与 oclive 情绪资源命名一致）。
   - **进阶**（可折叠）：场景、用户身份、**世界观**（`knowledge/world.md`）、**事件影响系数**（角色受影响程度）等，对应背后的 `manifest.json` / `settings.json`。
+  - **对话推理（大脑）**（进阶 · 引擎设置）：与 **oclive-launcher** 对齐，选择 **本机 Ollama**（填写 `model`）或 **云端 Remote LLM**（包内 `plugin_backends.llm: remote`）；云端侧车 URL 在启动 oclive 时由启动器注入 `OCLIVE_REMOTE_LLM_URL`，协议见 oclivenewnew `REMOTE_PLUGIN_PROTOCOL.md`。记忆 / 情绪 / 事件 / Prompt 四类后端仍在同页「其他插件后端」中配置。
 - **高级创作**：分标签编辑 **manifest.json**、**settings.json**、**core_personality.txt**、**知识 Markdown（`knowledge/*.md`）**、**情绪图片列表**；适合插件字段、多身份与完整包结构。
 - **世界观与知识文件（高级 · 世界观）**
   - 支持多个 **`knowledge/*.md`**；简单模式下的「世界观」仍与 **`knowledge/world.md`** 同步。
