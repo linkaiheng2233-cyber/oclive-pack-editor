@@ -9,7 +9,7 @@
 - 开发：`npm run tauri:dev`（桌面）或 `npm run dev:browser`（浏览器）；详见 [README.md](README.md)。
 - 自检：`npm test`、`npm run build`；若改动桌面壳：`npm run cargo:build` 或 `npm run tauri:build`（与 CI 一致）。
 
-合并前请保证前端构建与单测通过；若改动导出或 Tauri 命令，建议在目标平台上实际跑一遍「导入 / 导出 / 写入文件夹」。
+合并前请保证前端构建与单测通过；若改动导出或 Tauri 命令，建议在目标平台上实际跑一遍「导入 / 导出 / 写入文件夹」。**CI** 在 **Ubuntu 与 Windows** 上会各跑一遍 **Playwright 冒烟**（`npm run test:e2e`，需先同 job 内 `npm run build`）。
 
 ## 发版检查清单（维护者）
 
