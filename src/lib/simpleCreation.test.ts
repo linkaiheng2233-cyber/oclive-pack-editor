@@ -20,6 +20,19 @@ describe('simpleCreation', () => {
     expect(o.extra_future).toEqual({ plugin: true })
   })
 
+  it('applySimpleManifestToJson sets or clears min_runtime_version', () => {
+    const base = JSON.stringify({ id: 'a', min_runtime_version: '0.9.0' })
+    const form = defaultSimpleManifestForm()
+    form.id = 'a'
+    form.name = 'N'
+    form.minRuntimeVersion = '0.2.0'
+    let out = applySimpleManifestToJson(base, form)
+    expect(JSON.parse(out).min_runtime_version).toBe('0.2.0')
+    form.minRuntimeVersion = ''
+    out = applySimpleManifestToJson(out, form)
+    expect(JSON.parse(out).min_runtime_version).toBeUndefined()
+  })
+
   it('manifestRecordToSimpleForm reads first relation', () => {
     const m = {
       id: 'r',

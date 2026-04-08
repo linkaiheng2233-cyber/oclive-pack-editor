@@ -84,6 +84,16 @@ const emit = defineEmits<{
             <textarea id="f-desc" v-model="simpleM.description" rows="2" class="txt" />
           </div>
           <div class="form-row">
+            <label for="f-minrt">最低 oclive 版本（可选）</label>
+            <input
+              id="f-minrt"
+              v-model="simpleM.minRuntimeVersion"
+              type="text"
+              autocomplete="off"
+              placeholder="semver，如 0.2.0；与编写器 HOST_RUNTIME_VERSION / 运行时对齐，留空则不限制"
+            />
+          </div>
+          <div class="form-row">
             <label for="f-scenes">场景 ID（英文逗号分隔）</label>
             <input
               id="f-scenes"

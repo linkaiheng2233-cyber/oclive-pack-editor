@@ -58,6 +58,8 @@
   - **知识强调预览 / 调参助手**（仅编辑器内近似）：输入关键词可预览命中与原因、正文片段；可选「预览条件：场景」与严格场景开关；**临时权重滑杆**只影响预览排序，满意后再写入真实 `weight`。运行时召回以 oclivenewnew 为准，预览用于创作调参。
 - **导入角色包**：支持 **`.zip` / `.ocpak`**，解析后回填上述内容，便于在已有包上修改或另存为新包。导入时会校验 zip 内路径：拒绝含 `..` / `.` 段的非法路径（防 zip-slip）；情绪图仅接受 `{roleId}/assets/images/` 下**单层**文件名（不接受子目录）。
 
+**简单创作已覆盖（表单 → JSON）**：`manifest` 侧 `id` / `name` / `version` / `author` / `description` / `min_runtime_version`（可选）/ `scenes` / `default_personality` / 单槽 `user_relations` + `default_relation`；`settings` 侧 `schema_version` / `model` / `evolution.event_impact_factor`（其余演化字段保留原 JSON）/ `identity_binding` / `interaction_mode` / `memory_config.scene_weight_multiplier`（`topic_weights` 等保留）/ `remote_presence.default_enabled` / `plugin_backends`。**仍须高级创作或手写 JSON 的典型项**：多身份并存、`life_trajectory` / `life_schedule`、`knowledge` 开关与 glob、`dev_only`、`autonomous_scene`、逐场景 `topic_weights` 精调等（见 oclivenewnew `PACK_VERSIONING.md`）。
+
 编写器 **不包含**对话引擎本体；**试聊**页可连接本机已启动的 **oclivenewnew HTTP API**（`--api`，默认端口 `8420`），用与导出包一致的 `role_path` 做快速对话。导出后也可将角色目录放入运行时的 **roles 根** 下，由完整 oclive 进程加载测试。
 
 ## 使用

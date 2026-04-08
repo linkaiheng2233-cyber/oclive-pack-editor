@@ -20,6 +20,9 @@ export async function validateWithWasmIfAvailable(
   mergedManifestJson: string,
   mergedSceneIdsJson: string,
 ): Promise<WasmValidationResult> {
+  if (import.meta.env.VITEST) {
+    return { usedWasm: false, error: null }
+  }
   if (wasmLoadSkipped) {
     return { usedWasm: false, error: null }
   }

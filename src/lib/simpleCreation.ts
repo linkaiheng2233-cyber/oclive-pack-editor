@@ -32,6 +32,8 @@ export type SimpleManifestForm = {
   version: string
   author: string
   description: string
+  /** 最低 oclive 版本（semver，如 0.2.0）；空字符串表示不写 manifest.min_runtime_version */
+  minRuntimeVersion: string
   /** 逗号分隔，如 home, school */
   scenesCsv: string
   defaultPersonality: number[]
@@ -66,6 +68,7 @@ export function defaultSimpleManifestForm(): SimpleManifestForm {
     version: '1.0.0',
     author: '',
     description: '一句话简介',
+    minRuntimeVersion: '',
     scenesCsv: 'home',
     defaultPersonality: [...DEFAULT_PERSONALITY],
     relationKey: 'friend',
@@ -120,6 +123,8 @@ export function manifestRecordToSimpleForm(m: Record<string, unknown>): SimpleMa
     version: String(m.version ?? '').trim() || '1.0.0',
     author: String(m.author ?? ''),
     description: String(m.description ?? ''),
+    minRuntimeVersion:
+      typeof m.min_runtime_version === 'string' ? String(m.min_runtime_version).trim() : '',
     scenesCsv: scenes.join(', '),
     defaultPersonality: dp,
     relationKey: primaryKey || 'friend',
@@ -181,6 +186,12 @@ export function applySimpleManifestToJson(currentJson: string, form: SimpleManif
   base.version = form.version.trim()
   base.author = form.author.trim()
   base.description = form.description.trim()
+  const minRt = form.minRuntimeVersion.trim()
+  if (minRt) {
+    base.min_runtime_version = minRt
+  } else {
+    delete base.min_runtime_version
+  }
   base.scenes = scenes
   base.default_personality = clampPersonality(form.defaultPersonality)
   base.default_relation = key
