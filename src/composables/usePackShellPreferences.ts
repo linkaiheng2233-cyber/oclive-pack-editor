@@ -5,7 +5,7 @@ const SCALE_STORAGE_KEY = 'oclive-pack-editor-ui-scale'
 
 export type ThemePreference = 'light' | 'dark' | 'system'
 
-/** 界面缩放档位（相对根字号），写入 localStorage 为具体数值 */
+/** 界面缩放档位（相对根字号），写入 localStorage 为具体数值。须与 oclive-launcher `useLauncherUiScale.ts` 保持一致。 */
 const UI_SCALE_STEPS = [0.8, 0.88, 0.96, 1, 1.08, 1.16, 1.24] as const
 
 function resolveEffectiveTheme(pref: ThemePreference): 'light' | 'dark' {
