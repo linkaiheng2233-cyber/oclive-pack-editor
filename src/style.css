@@ -1,6 +1,8 @@
 /**
  * 全局样式：参考工作区 ok-ww（qfluentwidgets / Fluent Design）的浅色主背景与卡片层次。
  * 变量供 App 与各组件 scoped 样式共用。
+ *
+ * 根字号随窗口缩放；子元素用 rem 会跟著变。
  */
 :root {
   --fluent-bg-page: #f0f4f9;
@@ -37,7 +39,7 @@
   --fluent-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
 
   font-family: var(--fluent-font);
-  font-size: 14px;
+  font-size: clamp(12px, calc(9px + 0.7vmin), 20px);
   line-height: 1.5;
   color: var(--fluent-text-primary);
   background: var(--fluent-bg-page);
