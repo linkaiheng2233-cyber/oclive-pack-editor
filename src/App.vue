@@ -319,7 +319,10 @@ const viewTitle = computed(() => {
 
 .editor-shell {
   display: flex;
-  min-height: 100vh;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
   /* 页面底纹在全局 body/:root，避免重复叠渐变 */
   background: transparent;
 }
@@ -329,6 +332,7 @@ const viewTitle = computed(() => {
   width: calc(2.75rem + 1rem);
   box-sizing: border-box;
   flex-shrink: 0;
+  align-self: stretch;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -341,6 +345,10 @@ const viewTitle = computed(() => {
   box-shadow:
     var(--fluent-shadow-soft),
     inset -1px 0 0 color-mix(in srgb, var(--fluent-border-stroke) 60%, transparent);
+  position: sticky;
+  top: 0;
+  max-height: 100%;
+  overflow-y: auto;
 }
 
 .rail-btn {
@@ -425,6 +433,8 @@ const viewTitle = computed(() => {
 .editor-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
   max-width: min(1080px, calc(100vw - 4.75rem));
   padding: clamp(0.85rem, 2.2vw, 1.25rem) clamp(0.75rem, 3vw, 1.35rem) clamp(1.5rem, 4vw, 2.5rem);
   margin: 0 auto;

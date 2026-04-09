@@ -4,6 +4,7 @@
 
 ## [Unreleased]
 
+- **界面**：全局 **暖色主题**（象牙/卡其，与 oclive-launcher 日间 token 对齐）；根字号公式与 **界面缩放** 行为保持不变。
 - **文档**：README「与运行时的关系」补充 **`creator_message.txt`** 与启动器职责链接；CONTRIBUTING **跨仓约定**（文件名与 oclive-launcher 同步）。
 
 ## 0.2.0

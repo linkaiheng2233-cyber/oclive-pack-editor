@@ -1,63 +1,64 @@
 /**
- * 全局样式：参考工作区 ok-ww（qfluentwidgets / Fluent Design）的浅色主背景与卡片层次。
+ * 全局样式：Fluent Design + 与 oclive-launcher 一致的日间暖色（象牙 / 卡其、低饱和）。
  * 变量供 App 与各组件 scoped 样式共用。
  *
  * 根字号随窗口缩放；子元素用 rem 会跟著变。
  */
 :root {
-  --fluent-bg-page: #f0f4f9;
-  --fluent-bg-card: #ffffff;
-  --fluent-bg-subtle: #f5f5f5;
-  --fluent-bg-input: #ffffff;
-  --fluent-border-stroke: #edebe9;
-  --fluent-border-control: #d2d0ce;
-  --fluent-border-focus: #0078d4;
-  --fluent-shadow-card: 0 0.3px 0.9px rgba(0, 0, 0, 0.08), 0 1.6px 3.6px rgba(0, 0, 0, 0.12);
-  --fluent-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --fluent-bg-page: #e7e2d9;
+  --fluent-bg-card: #f6f3ec;
+  --fluent-bg-subtle: #ede8df;
+  --fluent-bg-input: #faf8f3;
+  --fluent-border-stroke: #d6cfc3;
+  --fluent-border-control: #c4bcb0;
+  --fluent-border-focus: #6f8f86;
+  --fluent-shadow-card:
+    0 1px 2px rgba(42, 34, 26, 0.05),
+    0 6px 18px rgba(42, 34, 26, 0.06);
+  --fluent-shadow-soft: 0 1px 3px rgba(42, 34, 26, 0.05);
 
-  --fluent-text-primary: #323130;
-  --fluent-text-secondary: #605e5c;
-  --fluent-text-disabled: #a19f9d;
+  --fluent-text-primary: #2c2722;
+  --fluent-text-secondary: #5a5349;
+  --fluent-text-disabled: #948c82;
 
-  --fluent-accent: #0078d4;
-  --fluent-accent-hover: #106ebe;
-  --fluent-accent-subtle: rgba(0, 120, 212, 0.12);
+  --fluent-accent: #4a6b62;
+  --fluent-accent-hover: #3d5a52;
+  --fluent-accent-subtle: rgba(74, 107, 98, 0.14);
 
-  --fluent-danger-bg: #fde7e9;
-  --fluent-danger-border: #d13438;
-  --fluent-danger-text: #a4262c;
+  --fluent-danger-bg: #f2e8e6;
+  --fluent-danger-border: #b56f6f;
+  --fluent-danger-text: #8a3a3a;
 
-  --fluent-success-text: #107c10;
+  --fluent-success-text: #3f6b4d;
 
-  --fluent-warning-bg: #fff4ce;
-  --fluent-warning-border: #e0c76a;
-  --fluent-warning-text: #8a4b00;
+  --fluent-warning-bg: #f0e8d6;
+  --fluent-warning-border: #c4ae7a;
+  --fluent-warning-text: #66552e;
 
-  --fluent-radius: 4px;
-  --fluent-radius-lg: 8px;
-  --fluent-radius-xl: 12px;
+  --fluent-radius: 6px;
+  --fluent-radius-lg: 10px;
+  --fluent-radius-xl: 14px;
   --fluent-font: 'Segoe UI', 'Segoe UI Variable', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   --fluent-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
 
-  /* 与 oclive-launcher 一致：侧栏高亮「编写器」品牌色 */
-  --rail-accent-editor: #0d7a6a;
-  --rail-accent-editor-bg: rgba(13, 122, 106, 0.14);
+  /* 与 oclive-launcher 侧栏编写器色一致（略降饱和） */
+  --rail-accent-editor: #4a7c70;
+  --rail-accent-editor-bg: rgba(74, 124, 112, 0.12);
 
   /**
-   * 编写器专用：背景与卡片对比要足够大，毛玻璃才「看得见」。
-   * （原先 ~82% 不透明白叠在 #f0f4f9 上，肉眼几乎等于实心白卡片。）
+   * 编写器壳层：暖灰卡其渐变 + 雾绿点缀，毛玻璃叠在上有层次又不刺眼。
    */
   --pack-shell-bg:
-    radial-gradient(115% 95% at 0% 0%, rgba(88, 102, 122, 0.34), transparent 58%),
-    radial-gradient(100% 92% at 100% 100%, rgba(72, 86, 108, 0.3), transparent 56%),
-    linear-gradient(168deg, #c5d0e0 0%, #d8e2ee 40%, #ccd8e6 100%);
+    radial-gradient(115% 95% at 0% 0%, rgba(175, 145, 115, 0.26), transparent 58%),
+    radial-gradient(100% 92% at 100% 100%, rgba(125, 155, 138, 0.2), transparent 56%),
+    linear-gradient(168deg, #ddd4c8 0%, #e9e4da 42%, #e0d8cc 100%);
   --pack-glass-fill: color-mix(in srgb, var(--fluent-bg-card) 52%, transparent);
   --pack-glass-fill-strong: color-mix(in srgb, var(--fluent-bg-card) 64%, transparent);
   --pack-glass-fill-subtle: color-mix(in srgb, var(--fluent-bg-subtle) 56%, transparent);
   --pack-glass-fill-page: color-mix(in srgb, var(--fluent-bg-page) 58%, transparent);
-  --pack-glass-border: color-mix(in srgb, var(--fluent-border-stroke) 22%, #5c6b7e);
-  --pack-glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.88);
-  --pack-glass-blur: blur(16px) saturate(125%);
+  --pack-glass-border: color-mix(in srgb, var(--fluent-border-stroke) 28%, #6b6258);
+  --pack-glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --pack-glass-blur: blur(16px) saturate(118%);
 
   /** 界面缩放：由 JS 写入 localStorage 与 documentElement；首屏见 index.html 内联脚本 */
   --pack-ui-scale: 1;
@@ -130,14 +131,20 @@ html[data-theme='dark'] {
   box-sizing: border-box;
 }
 
+html,
 body {
+  height: 100%;
   margin: 0;
-  min-height: 100vh;
+  overflow: hidden;
+}
+
+body {
   background: var(--pack-shell-bg);
 }
 
 #app {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
 }
 
 h1,

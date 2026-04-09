@@ -49,7 +49,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <span ref="root" class="help-hint">
+  <span ref="root" class="help-hint" :class="{ 'help-hint--open': open }">
     <button
       type="button"
       class="help-btn"
@@ -72,6 +72,11 @@ onUnmounted(() => {
   vertical-align: middle;
   margin-left: 0.3rem;
   position: relative;
+  z-index: 900;
+}
+
+.help-hint.help-hint--open {
+  z-index: 980;
 }
 
 .help-btn {
@@ -115,7 +120,7 @@ onUnmounted(() => {
   position: absolute;
   left: 0;
   top: calc(100% + 8px);
-  z-index: 200;
+  z-index: 901;
   min-width: min(20rem, calc(100vw - 2rem));
   max-width: min(34rem, calc(100vw - 1.5rem));
   padding: 0.7rem 0.95rem;
@@ -132,6 +137,8 @@ onUnmounted(() => {
     var(--fluent-shadow-card),
     0 14px 36px color-mix(in srgb, var(--fluent-text-primary) 10%, transparent);
   animation: help-pop-in 0.18s ease-out;
+  max-height: min(70vh, 26rem);
+  overflow-y: auto;
 }
 
 @keyframes help-pop-in {

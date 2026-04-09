@@ -30,7 +30,7 @@
 
 权威说明：`oclivenewnew` 仓库 **[creator-docs/getting-started/CREATOR_WORKFLOW.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/getting-started/CREATOR_WORKFLOW.md)**；启动器上手路径见 **[oclive-launcher README](https://github.com/linkaiheng2233-cyber/oclive-launcher#新用户从下载到第一次对话推荐路径)**。
 
-界面风格参考 **Fluent Design**（与常见 Fluent 桌面工具如 **qfluentwidgets** 一脉：浅色页背景、卡片层次、主色强调按钮），在 `src/style.css` 中通过 CSS 变量统一，并支持系统深色偏好。
+界面风格参考 **Fluent Design**（与常见 Fluent 桌面工具如 **qfluentwidgets** 一脉：浅色页背景、卡片层次、主色强调按钮），在 `src/style.css` 中通过 CSS 变量统一，并支持系统深色偏好；日间为 **象牙/卡其暖色**，与 **oclive-launcher** 对齐以便跨应用习惯一致。
 
 ## 离线范围
 
