@@ -1,0 +1,128 @@
+/**
+ * 简单创作：大白话说明（供 HelpHint 问号气泡），说明「写什么、会进哪个文件、对运行时有什么影响」。
+ */
+
+/** 整个「基础」分区：简单创作在干什么 */
+export const SIMPLE_BASE_INTRO = [
+  '简单创作用表单代替手写 JSON：你填的每一项，保存或导出时会写进角色包里的对应文件；玩家用 oclive 加载这个包时，就会按这些设定来演角色、显示界面。',
+  '基础区三件事：人设长文（怎么演）、情绪图（长什么样）、创作者公告（可选，只在启动器等地方展示给玩家看）。',
+] as const
+
+/** 人设长文 */
+export const SIMPLE_CORE_PERSONALITY = [
+  '这一大段会写进 core_personality.txt，并进入对话「大脑」用的提示里，直接影响 AI 怎么说话、怎么理解你和世界。',
+  '用平常话写性格、口癖、雷区、关系即可；不必写代码。留空或太短，角色可能只剩 manifest 里几行干巴巴的信息。',
+] as const
+
+/** 创作者公告：两种导出方式 */
+export const SIMPLE_CREATOR_MESSAGE_MODE = [
+  '「整包一句」：导出时只取你填的第一条非空行，合成一条寄语；适合只想留一句感谢或说明。',
+  '「按行多条」：每一非空行是一条独立寄语，启动器可以分条展示或随机抽一条；适合多作者、多模块各留一句。',
+  '无论哪种，对话里的 AI 都不会读这个文件；它只给下载包的人在启动器里看。',
+] as const
+
+/** 创作者公告输入框 */
+export const SIMPLE_CREATOR_MESSAGE_BODY = [
+  '写你想对「后来下载这个包的人」说的话：使用提示、致谢、版本说明都可以。每行最长 160 字（超出导出时可能被截断或校验提示）。',
+] as const
+
+/** 「进阶」折叠块总述 */
+export const SIMPLE_ADV_FOLD = [
+  '展开后是两列：左边是角色信息（manifest），管名字、场景、性格数字、你和角色的关系、世界观文件、知识库开关等；右边是引擎设置（settings），管用哪个模型、事件影响多大、身份怎么绑定等。',
+  '不确定时可以先只改左边展示名和场景；右边涉及对话算法，改完建议在试聊里跑几句再导出。',
+] as const
+
+/** manifest 分区标题 */
+export const SIMPLE_MANIFEST_INTRO = [
+  '这一列会写进 manifest.json：相当于角色的「名片 + 规则摘要」。启动器、列表页、以及运行时都会先读它来决定叫什么、有哪些场景、默认性格、和你的关系等。',
+] as const
+
+export const SIMPLE_FIELD_ROLE_ID = [
+  '英文小写 + 下划线最稳妥，通常和导出文件夹名一致。改 ID 等于换「身份证号」，旧路径、书签可能失效；已定稿发给别人后尽量不要改。',
+] as const
+
+export const SIMPLE_FIELD_DISPLAY_NAME = [
+  '玩家在各种界面里看到的称呼，可以是中文。不影响程序里的 id，只影响显示。',
+] as const
+
+export const SIMPLE_FIELD_VERSION_AUTHOR = [
+  '版本号方便你区分第几次发布；作者名会出现在包信息里。两者都不影响对话怎么算，只影响展示与追溯。',
+] as const
+
+export const SIMPLE_FIELD_DESCRIPTION = [
+  '一两句简介，用在列表、详情里让人快速懂这个角色。不会直接当成长篇设定喂给模型；长篇请写在上方「人设描述」。',
+] as const
+
+export const SIMPLE_FIELD_MIN_RUNTIME = [
+  '若填写，旧版 oclive 低于这个版本会拒绝加载，避免用到不支持的字段。留空表示不限制。一般跟着编写器或文档推荐版本填即可。',
+] as const
+
+export const SIMPLE_FIELD_SCENES = [
+  '多个场景用英文逗号分隔（如 home, school）。这些 id 要和知识库、剧情里用到的场景名一致，否则「换场景」时匹配不到。',
+  '场景越多，后面可选的「在哪聊天」越丰富；新手可以先只填一个 home。',
+] as const
+
+export const SIMPLE_TRAITS = [
+  '七个 0～1 的数字描述默认性格倾向：例如更黏人、更话多等。会写进 manifest，供运行时调语气或相关系统使用。',
+  '不是「越大越好」：按角色人设微调即可；全 0.5 表示不偏不倚的中性起点。',
+] as const
+
+export const SIMPLE_USER_RELATION = [
+  '简单模式只维护「一种你和角色的关系」：身份键是英文 id（如 friend），对外称呼是给人看的（如「好友」），语气提示会进提示词，影响 AI 怎么称呼你、多亲昵。',
+  '初始好感与倍率影响好感数值的起点和涨得快慢；倍率过大可能让数值飘得很快，建议小步调整。',
+  '若包里有多种身份键，保存时简单模式会合并成这一套；要保留多身份请用高级创作。',
+] as const
+
+export const SIMPLE_WORLDVIEW = [
+  '有内容时会生成 knowledge/world.md，作为世界观摘要参与知识检索。留空则可能用占位说明。',
+  '和高级创作里的知识文件是同一套体系，避免两处写两套互相矛盾的设定。',
+] as const
+
+export const SIMPLE_KNOWLEDGE = [
+  '勾选「启用知识库 Markdown 检索」后，运行时才会按 glob 去扫包里的 .md 并参与检索打分；关掉则相当于不用这套知识。',
+  'glob 决定匹配哪些路径，须以 knowledge/ 开头，例如 knowledge/**/*.md。改得太窄会漏文件，太宽可能把无关笔记也扫进来。',
+] as const
+
+/** settings 分区标题 */
+export const SIMPLE_SETTINGS_INTRO = [
+  '这一列会写进 settings.json（并与 manifest 按引擎规则合并）。主要管：对话用哪个模型、事件影响多强、身份跟场景怎么绑定、以及记忆/情绪等插件走内置还是远程。',
+] as const
+
+export const SIMPLE_BRAIN_LLM = [
+  '「本机 Ollama」：在你电脑上跑模型，下面填的模型名要和 ollama list 里一致。',
+  '「云端 Remote LLM」：包内会标记为远程推理，需要在启动 oclive 时配置侧车地址等环境；零基础建议先用本机。',
+  '这一项决定的是「主对话大脑」走哪条路，不是下面 memory/emotion 那四个小插件。',
+] as const
+
+export const SIMPLE_SCHEMA_VERSION = [
+  'schema 版本号表示 settings 契约版本，和引擎内置规则对齐。不要随意改大改小；除非文档说明要升级，否则保持默认即可。',
+] as const
+
+export const SIMPLE_EVENT_IMPACT = [
+  '事件影响系数：剧情里的事件（例如约会、冲突）对好感、状态等的影响强度。数值越大，同样事件带来的变化越明显。',
+  '建议每次只改一点（例如 0.05），用试聊感受再导出。',
+] as const
+
+export const SIMPLE_IDENTITY_BINDING = [
+  '按场景（per_scene）：不同场景下可以记住不同的「你是谁、关系如何」等，适合多场景剧情。',
+  '全局（global）：所有场景共用一套身份记忆，更简单；纯聊天向角色常用这个。',
+] as const
+
+export const SIMPLE_INTERACTION_MODE = [
+  '沉浸（immersive）：更偏剧情与场景代入，系统会更多考虑场景、事件等上下文。',
+  '纯聊（pure_chat）：更偏日常对话，少一些剧情向的包袱。按你想要的体验选即可。',
+] as const
+
+export const SIMPLE_SCENE_WEIGHT = [
+  '场景记忆权重倍率：当前场景相关记忆在拼进提示时乘的权重。调大更「活在当下」；调小更平均地参考过去场景。',
+] as const
+
+export const SIMPLE_REMOTE_PRESENCE = [
+  '「异地心声」类功能是否默认开启（若包与引擎支持）。开启后可能与远程在线、日程等联动；不需要可以关掉以简化行为。',
+] as const
+
+export const SIMPLE_PLUGIN_BACKENDS = [
+  'memory / emotion / event / prompt 四类插件决定：记忆怎么存、情绪怎么判、事件怎么算、系统提示怎么组。一般全部选 builtin 即可。',
+  'builtin_v2 是新一版内置实现；remote 需要你自己部署对应服务。不确定时保持 builtin，除非你按文档接了远程。',
+  '上面「对话推理」里的 LLM 是主模型；这里是四个周边模块，分工不同。',
+] as const

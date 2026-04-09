@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import AdvFaqList from '../AdvFaqList.vue'
+import { CHECKS_FAQ } from '../../lib/simpleEditorFaq'
+
 const requireChecksBeforeExport = defineModel<boolean>('requireChecksBeforeExport', {
   required: true,
 })
@@ -39,6 +42,10 @@ const emit = defineEmits<{
     <p class="check-sub">
       关闭后可直接导出 .zip / 写入文件夹，便于携带未完成包或使用插件在 oclive 中自由实测。
     </p>
+    <details class="checks-faq-details">
+      <summary class="checks-faq-sum">常见问题 · 检查与导出</summary>
+      <AdvFaqList :items="CHECKS_FAQ" />
+    </details>
   </section>
 </template>
 
@@ -46,10 +53,12 @@ const emit = defineEmits<{
 .checks {
   margin-top: 1rem;
   padding: 1rem 1.125rem;
-  border: 1px solid var(--fluent-border-stroke);
+  border: 1px solid var(--pack-glass-border);
   border-radius: var(--fluent-radius-lg);
-  background: var(--fluent-bg-card);
-  box-shadow: var(--fluent-shadow-card);
+  background: var(--pack-glass-fill);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
+  box-shadow: var(--fluent-shadow-card), var(--pack-glass-inset);
 }
 .checks h2 {
   font-size: 1rem;
@@ -101,10 +110,46 @@ const emit = defineEmits<{
   font-weight: 500;
   font-family: var(--fluent-font);
   cursor: pointer;
-  transition: background 0.15s ease;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
 }
 .check-row button:hover {
   background: var(--fluent-accent-hover);
+}
+.checks-faq-details {
+  margin-top: 1rem;
+  padding: 0.55rem 0.75rem 0.75rem;
+  border: 1px solid var(--pack-glass-border);
+  border-radius: var(--fluent-radius-lg);
+  background: color-mix(in srgb, var(--fluent-bg-card) 50%, transparent);
+}
+.checks-faq-sum {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--fluent-text-primary);
+  list-style: none;
+}
+.checks-faq-details[open] .checks-faq-sum {
+  margin-bottom: 0.6rem;
+}
+.checks-faq-sum::-webkit-details-marker {
+  display: none;
+}
+.check-row button:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 4px var(--fluent-border-focus);
+}
+.check-row button:active {
+  transform: scale(0.985);
 }
 .chk {
   font-size: 0.875rem;

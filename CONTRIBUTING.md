@@ -11,6 +11,10 @@
 
 合并前请保证前端构建与单测通过；若改动导出或 Tauri 命令，建议在目标平台上实际跑一遍「导入 / 导出 / 写入文件夹」。**CI** 在 **Ubuntu 与 Windows** 上会各跑一遍 **Playwright 冒烟**（`npm run test:e2e`，需先同 job 内 `npm run build`）。
 
+## 跨仓约定：随包寄语文件名
+
+包内随包寄语默认为 **`creator_message.txt`**（与 **oclive-launcher** 的 `ROLE_PACK_CREATOR_MESSAGE_FILENAME` / `role_creator_message.rs` 同名）。若改名须同步三处；展示与 **`launcherEchoRoleId`** 由启动器负责，**oclivenewnew 不读此文件**。详见 [oclive-launcher README — 随包寄语与职责边界](https://github.com/linkaiheng2233-cyber/oclive-launcher/blob/main/README.md#随包寄语与职责边界)。
+
 ## 发版检查清单（维护者）
 
 在创建 **GitHub Release** 或对外分发安装包前，建议按顺序确认：

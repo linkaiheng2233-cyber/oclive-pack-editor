@@ -3,10 +3,55 @@ import { computed, onMounted, ref, watch } from 'vue'
 import {
   fetchRuntimeChat,
   fetchRuntimeHealth,
+  readRoleManifestScenes,
   runtimeTcpListening,
   spawnOcliveApi,
+  type RuntimeChatMeta,
 } from '../../lib/runtimeApi'
 import { isTauriRuntime } from '../../lib/exportFolder'
+import AdvFaqList from '../AdvFaqList.vue'
+import HelpHint from '../HelpHint.vue'
+import { CHAT_FAQ } from '../../lib/simpleEditorFaq'
+
+/** 试聊区：标题旁与各表单项旁的「?」详细说明（大白话） */
+const CHAT_HINT = {
+  intro: [
+    '编写器里不会内置「对话大脑」——真正和你说话的是本机安装的 oclive。',
+    '试聊时，编写器把一句话发给你电脑上的 oclive，再把角色的回复显示在下面。你需要：先让 oclive 在后台打开试聊服务（命令行里一般是带 --api、端口常和下面「连接地址」一致），再告诉编写器「角色包在哪个文件夹」。这样不用打开主程序也能快速验人设。',
+  ],
+  apiBase: [
+    '这是 oclive 试聊服务在本机上的「门牌号」，一般是 http://127.0.0.1:8420。',
+    '如果你在命令行里启动时写了别的端口（例如 --port 9000），这里就要改成同一个端口，否则连不上。点「检测连接」可以确认是否已经连上。',
+  ],
+  exe: [
+    '只有桌面版编写器的「一键启动」才需要填这一项。',
+    '请填 oclivenewnew.exe（或你的 oclive 程序）的完整路径。第一次会弹窗让你确认，避免误运行陌生程序。若你习惯自己在终端里已经运行了带 --api 的 oclive，可以不填，只要「检测连接」通过即可。',
+  ],
+  rolePath: [
+    '要试聊的角色包所在的文件夹，这一层里必须有 manifest.json。',
+    '通常是你在编写器里点「写入文件夹」后生成的「roles 根目录 / 角色 id」那一层。上面若已自动填好路径，一般不用改；也可以粘贴别的绝对路径来试别的包。',
+  ],
+  scene: [
+    '和主应用里「场景」的意思一样：你想从哪个场景开始聊。',
+    '选「让引擎自己决定」时，不强行指定场景。桌面版可以从 manifest 刷新列表；在浏览器里开发时，需要手填场景 id 或留空。',
+  ],
+  ping: [
+    '不会真的发聊天内容，只是问一句「试聊服务在不在」。',
+    '若显示失败，请检查 oclive 是否已用试聊模式启动、端口是否和「连接地址」一致。',
+  ],
+  spawn: [
+    '用你填的 oclive 程序路径，尝试自动打开一个新窗口并带上试聊参数。',
+    '若该端口已经有程序在监听且就是 oclive，会提示你不必重复启动。若没填程序路径，会提示你先填路径——你也可以改为自己在终端启动 oclive。',
+  ],
+  newThread: [
+    '清空当前聊天记录，并换一个新的会话编号，相当于和同一角色「重新开始聊一轮」。',
+    '不会删除磁盘上的角色文件，只是试聊窗口里的上下文重来。',
+  ],
+  composer: [
+    'Enter 发送一条消息；Shift+Enter 换行（适合长句子）。',
+    '请先确认「连接地址」检测通过，且「角色文件夹」填写正确，否则可能发不出去或报错。',
+  ],
+} as const
 
 const props = defineProps<{
   /** manifest.id，用于与 roles 根拼接成试聊目录 */
@@ -28,7 +73,14 @@ const healthMessage = ref('')
 const chatLoading = ref(false)
 const spawnLoading = ref(false)
 const input = ref('')
-const messages = ref<{ role: 'user' | 'assistant'; text: string }[]>([])
+const messages = ref<
+  { role: 'user' | 'assistant'; text: string; meta?: RuntimeChatMeta }[]
+>([])
+/** 空字符串表示不传 scene_id，由运行时推断 */
+const sceneId = ref('')
+const sceneOptions = ref<string[]>([])
+const scenesLoading = ref(false)
+const scenesLoadError = ref('')
 /** 与 oclive 请求体 `session_id` 一致；按 API 根 + 角色目录分桶持久化（localStorage），供后续后端会话能力接入 */
 const chatSessionId = ref('')
 
@@ -113,6 +165,42 @@ function newChatThread(): void {
   messages.value = []
 }
 
+const PRESENCE_LABELS: Record<string, string> = {
+  co_present: '共景',
+  remote_stub: '异地占位',
+  remote_life: '异地心声',
+}
+
+function presenceLabel(mode?: string): string {
+  if (!mode) return ''
+  return PRESENCE_LABELS[mode] ?? mode
+}
+
+function formatFavorMeta(m: RuntimeChatMeta): string {
+  const cur = m.favorability_current
+  const d = m.favorability_delta
+  if (cur === undefined && d === undefined) return ''
+  const parts: string[] = []
+  if (cur !== undefined) parts.push(`好感 ${cur.toFixed(1)}`)
+  if (d !== undefined) parts.push(`${d >= 0 ? '+' : ''}${d.toFixed(2)}`)
+  return parts.join(' ')
+}
+
+async function refreshManifestScenes(): Promise<void> {
+  const p = effectiveRolePath.value.trim()
+  if (!p || !isTauriRuntime()) return
+  scenesLoading.value = true
+  scenesLoadError.value = ''
+  try {
+    sceneOptions.value = await readRoleManifestScenes(p)
+  } catch (e) {
+    scenesLoadError.value = e instanceof Error ? e.message : String(e)
+    sceneOptions.value = []
+  } finally {
+    scenesLoading.value = false
+  }
+}
+
 function onComposerKeydown(e: KeyboardEvent): void {
   if (e.key !== 'Enter') return
   if (e.shiftKey) return
@@ -183,6 +271,15 @@ watch(apiBase, (v) => {
     /* ignore */
   }
 })
+
+watch(
+  effectiveRolePath,
+  () => {
+    sceneId.value = ''
+    void refreshManifestScenes()
+  },
+  { immediate: true },
+)
 watch(ocliveExe, (v) => {
   try {
     localStorage.setItem(STORAGE_EXE, v)
@@ -197,7 +294,7 @@ async function pingHealth(): Promise<void> {
     const text = await fetchRuntimeHealth(apiBase.value.trim())
     healthOk.value = text.trim().toLowerCase().includes('ok')
     healthMessage.value = healthOk.value
-      ? 'API 可用'
+      ? '试聊服务已就绪，可以发消息了。'
       : `意外响应：${text.slice(0, 120)}`
   } catch (e) {
     healthOk.value = false
@@ -208,7 +305,8 @@ async function pingHealth(): Promise<void> {
 async function trySpawnRuntime(): Promise<void> {
   const exe = ocliveExe.value.trim()
   if (!exe) {
-    healthMessage.value = '请填写 oclive 可执行文件路径后再试'
+    healthMessage.value =
+      '一键启动需要先填写「oclive 程序路径」。若你已在终端手动运行了带 --api 的 oclive，可跳过此项，直接点「检测连接」。'
     return
   }
   if (!ensureExeConsent(exe)) {
@@ -223,11 +321,11 @@ async function trySpawnRuntime(): Promise<void> {
     if (isTauriRuntime() && (await runtimeTcpListening(host, port))) {
       await pingHealth()
       if (healthOk.value) {
-        healthMessage.value = '该端口已有服务在监听，且 API 检测通过，无需再启动 oclive。'
+        healthMessage.value = '该端口已有程序在监听，且试聊服务检测通过，无需再启动 oclive。'
         return
       }
       healthMessage.value =
-        '该端口已被占用，但「检测 API」未通过。请确认占用进程或更换 API 地址中的端口。'
+        '该端口已被占用，但试聊服务检测未通过。请确认占用进程是否为目标 oclive，或更换「连接地址」里的端口。'
       healthOk.value = false
       return
     }
@@ -252,13 +350,18 @@ async function send(): Promise<void> {
   messages.value.push({ role: 'user', text: msg })
   input.value = ''
   try {
-    const reply = await fetchRuntimeChat(
+    const result = await fetchRuntimeChat(
       apiBase.value.trim(),
       path,
       msg,
       chatSessionId.value || null,
+      sceneId.value.trim() || null,
     )
-    messages.value.push({ role: 'assistant', text: reply })
+    messages.value.push({
+      role: 'assistant',
+      text: result.reply,
+      meta: result.meta,
+    })
   } catch (e) {
     const err = e instanceof Error ? e.message : String(e)
     messages.value.push({ role: 'assistant', text: `（错误）${err}` })
@@ -270,24 +373,33 @@ async function send(): Promise<void> {
 
 <template>
   <section class="chat-panel" aria-label="试聊">
-    <h2>试聊（本机 oclive HTTP API）</h2>
-    <p class="lead">
-      需先启动运行时：<code>oclivenewnew --api</code>（端口与下方 API 地址一致，默认 8420；或点击下方自动启动）。角色目录须含
-      <code>manifest.json</code>，通常为先「写入文件夹」后的
-      <code>roles根/角色id</code>。输入框内 <strong>Enter</strong> 发送，<strong>Shift+Enter</strong> 换行；自动启动首次会要求确认
-      可执行文件路径。
-    </p>
+    <div class="chat-header">
+      <h2 class="chat-title">
+        试聊
+        <HelpHint :paragraphs="CHAT_HINT.intro" />
+      </h2>
+      <p class="lead">
+        发布前在这里和角色说几句话，看看回复顺不顺眼。下面几项保持默认或按提示填即可；不懂就点旁边的
+        <span class="hint-mark" aria-hidden="true">?</span>。
+      </p>
+    </div>
     <p v-if="defaultRolePath" class="path-hint" role="status">
-      已从「写入文件夹」推断角色目录（可改填下方手动路径）：<code>{{ defaultRolePath }}</code>
+      已从「写入文件夹」猜到你的角色文件夹（也可在下方改成别的路径）：<code>{{ defaultRolePath }}</code>
     </p>
 
     <div class="grid">
       <label class="field">
-        <span>API 根地址</span>
-        <input v-model="apiBase" type="url" autocomplete="off" />
+        <span class="field-label-row">
+          <span class="field-label-text">连接地址（和 oclive 端口一致）</span>
+          <HelpHint :paragraphs="CHAT_HINT.apiBase" />
+        </span>
+        <input v-model="apiBase" type="url" autocomplete="off" placeholder="默认 http://127.0.0.1:8420" />
       </label>
       <label class="field field-wide">
-        <span>oclive 可执行文件（可选，仅桌面版「自动启动」）</span>
+        <span class="field-label-row">
+          <span class="field-label-text">oclive 程序路径（仅「一键启动」需要）</span>
+          <HelpHint :paragraphs="CHAT_HINT.exe" />
+        </span>
         <input
           v-model="ocliveExe"
           type="text"
@@ -296,35 +408,72 @@ async function send(): Promise<void> {
         />
       </label>
       <label class="field field-wide">
-        <span>角色包目录（含 manifest.json）</span>
+        <span class="field-label-row">
+          <span class="field-label-text">角色文件夹（里面要有 manifest.json）</span>
+          <HelpHint :paragraphs="CHAT_HINT.rolePath" />
+        </span>
         <input
           v-model="rolePathManual"
           type="text"
-          :placeholder="defaultRolePath || '先导出到文件夹或手动填写绝对路径'"
+          :placeholder="defaultRolePath || '先导出到文件夹，或粘贴完整路径'"
           autocomplete="off"
         />
       </label>
+      <label class="field field-wide">
+        <span class="field-label-row">
+          <span class="field-label-text">从哪个场景聊（可选）</span>
+          <HelpHint :paragraphs="CHAT_HINT.scene" />
+        </span>
+        <div class="scene-row">
+          <select
+            v-if="isTauriRuntime()"
+            v-model="sceneId"
+            class="scene-select"
+            :disabled="!effectiveRolePath"
+          >
+            <option value="">让引擎自己决定</option>
+            <option v-for="s in sceneOptions" :key="s" :value="s">{{ s }}</option>
+          </select>
+          <input
+            v-else
+            v-model="sceneId"
+            type="text"
+            class="scene-select"
+            :disabled="!effectiveRolePath"
+            placeholder="可留空；或填写 manifest 里 scenes 中的场景 id"
+            autocomplete="off"
+          />
+          <button
+            v-if="isTauriRuntime()"
+            type="button"
+            class="scene-refresh secondary"
+            :disabled="scenesLoading || !effectiveRolePath"
+            @click="refreshManifestScenes"
+          >
+            {{ scenesLoading ? '读取中…' : '从 manifest 读取场景列表' }}
+          </button>
+        </div>
+        <span v-if="scenesLoadError" class="scene-err">{{ scenesLoadError }}</span>
+      </label>
     </div>
 
-    <div class="row-actions">
-      <button type="button" @click="pingHealth">检测 API</button>
-      <button
-        v-if="isTauriRuntime()"
-        type="button"
-        class="secondary"
-        :disabled="spawnLoading"
-        @click="trySpawnRuntime"
-      >
-        {{ spawnLoading ? '启动中…' : '自动启动 oclive（--api）' }}
-      </button>
-      <button
-        type="button"
-        class="secondary"
-        :disabled="!effectiveRolePath"
-        @click="newChatThread"
-      >
-        新会话
-      </button>
+    <div class="row-actions" aria-label="试聊操作">
+      <span class="action-with-hint">
+        <button type="button" @click="pingHealth">检测连接</button>
+        <HelpHint :paragraphs="CHAT_HINT.ping" />
+      </span>
+      <span v-if="isTauriRuntime()" class="action-with-hint">
+        <button type="button" class="secondary" :disabled="spawnLoading" @click="trySpawnRuntime">
+          {{ spawnLoading ? '启动中…' : '一键启动试聊服务' }}
+        </button>
+        <HelpHint :paragraphs="CHAT_HINT.spawn" />
+      </span>
+      <span class="action-with-hint">
+        <button type="button" class="secondary" :disabled="!effectiveRolePath" @click="newChatThread">
+          新会话
+        </button>
+        <HelpHint :paragraphs="CHAT_HINT.newThread" />
+      </span>
     </div>
     <p
       v-if="healthMessage"
@@ -338,26 +487,72 @@ async function send(): Promise<void> {
       <div
         v-for="(m, i) in messages"
         :key="i"
-        class="bubble"
-        :class="m.role === 'user' ? 'bubble-user' : 'bubble-bot'"
+        class="bubble-block"
+        :class="m.role === 'user' ? 'align-user' : 'align-bot'"
       >
-        {{ m.text }}
+        <div class="bubble" :class="m.role === 'user' ? 'bubble-user' : 'bubble-bot'">
+          {{ m.text }}
+        </div>
+        <div v-if="m.role === 'assistant' && m.meta" class="meta-panel">
+          <div class="meta-chips">
+            <span v-if="m.meta.scene_id" class="chip">场景 {{ m.meta.scene_id }}</span>
+            <span v-if="m.meta.presence_mode" class="chip">{{
+              presenceLabel(m.meta.presence_mode)
+            }}</span>
+            <span v-if="m.meta.relation_state" class="chip">关系 {{ m.meta.relation_state }}</span>
+            <span v-if="formatFavorMeta(m.meta)" class="chip">{{ formatFavorMeta(m.meta) }}</span>
+            <span v-if="m.meta.bot_emotion" class="chip">情绪 {{ m.meta.bot_emotion }}</span>
+            <span v-if="m.meta.portrait_emotion" class="chip">立绘 {{ m.meta.portrait_emotion }}</span>
+            <span v-if="m.meta.reply_is_fallback" class="chip warn">备用回复</span>
+            <span
+              v-if="m.meta.knowledge_chunks_in_prompt != null"
+              class="chip"
+              >知识块 {{ m.meta.knowledge_chunks_in_prompt }}</span
+            >
+            <span v-if="m.meta.offer_destination_picker" class="chip accent">可选目的地</span>
+            <span v-if="m.meta.offer_together_travel" class="chip accent">可同行</span>
+          </div>
+          <details v-if="m.meta.events?.length || m.meta.emotion" class="meta-details">
+            <summary>调试详情</summary>
+            <pre v-if="m.meta.events?.length" class="meta-pre">{{
+              m.meta.events
+                .map((ev) => `${ev.event_type} (${ev.confidence.toFixed(2)})`)
+                .join('\n')
+            }}</pre>
+            <pre v-if="m.meta.emotion" class="meta-pre">{{
+              JSON.stringify(m.meta.emotion, null, 2)
+            }}</pre>
+          </details>
+        </div>
       </div>
-      <p v-if="!messages.length" class="muted">发送第一条消息开始试聊。</p>
+      <p v-if="!messages.length" class="muted">
+        还没有消息。确认「检测连接」通过并填好角色文件夹后，在下方输入一句话试试。
+      </p>
     </div>
 
-    <div class="composer">
-      <textarea
-        v-model="input"
-        rows="3"
-        placeholder="输入消息…"
-        :disabled="chatLoading"
-        @keydown="onComposerKeydown"
-      />
-      <button type="button" :disabled="chatLoading || !effectiveRolePath" @click="send">
-        {{ chatLoading ? '发送中…' : '发送' }}
-      </button>
+    <div class="composer-block">
+      <div class="field-label-row composer-label">
+        <span class="field-label-text">输入消息</span>
+        <HelpHint :paragraphs="CHAT_HINT.composer" />
+      </div>
+      <div class="composer">
+        <textarea
+          v-model="input"
+          rows="3"
+          placeholder="想说的话写在这里…（Enter 发送，Shift+Enter 换行）"
+          :disabled="chatLoading"
+          @keydown="onComposerKeydown"
+        />
+        <button type="button" :disabled="chatLoading || !effectiveRolePath" @click="send">
+          {{ chatLoading ? '发送中…' : '发送' }}
+        </button>
+      </div>
     </div>
+
+    <details class="chat-faq-details">
+      <summary class="chat-faq-sum">常见问题 · 试聊连接与路径</summary>
+      <AdvFaqList :items="CHAT_FAQ" />
+    </details>
   </section>
 </template>
 
@@ -365,21 +560,55 @@ async function send(): Promise<void> {
 .chat-panel {
   margin-top: 1rem;
   padding: 1rem 1.125rem;
-  border: 1px solid var(--fluent-border-stroke);
+  border: 1px solid var(--pack-glass-border);
   border-radius: var(--fluent-radius-lg);
-  background: var(--fluent-bg-card);
-  box-shadow: var(--fluent-shadow-card);
+  background: var(--pack-glass-fill);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
+  box-shadow: var(--fluent-shadow-card), var(--pack-glass-inset);
 }
-.chat-panel h2 {
+.chat-header {
+  margin-bottom: 0.75rem;
+}
+.chat-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.15rem;
   font-size: 1rem;
   font-weight: 600;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.45rem;
+}
+.field-label-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+  margin-bottom: 0.15rem;
+}
+.field-label-text {
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.35;
+}
+.hint-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--fluent-border-control) 85%, transparent);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--fluent-text-secondary);
+  vertical-align: middle;
 }
 .lead {
   margin: 0 0 1rem;
   font-size: 0.875rem;
   color: var(--fluent-text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 .lead code {
   font-size: 0.8rem;
@@ -419,11 +648,61 @@ async function send(): Promise<void> {
   font-family: var(--fluent-font);
   font-size: 0.875rem;
 }
-.row-actions {
+.scene-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: center;
+}
+.scene-select {
+  flex: 1;
+  min-width: 12rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: var(--fluent-radius);
+  border: 1px solid var(--fluent-border-stroke);
+  font-family: var(--fluent-font);
+  font-size: 0.875rem;
+  background: var(--fluent-bg-subtle);
+  color: var(--fluent-text-primary);
+}
+.scene-refresh {
+  padding: 0.45rem 0.75rem;
+  min-height: 32px;
+  border-radius: var(--fluent-radius);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  background: var(--pack-glass-fill-subtle);
+  color: var(--fluent-text-primary);
+  border: 1px solid var(--pack-glass-border);
+}
+.scene-refresh:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.scene-err {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: #c42b1c;
+}
+.muted-inline {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.45;
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.85rem;
+  align-items: center;
   margin: 0.75rem 0;
+}
+.action-with-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
 }
 .row-actions button {
   padding: 0.45rem 0.9rem;
@@ -434,11 +713,34 @@ async function send(): Promise<void> {
   color: #fff;
   font-size: 0.875rem;
   cursor: pointer;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
+}
+.row-actions button:hover {
+  background: var(--fluent-accent-hover);
+}
+.row-actions button:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 4px var(--fluent-border-focus);
+}
+.row-actions button:active:not(:disabled) {
+  transform: scale(0.985);
 }
 .row-actions button.secondary {
-  background: var(--fluent-bg-subtle);
+  background: var(--pack-glass-fill-subtle);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
   color: var(--fluent-text-primary);
-  border: 1px solid var(--fluent-border-stroke);
+  border: 1px solid var(--pack-glass-border);
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
 }
 .health {
   font-size: 0.8125rem;
@@ -450,36 +752,107 @@ async function send(): Promise<void> {
 .health.bad {
   color: #c42b1c;
 }
+.bubble-block {
+  margin-bottom: 0.65rem;
+}
+.bubble-block.align-user {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.bubble-block.align-bot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.meta-panel {
+  margin-top: 0.35rem;
+  max-width: 100%;
+}
+.meta-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.chip {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background: var(--fluent-bg-subtle);
+  color: var(--fluent-text-secondary);
+  border: 1px solid var(--pack-glass-border);
+}
+.chip.warn {
+  color: #a4262c;
+  border-color: color-mix(in srgb, #a4262c 35%, transparent);
+}
+.chip.accent {
+  color: var(--fluent-accent);
+  border-color: color-mix(in srgb, var(--fluent-accent) 40%, transparent);
+}
+.meta-details {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--fluent-text-secondary);
+}
+.meta-details summary {
+  cursor: pointer;
+  user-select: none;
+}
+.meta-pre {
+  margin: 0.35rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 120px;
+  overflow: auto;
+  padding: 0.35rem 0.45rem;
+  border-radius: 4px;
+  background: var(--pack-glass-fill-subtle);
+  border: 1px solid var(--pack-glass-border);
+}
 .chat-log {
   min-height: 140px;
-  max-height: 280px;
+  max-height: 320px;
   overflow-y: auto;
   padding: 0.75rem;
-  background: var(--fluent-bg-subtle);
+  background: var(--pack-glass-fill-subtle);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
   border-radius: var(--fluent-radius);
   margin-bottom: 0.75rem;
+  border: 1px solid var(--pack-glass-border);
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
 }
 .bubble {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
   padding: 0.45rem 0.65rem;
   border-radius: 8px;
   font-size: 0.875rem;
   line-height: 1.45;
   white-space: pre-wrap;
+  max-width: 100%;
 }
 .bubble-user {
   background: var(--fluent-accent-subtle);
   margin-left: 2rem;
 }
 .bubble-bot {
-  background: var(--fluent-bg-card);
+  background: var(--pack-glass-fill-strong);
   margin-right: 2rem;
-  border: 1px solid var(--fluent-border-stroke);
+  border: 1px solid var(--pack-glass-border);
 }
 .muted {
   color: var(--fluent-text-secondary);
   font-size: 0.8125rem;
   margin: 0;
+}
+.composer-block {
+  margin-top: 0.25rem;
+}
+.composer-label {
+  margin-bottom: 0.35rem;
 }
 .composer {
   display: flex;
@@ -504,9 +877,50 @@ async function send(): Promise<void> {
   color: #fff;
   cursor: pointer;
   font-weight: 500;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+.composer button:hover:not(:disabled) {
+  background: var(--fluent-accent-hover);
+}
+.composer button:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 4px var(--fluent-border-focus);
+}
+.composer button:active:not(:disabled) {
+  transform: scale(0.985);
 }
 .composer button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.chat-faq-details {
+  margin-top: 1rem;
+  padding: 0.55rem 0.75rem 0.75rem;
+  border: 1px solid var(--pack-glass-border);
+  border-radius: var(--fluent-radius-lg);
+  background: color-mix(in srgb, var(--fluent-bg-card) 50%, transparent);
+}
+.chat-faq-sum {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--fluent-text-primary);
+  list-style: none;
+}
+.chat-faq-details[open] .chat-faq-sum {
+  margin-bottom: 0.6rem;
+}
+.chat-faq-sum::-webkit-details-marker {
+  display: none;
 }
 </style>

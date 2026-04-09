@@ -12,7 +12,7 @@
 
 | 项目 | 说明 |
 |------|------|
-| **本仓库** | 产出 `manifest.json`、`settings.json`、`core_personality.txt`、可选 **`knowledge/**/*.md`**（多文件世界观）、占位场景、`assets/images/` 情绪图等 |
+| **本仓库** | 产出 `manifest.json`、`settings.json`、`core_personality.txt`、可选 **`knowledge/**/*.md`**（多文件世界观）、占位场景、`assets/images/` 情绪图等；可选 **`creator_message.txt`**（创作者公告：可「整包一句」或「按行多条」；**oclivenewnew 不参与读取**，由 **oclive-launcher** 只读展示；约定见 [启动器 README](https://github.com/linkaiheng2233-cyber/oclive-launcher/blob/main/README.md#随包寄语与职责边界创作者公告)） |
 | **oclivenewnew** | 加载、校验与对话；契约原文在其仓库 **`creator-docs/`** 与 **`roles/README_MANIFEST.md`** |
 
 **版本对齐**：`src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 应与 **oclivenewnew** `src-tauri/Cargo.toml` 的 **`version`** 一致；导出前校验（含可选 wasm）会检查 **`manifest.min_runtime_version`** 与 **`manifest.json` / `settings.json` 顶层键**（见 [PACK_VERSIONING.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/role-pack/PACK_VERSIONING.md)）。

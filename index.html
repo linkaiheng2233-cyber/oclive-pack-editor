@@ -1,7 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      ;(function () {
+        try {
+          var t = localStorage.getItem('oclive-pack-editor-theme')
+          var dark =
+            t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+          var s = localStorage.getItem('oclive-pack-editor-ui-scale')
+          if (s != null && s !== '' && !isNaN(parseFloat(s))) {
+            document.documentElement.style.setProperty('--pack-ui-scale', String(parseFloat(s)))
+          }
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>oclive-pack-editor</title>

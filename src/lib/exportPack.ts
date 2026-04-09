@@ -1,4 +1,9 @@
 import JSZip from 'jszip'
+import {
+  buildCreatorMessageFileContent,
+  ROLE_PACK_CREATOR_MESSAGE_FILENAME,
+  type CreatorMessageExportMode,
+} from './rolePackCreatorMessage'
 import { mergedSceneIds, rolePackRelativePaths } from './packLayout'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
 
@@ -24,6 +29,10 @@ export type PackExtraFiles = {
   knowledgeMarkdownFiles: KnowledgeMarkdownFile[]
   /** 置于 assets/images/ 下，文件名应与 oclive 情绪资源命名一致（如 happy.png） */
   emotionImages: File[]
+  /** 写入 roles/{id}/creator_message.txt，随包分发；见 `creatorMessageMode` */
+  creatorMessage?: string
+  /** unified：全文只取首条非空行；per_module：每行一条（多模块拼接时汇总展示） */
+  creatorMessageMode?: CreatorMessageExportMode
 }
 
 function worldMdBody(body: string): string {
@@ -54,6 +63,14 @@ export function buildRolePackFiles(
     `${id}/core_personality.txt`,
     core ? `${core}\n` : '（请填写人设、语气与说话习惯。）\n',
   )
+
+  const echoBody = buildCreatorMessageFileContent(
+    extra?.creatorMessage ?? '',
+    extra?.creatorMessageMode ?? 'unified',
+  )
+  if (echoBody) {
+    files.set(`${id}/${ROLE_PACK_CREATOR_MESSAGE_FILENAME}`, echoBody)
+  }
 
   const world = worldMdBody(extra?.worldviewMarkdown ?? '')
   const docs = extra?.knowledgeMarkdownFiles ?? []

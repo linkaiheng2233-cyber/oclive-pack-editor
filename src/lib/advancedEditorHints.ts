@@ -1,0 +1,358 @@
+/**
+ * 高级创作界面：白话说明与「常改键」提示（不写进 JSON，避免破坏校验）。
+ */
+
+export const ADV_OVERVIEW = [
+  '这一页直接编辑角色包里的文本与 JSON，适合想精细控制、或简单创作里找不到的选项。',
+  '看不懂代码也没关系：先看每个分区标题旁的问号，再展开「一般在改哪些」；需要时再展开本页下方的「重点」折叠块（默认收起，不占地方）看字段说明与常见问题。键名（英文）请保持和示例一致，逗号、引号成对，保存前可用「检查与导出」里的校验。',
+] as const
+
+export const ADV_MANIFEST = [
+  '这一份是角色的「身份证 + 展示信息」：叫什么、有哪些场景、和用户是什么关系等。游戏/应用读角色时先看它。',
+  '键名大多是固定的英文单词，相当于表格列名。你可以改里面的文字、数字、列表；不要随意删掉整段结构，除非你清楚后果。',
+  '需要写给自己看的备注，可以用以下划线开头的名字自建字段（例如 _note），运行时一般会忽略。',
+] as const
+
+export const ADV_SETTINGS = [
+  '这一份主要管「对话怎么算出来」：用哪个模型、记忆/情绪等插件走哪条路。和 manifest 分工不同，改错可能导致无法加载或对话异常。',
+  '若你只用本机 Ollama，最常改的是 model（模型名）。云端或远程推理需要按文档配置环境变量与 plugin_backends。',
+  '简单创作里有一部分同款选项；这里可以改全量 JSON。不确定时先备份再改。',
+] as const
+
+export const ADV_CORE_TXT = [
+  '这里是角色的长文设定：性格、说话习惯、禁忌等，会进入对话「大脑」的提示里。',
+  '用自然语言写即可，不必写代码。段落之间空行有助于阅读；过长可能影响单次请求长度，可按需精简。',
+] as const
+
+export const ADV_CREATOR_MESSAGE = [
+  '写给玩家看的短寄语，会出现在启动器等位置（只读展示）。与简单创作共用同一内容。',
+  '「整包一句」只取第一条非空行；「按行多条」适合多条随机寄语。',
+] as const
+
+export const ADV_WORLD_KNOWLEDGE = [
+  '每个知识文件是一段 Markdown，顶上有几行「前言区」（front matter）用 --- 包住，用来写 id、标签、场景、权重等。',
+  '正文是角色世界里的常识或设定；检索时会按标签、场景、权重等参与打分。路径一般放在 knowledge/ 下。',
+  '下面的「预览」只是在编写器里估算哪些条目可能更相关，和运行时略有差异，以实际对话为准。',
+] as const
+
+export const ADV_KNOWLEDGE_PREVIEW = [
+  '输入玩家一句话里可能出现的词，看看哪些知识条目可能排前面。临时权重滑块只在预览里生效，用来试调参。',
+] as const
+
+export const ADV_EMOTION_IMAGES = [
+  '把立绘或表情图放到包里，供界面按情绪标签显示。文件名与映射若在别处配置，需与这里选中的资源一致。',
+  '支持常见图片格式。可先选图再导出，或在外部放好文件后写入文件夹。',
+] as const
+
+/** manifest 里创作者最常动到的键（非完整 schema） */
+export const MANIFEST_KEY_GUIDE: readonly { key: string; say: string }[] = [
+  { key: 'id', say: '角色内部 id，通常和文件夹名一致' },
+  { key: 'name / version / author / description', say: '展示名、版本、作者、简介' },
+  { key: 'scenes', say: '有哪些场景（字符串数组）' },
+  { key: 'default_personality', say: '性格七维，0～1 的小数' },
+  { key: 'user_relations / default_relation', say: '用户身份（好友/恋人等）与默认身份' },
+  { key: 'min_runtime_version', say: '可选，最低 oclive 版本，太低会拒绝加载' },
+  { key: 'knowledge', say: '是否启用知识库与文件匹配规则等' },
+  { key: 'life_trajectory / life_schedule', say: '可选，异地心声、日程等进阶设定' },
+  { key: '以 _ 开头的键', say: '给你自己看的备注，运行时通常忽略' },
+]
+
+/** settings 里常改项说明 */
+export const SETTINGS_KEY_GUIDE: readonly { key: string; say: string }[] = [
+  { key: 'model', say: 'Ollama 模型名（本机对话用）' },
+  { key: 'plugin_backends.llm', say: 'ollama 或 remote 等，决定推理走哪条路' },
+  { key: 'schema', say: '契约版本号，勿随意改' },
+  { key: 'memory_config / evolution', say: '记忆与演化相关参数' },
+  { key: 'identity_binding / interaction_mode', say: '身份与场景绑定、交互模式' },
+  { key: 'remote_presence', say: '异地相关默认开关等' },
+  { key: 'plugin_backends.*', say: 'memory / emotion / event / prompt 等插件后端类型' },
+]
+
+/** 知识文件 front matter 字段 */
+export const KNOWLEDGE_META_GUIDE: readonly { key: string; say: string }[] = [
+  { key: 'id', say: '本条知识的唯一 id' },
+  { key: 'tags', say: '关键词标签，便于检索命中' },
+  { key: 'scenes', say: '限定在哪些场景更相关，可留空表示不限制' },
+  { key: 'weight', say: '权重，越大越容易被强调' },
+  { key: 'event_hints', say: '与事件类型相关的提示词' },
+]
+
+/** 逐项：字段含义 + 创作者可改范围（权限） */
+export type CreatorScopeRow = {
+  field: string
+  meaning: string
+  scope: string
+}
+
+export const MANIFEST_MERGE_NOTE =
+  '与 settings 的关系：门面（id、name、scenes、user_relations 等）主要在 manifest；模型、演化、身份模式、记忆、知识开关等若也在 settings.json 里写了，加载时会按引擎规则与 manifest 合并，冲突时以 settings 侧为准（如 knowledge、model 相关）。'
+
+export const MANIFEST_FIELD_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
+  {
+    field: 'id',
+    meaning: '角色内部 id，通常与导出目录名一致。',
+    scope: '可改，但必须与文件夹名、引用路径一致；乱改会导致加载失败。',
+  },
+  {
+    field: 'name / version / author / description',
+    meaning: '展示名、版本号、作者、简介。',
+    scope: '可任意改文案；不影响引擎结构。',
+  },
+  {
+    field: 'scenes',
+    meaning: '场景 id 列表（JSON 数组）。',
+    scope: '可增删场景 id；id 建议与包内 scenes/ 子目录一致（若有）。',
+  },
+  {
+    field: 'default_personality',
+    meaning: '性格七维，长度 7 的数组，每项 0～1。',
+    scope: '可逐项调小数；顺序对应：倔强、黏人、敏感、强势、宽容、话多、温暖（与 oclive 文档一致）。',
+  },
+  {
+    field: 'user_relations',
+    meaning: '「用户身份」集合：每种关系一个键（自定义英文 id，如 friend、lover）。',
+    scope: '可新增/删除身份键；至少保留一个；键名建议小写+下划线。',
+  },
+  {
+    field: 'user_relations.<身份键>.display_name',
+    meaning: '该身份在界面或提示里的显示名称（如「好友」「恋人」）。',
+    scope: '可任意改中文或英文短名。',
+  },
+  {
+    field: 'user_relations.<身份键>.prompt_hint',
+    meaning: '告诉模型「你和用户是什么关系」的提示句。',
+    scope: '可写多句、可改语气；直接影响对话里对关系的理解。',
+  },
+  {
+    field: 'user_relations.<身份键>.favor_multiplier',
+    meaning: '该身份下好感变化乘数。',
+    scope: '正数即可；>1 好感涨得快，<1 更慢（具体以引擎为准）。',
+  },
+  {
+    field: 'user_relations.<身份键>.initial_favorability',
+    meaning: '切换到该身份时的初始好感（0～100）。',
+    scope: '可改；用于开局或切身份时的起点。',
+  },
+  {
+    field: 'default_relation',
+    meaning: '默认选中的身份键，必须是 user_relations 里已存在的键。',
+    scope: '可改为任意已有键（如从 friend 改为 lover）；不能填不存在的键。',
+  },
+  {
+    field: 'min_runtime_version',
+    meaning: '可选，要求玩家的 oclive 最低版本（semver）。',
+    scope: '可设如 "0.2.0"；不填则不做版本门槛。',
+  },
+  {
+    field: 'knowledge（manifest 内）',
+    meaning: '是否启用知识库、glob 匹配哪些 md。',
+    scope: '可改；若 settings.json 里也写了 knowledge，一般以 settings 为准。',
+  },
+  {
+    field: 'life_trajectory / life_schedule',
+    meaning: '异地心声、虚拟日程等进阶内容。',
+    scope: '可改；需对照 oclive README_MANIFEST，改错会影响叙事与时间线。',
+  },
+  {
+    field: 'dev_only',
+    meaning: '若为 true，角色可作为调试包隐藏于列表（视启动器规则）。',
+    scope: '可开关；面向创作者调试。',
+  },
+  {
+    field: '以 _ 开头的键',
+    meaning: '仅给自己看的备忘或说明。',
+    scope: '可任意添加；运行时通常忽略。',
+  },
+]
+
+export const SETTINGS_MERGE_NOTE =
+  '与 manifest 的关系：settings.json 中的 model、identity_binding、evolution、memory_config、knowledge 等会写入合并结果并覆盖 manifest 中对应逻辑；主对话模型名在合并侧常体现为 ollama_model。请与 manifest 分工：门面与人设契约在 manifest，引擎参数多在 settings。'
+
+export const SETTINGS_FIELD_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
+  {
+    field: 'schema_version',
+    meaning: 'settings 契约版本，用于日后迁移。',
+    scope: '一般保持 1；仅当官方升级说明要求时再改。',
+  },
+  {
+    field: 'model',
+    meaning: '本机 Ollama 主对话模型名。',
+    scope: '可改为本机 ollama list 中任意已安装模型；与 plugin_backends.llm=remote 时的远程方案二选一逻辑以引擎为准。',
+  },
+  {
+    field: 'evolution.event_impact_factor',
+    meaning: '事件对好感、关系等影响的强度系数。',
+    scope: '可在引擎允许范围内调（简单创作约 0.05～5）；过大可能导致数值波动过激。',
+  },
+  {
+    field: 'evolution.ai_analysis_interval',
+    meaning: '与演化/分析相关的间隔（回合等）。',
+    scope: '进阶；不熟悉可保留模板默认。',
+  },
+  {
+    field: 'evolution.max_change_per_event / max_total_change',
+    meaning: '单次事件与累计允许的人设/数值变化上限。',
+    scope: '可微调；避免极端值导致人设漂移过快。',
+  },
+  {
+    field: 'identity_binding',
+    meaning: '用户身份是否与场景绑定。',
+    scope: 'global：全场景共用一套身份键；per_scene：可按场景使用不同身份键（与 manifest.user_relations 配合）。',
+  },
+  {
+    field: 'memory_config.scene_weight_multiplier',
+    meaning: '记忆检索中「场景」维度的整体倍率。',
+    scope: '正数；调大更强调当前场景相关记忆。',
+  },
+  {
+    field: 'memory_config.topic_weights',
+    meaning: '按场景、主题细分的记忆权重表。',
+    scope: '可增删键；场景名须与合并后的场景列表一致，否则「检查」可能报错。',
+  },
+  {
+    field: 'interaction_mode',
+    meaning: '默认交互模式：immersive（沉浸）或 pure_chat（偏纯对话）。',
+    scope: '包内默认值；玩家运行时仍可改，导出仍以这里为包默认。',
+  },
+  {
+    field: 'remote_presence.default_enabled',
+    meaning: '安装后「异地心声」是否默认勾选。',
+    scope: '仅默认开关；异地文案大段仍在 manifest（如 life_trajectory）。',
+  },
+  {
+    field: 'autonomous_scene',
+    meaning: '虚拟时间推进后是否按规则自动更新角色场景等。',
+    scope: '进阶；需对照 README 与场景配置，改错会影响切场景逻辑。',
+  },
+  {
+    field: 'plugin_backends.llm',
+    meaning: '主 LLM 接入：ollama（本机）或 remote（远程 HTTP）。',
+    scope: 'remote 需按文档配置环境变量与协议；否则保持 ollama。',
+  },
+  {
+    field: 'plugin_backends.memory / emotion / event / prompt',
+    meaning: '记忆、情绪、事件、提示词等子系统的插件后端类型。',
+    scope: 'builtin / builtin_v2 / remote；remote 需自建服务与文档约定，创作者一般保持 builtin。',
+  },
+  {
+    field: 'knowledge.enabled',
+    meaning: '是否启用知识库 Markdown 检索。',
+    scope: '可开关；与 manifest.knowledge 同时存在时以合并规则为准（编写器侧通常 settings 优先）。',
+  },
+  {
+    field: 'knowledge.glob',
+    meaning: '扫描知识文件的路径 glob。',
+    scope: '须以 knowledge/ 开头；可收窄或放宽匹配范围。',
+  },
+  {
+    field: '_oclive_creator_guide（若存在）',
+    meaning: '模板里自带的创作者说明对象。',
+    scope: '仅文档；可保留或删除；运行时忽略。',
+  },
+]
+
+export const KNOWLEDGE_FILE_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
+  {
+    field: '文件路径（如 knowledge/world.md）',
+    meaning: '包内相对路径，决定导出后文件落点。',
+    scope: '可改名但需同步修改引用；world.md 常与简单创作「世界观」同步。',
+  },
+  {
+    field: 'Front matter：id',
+    meaning: '本条知识条目 id。',
+    scope: '可改；需唯一、便于检索去重。',
+  },
+  {
+    field: 'Front matter：tags',
+    meaning: '关键词标签列表。',
+    scope: '可增删；影响关键词命中。',
+  },
+  {
+    field: 'Front matter：scenes',
+    meaning: '限定在哪些场景更相关。',
+    scope: '可留空=不限制；填了则与场景 id 一致。',
+  },
+  {
+    field: 'Front matter：weight',
+    meaning: '检索加权。',
+    scope: '正数；越大越容易被强调。',
+  },
+  {
+    field: 'Front matter：event_hints',
+    meaning: '与事件类型相关的提示。',
+    scope: '可增删关键词；用于事件相关检索。',
+  },
+  {
+    field: '正文（--- 以下）',
+    meaning: '世界观与设定正文，Markdown。',
+    scope: '可任意写；过长时注意包体积与检索片段长度。',
+  },
+]
+
+export const EMOTION_ASSET_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
+  {
+    field: '选择图片（覆盖）',
+    meaning: '用新选的文件列表替换当前列表。',
+    scope: '可反复选；导出时写入 assets/images/（与简单创作相同）。',
+  },
+  {
+    field: '追加图片',
+    meaning: '在现有列表后增加文件。',
+    scope: '适合分批添加表情；注意总大小。',
+  },
+  {
+    field: '清空列表',
+    meaning: '移除已选中的图片记录。',
+    scope: '仅影响编写器内列表；已导出到文件夹的文件不会自动删除。',
+  },
+]
+
+export const CORE_PERSONALITY_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
+  {
+    field: '整体内容',
+    meaning: '角色性格、口癖、关系观、禁忌等长文，会进入主对话相关提示。',
+    scope: '可完全自定义自然语言；不需要 JSON；建议分段写清。',
+  },
+  {
+    field: '长度与结构',
+    meaning: '过长会占用模型上下文。',
+    scope: '可写长文；若对话异常可考虑精简或拆重点条列。',
+  },
+]
+
+export const CREATOR_MSG_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
+  {
+    field: '导出模式（单选）',
+    meaning: '整包一句：只取首条有效行；按行多条：每行一条随机寄语。',
+    scope: '可随时切换；切换后请用「检查与导出」确认导出内容符合预期。',
+  },
+  {
+    field: '正文',
+    meaning: '展示给玩家的短句。',
+    scope: '可任意修改；注意模式对「行」的解释不同（空行、多行）。',
+  },
+]
+
+/** 命中预览区：控件含义（本地近似，非运行时） */
+export const KNOWLEDGE_PREVIEW_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
+  {
+    field: '关键词输入',
+    meaning: '模拟用户消息里可能出现的词，多个词用空格分隔即可。',
+    scope: '可任意试不同组合；用于看排序，不写入角色包。',
+  },
+  {
+    field: '预览条件：场景',
+    meaning: '可选，填 scene id 参与场景匹配判断。',
+    scope: '可与 manifest / 知识头信息里的场景 id 对照调试。',
+  },
+  {
+    field: '仅预览匹配该场景',
+    meaning: '勾选后只保留场景匹配的知识条目参与预览。',
+    scope: '调试用开关；不影响导出文件。',
+  },
+  {
+    field: '临时权重滑块',
+    meaning: '只改预览里的加权，不改包内真实 weight。',
+    scope: '可试调参；还原/清空后恢复。',
+  },
+]

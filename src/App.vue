@@ -5,6 +5,7 @@ import ChatPanel from './components/pack/ChatPanel.vue'
 import PackChecksSection from './components/pack/PackChecksSection.vue'
 import SimpleCreationPanel from './components/pack/SimpleCreationPanel.vue'
 import { usePackEditor } from './composables/usePackEditor'
+import { usePackShellPreferences } from './composables/usePackShellPreferences'
 
 const {
   manifestText,
@@ -24,6 +25,8 @@ const {
   simpleS,
   multiRelationWarning,
   emotionImageSummary,
+  creatorMessageToOthers,
+  creatorMessageMode,
   folderExportOk,
   manifestRoleId,
   lastExportedRolesRoot,
@@ -42,6 +45,8 @@ const {
 } = usePackEditor()
 
 const marketComposePaste = ref('')
+
+const { themeCycleLabel, cycleTheme, bumpScale, scaleLabel } = usePackShellPreferences()
 
 function onApplyMarketCompose() {
   const r = applyMarketComposeJson(marketComposePaste.value)
@@ -92,7 +97,7 @@ const viewTitle = computed(() => {
         v-for="item in editorNav"
         :key="item.id"
         type="button"
-        class="rail-btn"
+        class="rail-btn rail-btn--accent-editor"
         :class="{ active: editorView === item.id }"
         @click="goEditorView(item.id)"
       >
@@ -116,8 +121,32 @@ const viewTitle = computed(() => {
       </nav>
 
       <header class="shell-header">
-        <p class="kicker">oclive · 角色包编写器</p>
-        <h1 class="shell-h1">{{ viewTitle }}</h1>
+        <div class="shell-header-row">
+          <div class="shell-header-copy">
+            <p class="kicker">oclive · 角色包编写器</p>
+            <h1 class="shell-h1">{{ viewTitle }}</h1>
+          </div>
+          <div class="shell-header-tools" role="toolbar" aria-label="外观与字号">
+            <div class="shell-scale" aria-label="界面大小">
+              <button type="button" class="shell-tool-btn" title="缩小" aria-label="缩小界面" @click="bumpScale(-1)">
+                A−
+              </button>
+              <span class="shell-scale-value" :title="'相对默认字号：' + scaleLabel">{{ scaleLabel }}</span>
+              <button type="button" class="shell-tool-btn" title="放大" aria-label="放大界面" @click="bumpScale(1)">
+                A+
+              </button>
+            </div>
+            <button
+              type="button"
+              class="shell-tool-btn shell-theme-btn"
+              :title="'主题：' + themeCycleLabel + '（点击切换）'"
+              @click="cycleTheme"
+            >
+              {{ themeCycleLabel === '跟随系统' ? '◐' : themeCycleLabel === '深色' ? '🌙' : '☀️' }}
+              {{ themeCycleLabel }}
+            </button>
+          </div>
+        </div>
         <p v-if="editorView === 'start'" class="sub">
           独立工具，仅产出与运行时兼容的目录树；契约见 oclivenewnew 仓库
           <code>creator-docs/</code> 与 <code>roles/README_MANIFEST.md</code>。
@@ -164,7 +193,8 @@ const viewTitle = computed(() => {
         <section class="quick-card" aria-label="进入创作">
           <p class="section-kicker">创作方式</p>
           <p class="quick-lead">
-            按需进入对应页面：简单模式侧重人设与情绪图；高级模式直接编辑 JSON 与资源路径。
+            简单模式用表单填人设；高级模式直接改文件，不懂可点各页的
+            <span class="quick-hint-ico" aria-hidden="true">?</span> 看说明。
           </p>
           <div class="quick-actions">
             <button type="button" class="quick-tile" @click="goEditorView('simple')">
@@ -175,7 +205,7 @@ const viewTitle = computed(() => {
             <button type="button" class="quick-tile" @click="goEditorView('advanced')">
               <span class="quick-tile-ico" aria-hidden="true">⚙️</span>
               <span class="quick-tile-title">高级创作</span>
-              <span class="quick-tile-desc">manifest / settings / 分标签编辑</span>
+              <span class="quick-tile-desc">直接编辑 JSON 与知识库；有白话提示</span>
             </button>
             <button type="button" class="quick-tile quick-tile-accent" @click="goEditorView('check')">
               <span class="quick-tile-ico" aria-hidden="true">✓</span>
@@ -196,6 +226,8 @@ const viewTitle = computed(() => {
         <SimpleCreationPanel
           v-model:core-personality="corePersonalityText"
           v-model:worldview-markdown="worldviewMarkdown"
+          v-model:creator-message-to-others="creatorMessageToOthers"
+          v-model:creator-message-mode="creatorMessageMode"
           :simple-m="simpleM"
           :simple-s="simpleS"
           :multi-relation-warning="multiRelationWarning"
@@ -213,6 +245,8 @@ const viewTitle = computed(() => {
           v-model:manifest-text="manifestText"
           v-model:settings-text="settingsText"
           v-model:core-personality="corePersonalityText"
+          v-model:creator-message-to-others="creatorMessageToOthers"
+          v-model:creator-message-mode="creatorMessageMode"
           v-model:knowledge-files="knowledgeMarkdownFiles"
           v-model:advanced-tab="advancedTab"
           :emotion-summary="emotionImageSummary"
@@ -286,64 +320,113 @@ const viewTitle = computed(() => {
 .editor-shell {
   display: flex;
   min-height: 100vh;
-  background: var(--fluent-bg-page);
+  /* 页面底纹在全局 body/:root，避免重复叠渐变 */
+  background: transparent;
 }
 
+/* 与 oclive-launcher 侧栏：宽度、图标格、毛玻璃与描边一致 */
 .editor-rail {
-  width: 80px;
+  width: calc(2.75rem + 1rem);
+  box-sizing: border-box;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.85rem 0.45rem;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 1rem 0.5rem;
   border-right: 1px solid var(--fluent-border-stroke);
-  background: var(--fluent-bg-card);
-  box-shadow: var(--fluent-shadow-soft);
+  background: color-mix(in srgb, var(--fluent-bg-card) 78%, transparent);
+  backdrop-filter: blur(10px) saturate(110%);
+  -webkit-backdrop-filter: blur(10px) saturate(110%);
+  box-shadow:
+    var(--fluent-shadow-soft),
+    inset -1px 0 0 color-mix(in srgb, var(--fluent-border-stroke) 60%, transparent);
 }
 
 .rail-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.45rem 0.2rem;
+  width: 100%;
+  max-width: 2.75rem;
+  gap: 0.3rem;
+  padding: 0.1rem 0;
   border: none;
-  border-radius: var(--fluent-radius-lg);
+  border-radius: 0;
   background: transparent;
   color: var(--fluent-text-secondary);
   cursor: pointer;
   font-size: 0.65rem;
   font-weight: 500;
   transition:
-    background 0.15s ease,
-    color 0.15s ease;
+    color 0.15s ease,
+    transform 0.12s ease;
 }
 
 .rail-btn:hover {
+  color: var(--fluent-text-primary);
+}
+
+.rail-btn:hover .rail-ico {
   background: var(--fluent-bg-subtle);
   color: var(--fluent-text-primary);
 }
 
 .rail-btn.active {
-  background: var(--fluent-accent-subtle);
+  color: var(--fluent-text-primary);
+}
+
+.rail-btn.active .rail-ico {
+  background: color-mix(in srgb, var(--fluent-accent-subtle) 70%, rgba(255, 255, 255, 0.12));
   color: var(--fluent-accent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--fluent-accent) 26%, transparent),
+    0 0 10px color-mix(in srgb, var(--fluent-accent) 20%, transparent);
+}
+
+.rail-btn--accent-editor.active .rail-ico {
+  background: var(--rail-accent-editor-bg);
+  color: var(--rail-accent-editor);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--rail-accent-editor) 28%, transparent),
+    0 0 10px color-mix(in srgb, var(--rail-accent-editor) 18%, transparent);
+}
+
+.rail-btn:focus-visible {
+  outline: none;
+}
+
+.rail-btn:focus-visible .rail-ico {
+  box-shadow: 0 0 0 2px var(--fluent-border-focus);
 }
 
 .rail-ico {
-  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: var(--fluent-radius);
+  font-size: 1.25rem;
   line-height: 1;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.2s ease;
 }
 
 .rail-lbl {
   line-height: 1.15;
   text-align: center;
+  max-width: 2.75rem;
 }
 
 .editor-main {
   flex: 1;
   min-width: 0;
-  max-width: 1080px;
-  padding: 1.1rem 1.25rem 2.5rem;
+  max-width: min(1080px, calc(100vw - 4.75rem));
+  padding: clamp(0.85rem, 2.2vw, 1.25rem) clamp(0.75rem, 3vw, 1.35rem) clamp(1.5rem, 4vw, 2.5rem);
   margin: 0 auto;
   width: 100%;
 }
@@ -352,14 +435,96 @@ const viewTitle = computed(() => {
   margin-bottom: 1.25rem;
   padding: 1.1rem 1.25rem 1.2rem;
   border-radius: var(--fluent-radius-lg);
-  background: linear-gradient(
-    135deg,
-    var(--fluent-bg-card) 0%,
-    var(--fluent-bg-subtle) 55%,
-    var(--fluent-bg-card) 100%
-  );
+  background: color-mix(in srgb, var(--fluent-bg-card) 82%, transparent);
+  backdrop-filter: blur(9px) saturate(106%);
+  -webkit-backdrop-filter: blur(9px) saturate(106%);
   border: 1px solid var(--fluent-border-stroke);
+  border-left: 3px solid var(--rail-accent-editor);
   box-shadow: var(--fluent-shadow-card);
+}
+
+.shell-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.35rem;
+}
+
+.shell-header-copy {
+  flex: 1;
+  min-width: min(100%, 14rem);
+}
+
+.shell-header-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 0.65rem;
+}
+
+.shell-scale {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--fluent-radius-lg);
+  border: 1px solid var(--pack-glass-border);
+  background: var(--pack-glass-fill-subtle);
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
+}
+
+.shell-scale-value {
+  min-width: 2.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fluent-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.shell-tool-btn {
+  padding: 0.35rem 0.55rem;
+  min-height: 30px;
+  border-radius: var(--fluent-radius);
+  border: 1px solid var(--pack-glass-border);
+  background: var(--pack-glass-fill-strong);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
+  color: var(--fluent-text-primary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-family: var(--fluent-font);
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.shell-tool-btn:hover {
+  background: var(--fluent-bg-subtle);
+  border-color: var(--fluent-text-secondary);
+}
+
+.shell-tool-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    var(--pack-glass-inset),
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 4px var(--fluent-border-focus);
+}
+
+.shell-tool-btn:active {
+  transform: scale(0.98);
+}
+
+.shell-theme-btn {
+  padding: 0.35rem 0.65rem;
 }
 
 .kicker {
@@ -373,13 +538,14 @@ const viewTitle = computed(() => {
 
 .shell-h1 {
   margin: 0.35rem 0 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: 1.55rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 .sub {
-  margin: 0.5rem 0 0;
+  margin: 0.65rem 0 0;
   color: var(--fluent-text-secondary);
   font-size: 0.875rem;
   line-height: 1.55;
@@ -410,11 +576,13 @@ const viewTitle = computed(() => {
 }
 
 .import-wrap {
-  padding: 1rem 1.125rem 1.125rem;
+  padding: 1rem 1.15rem 1.125rem;
   border-radius: var(--fluent-radius-lg);
-  background: var(--fluent-bg-card);
+  background: color-mix(in srgb, var(--fluent-bg-card) 82%, transparent);
+  backdrop-filter: blur(9px) saturate(106%);
+  -webkit-backdrop-filter: blur(9px) saturate(106%);
   border: 1px solid var(--fluent-border-stroke);
-  box-shadow: var(--fluent-shadow-soft);
+  box-shadow: var(--fluent-shadow-card);
 }
 
 .section-kicker {
@@ -439,19 +607,38 @@ const viewTitle = computed(() => {
   padding: 0.5rem 1rem;
   border-radius: var(--fluent-radius);
   border: 1px solid var(--fluent-accent);
-  background: var(--fluent-bg-card);
+  background: var(--pack-glass-fill-strong);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
   color: var(--fluent-accent);
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 500;
-  box-shadow: var(--fluent-shadow-soft);
-  transition: background 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
 }
 
 .import-btn:hover {
   background: var(--fluent-accent-subtle);
   border-color: var(--fluent-accent-hover);
   color: var(--fluent-accent-hover);
+}
+
+.import-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    var(--pack-glass-inset),
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 4px var(--fluent-border-focus);
+}
+
+.import-btn:active {
+  transform: scale(0.985);
 }
 
 .import-hint {
@@ -461,11 +648,13 @@ const viewTitle = computed(() => {
 
 .market-compose-wrap {
   margin-top: 1rem;
-  padding: 1rem 1.125rem 1.2rem;
+  padding: 1rem 1.15rem 1.2rem;
   border-radius: var(--fluent-radius-lg);
-  background: var(--fluent-bg-card);
+  background: color-mix(in srgb, var(--fluent-bg-card) 82%, transparent);
+  backdrop-filter: blur(9px) saturate(106%);
+  -webkit-backdrop-filter: blur(9px) saturate(106%);
   border: 1px solid var(--fluent-border-stroke);
-  box-shadow: var(--fluent-shadow-soft);
+  box-shadow: var(--fluent-shadow-card);
 }
 
 .mc-h2 {
@@ -516,18 +705,40 @@ const viewTitle = computed(() => {
   font-size: 0.875rem;
   font-weight: 600;
   font-family: var(--fluent-font);
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
 }
 
 .mc-btn.primary:hover {
   background: var(--fluent-accent-hover);
 }
 
+.mc-btn.primary:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 4px var(--fluent-border-focus);
+}
+
+.mc-btn.primary:active {
+  transform: scale(0.985);
+}
+
 .quick-card {
   margin-top: 1rem;
-  padding: 1rem 1.125rem 1.2rem;
+  padding: 1rem 1.15rem 1.2rem;
   border-radius: var(--fluent-radius-lg);
-  background: var(--fluent-bg-card);
+  background: color-mix(in srgb, var(--fluent-bg-card) 82%, transparent);
+  backdrop-filter: blur(9px) saturate(106%);
+  -webkit-backdrop-filter: blur(9px) saturate(106%);
   border: 1px solid var(--fluent-border-stroke);
+  border-left: 3px solid color-mix(in srgb, var(--rail-accent-editor) 65%, var(--fluent-border-stroke));
   box-shadow: var(--fluent-shadow-card);
 }
 
@@ -538,9 +749,23 @@ const viewTitle = computed(() => {
   line-height: 1.5;
 }
 
+.quick-hint-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--fluent-border-control) 85%, transparent);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--fluent-text-secondary);
+  vertical-align: middle;
+}
+
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
   gap: 0.75rem;
 }
 
@@ -551,25 +776,43 @@ const viewTitle = computed(() => {
   text-align: left;
   padding: 1rem 1rem 1.1rem;
   border-radius: var(--fluent-radius-lg);
-  border: 1px solid var(--fluent-border-stroke);
-  background: var(--fluent-bg-subtle);
+  border: 1px solid var(--pack-glass-border);
+  background: var(--pack-glass-fill-subtle);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
   cursor: pointer;
   font-family: var(--fluent-font);
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease,
-    background 0.15s ease;
+    background 0.15s ease,
+    transform 0.1s ease;
 }
 
 .quick-tile:hover {
-  border-color: var(--fluent-accent);
-  box-shadow: var(--fluent-shadow-soft);
-  background: var(--fluent-bg-card);
+  border-color: color-mix(in srgb, var(--fluent-accent) 35%, var(--pack-glass-border));
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
+  background: var(--pack-glass-fill-strong);
+}
+
+.quick-tile:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--fluent-accent) 45%, var(--pack-glass-border));
+  box-shadow:
+    var(--fluent-shadow-soft),
+    var(--pack-glass-inset),
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 4px var(--fluent-border-focus),
+    0 0 14px color-mix(in srgb, var(--fluent-accent) 18%, transparent);
+}
+
+.quick-tile:active {
+  transform: scale(0.992);
 }
 
 .quick-tile-accent {
-  border-color: rgba(0, 120, 212, 0.35);
-  background: var(--fluent-accent-subtle);
+  border-color: color-mix(in srgb, var(--fluent-accent) 28%, var(--fluent-border-stroke));
+  background: color-mix(in srgb, var(--fluent-accent-subtle) 55%, transparent);
 }
 
 .quick-tile-ico {
@@ -621,18 +864,38 @@ const viewTitle = computed(() => {
   font-size: 0.875rem;
   font-weight: 500;
   font-family: var(--fluent-font);
-  transition: background 0.15s ease;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
 }
 
 .actions button:hover {
   background: var(--fluent-accent-hover);
 }
 
+.actions button:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 4px var(--fluent-border-focus);
+}
+
+.actions button:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
 .actions button.secondary {
-  background: var(--fluent-bg-card);
+  background: var(--pack-glass-fill-strong);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
   color: var(--fluent-text-primary);
-  border-color: var(--fluent-border-control);
-  box-shadow: var(--fluent-shadow-soft);
+  border-color: var(--pack-glass-border);
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
 }
 
 .actions button.secondary:hover {
@@ -693,19 +956,35 @@ const viewTitle = computed(() => {
 }
 
 .mobile-nav-btn {
-  padding: 0.35rem 0.55rem;
-  border-radius: var(--fluent-radius);
-  border: 1px solid var(--fluent-border-stroke);
-  background: var(--fluent-bg-card);
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--fluent-radius-lg);
+  border: 1px solid var(--pack-glass-border);
+  background: var(--pack-glass-fill-strong);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
   color: var(--fluent-text-primary);
   font-size: 0.78rem;
+  font-weight: 500;
   cursor: pointer;
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.mobile-nav-btn:hover {
+  background: var(--fluent-bg-subtle);
 }
 
 .mobile-nav-btn.active {
-  border-color: var(--fluent-accent);
-  background: var(--fluent-accent-subtle);
-  color: var(--fluent-accent);
+  border-color: color-mix(in srgb, var(--rail-accent-editor) 42%, var(--pack-glass-border));
+  background: var(--rail-accent-editor-bg);
+  color: var(--rail-accent-editor);
+  font-weight: 600;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--rail-accent-editor) 28%, transparent),
+    0 0 10px color-mix(in srgb, var(--rail-accent-editor) 14%, transparent);
 }
 
 @media (max-width: 720px) {
@@ -713,11 +992,27 @@ const viewTitle = computed(() => {
     display: none;
   }
 
+  .editor-main {
+    max-width: min(1080px, calc(100vw - 1.25rem));
+    padding-left: clamp(0.65rem, 4vw, 1rem);
+    padding-right: clamp(0.65rem, 4vw, 1rem);
+  }
+
+  .shell-header-tools {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .mobile-nav {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: 0.45rem;
     margin-bottom: 0.85rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--pack-glass-border);
+    background: var(--pack-glass-fill);
+    backdrop-filter: var(--pack-glass-blur);
+    -webkit-backdrop-filter: var(--pack-glass-blur);
   }
 
   .editor-main {

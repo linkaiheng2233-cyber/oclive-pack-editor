@@ -47,6 +47,29 @@ describe('importRolePackFromZip', () => {
     expect(r.manifestJson).toContain('hero')
     expect(r.corePersonality).toContain('hello')
     expect(r.emotionImageFiles).toHaveLength(0)
+    expect(r.creatorMessage).toBe('')
+  })
+
+  it('reads creator_message.txt preserving content', async () => {
+    const z = new JSZip()
+    z.file('hero/manifest.json', '{"id":"hero","name":"H"}\n')
+    z.file('hero/settings.json', '{}')
+    z.file('hero/core_personality.txt', 'x')
+    z.file('hero/creator_message.txt', 'stay brave\n')
+    const f = await zipToFile(z, 'p.zip')
+    const r = await importRolePackFromZip(f)
+    expect(r.creatorMessage).toBe('stay brave')
+  })
+
+  it('reads creator_message.txt multiple lines', async () => {
+    const z = new JSZip()
+    z.file('hero/manifest.json', '{"id":"hero","name":"H"}\n')
+    z.file('hero/settings.json', '{}')
+    z.file('hero/core_personality.txt', 'x')
+    z.file('hero/creator_message.txt', 'a\nb\n')
+    const f = await zipToFile(z, 'p.zip')
+    const r = await importRolePackFromZip(f)
+    expect(r.creatorMessage).toBe('a\nb')
   })
 
   it('loads emotion images under assets/images', async () => {

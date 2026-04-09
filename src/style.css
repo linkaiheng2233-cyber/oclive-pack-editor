@@ -35,45 +35,93 @@
 
   --fluent-radius: 4px;
   --fluent-radius-lg: 8px;
+  --fluent-radius-xl: 12px;
   --fluent-font: 'Segoe UI', 'Segoe UI Variable', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   --fluent-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
 
+  /* 与 oclive-launcher 一致：侧栏高亮「编写器」品牌色 */
+  --rail-accent-editor: #0d7a6a;
+  --rail-accent-editor-bg: rgba(13, 122, 106, 0.14);
+
+  /**
+   * 编写器专用：背景与卡片对比要足够大，毛玻璃才「看得见」。
+   * （原先 ~82% 不透明白叠在 #f0f4f9 上，肉眼几乎等于实心白卡片。）
+   */
+  --pack-shell-bg:
+    radial-gradient(115% 95% at 0% 0%, rgba(88, 102, 122, 0.34), transparent 58%),
+    radial-gradient(100% 92% at 100% 100%, rgba(72, 86, 108, 0.3), transparent 56%),
+    linear-gradient(168deg, #c5d0e0 0%, #d8e2ee 40%, #ccd8e6 100%);
+  --pack-glass-fill: color-mix(in srgb, var(--fluent-bg-card) 52%, transparent);
+  --pack-glass-fill-strong: color-mix(in srgb, var(--fluent-bg-card) 64%, transparent);
+  --pack-glass-fill-subtle: color-mix(in srgb, var(--fluent-bg-subtle) 56%, transparent);
+  --pack-glass-fill-page: color-mix(in srgb, var(--fluent-bg-page) 58%, transparent);
+  --pack-glass-border: color-mix(in srgb, var(--fluent-border-stroke) 22%, #5c6b7e);
+  --pack-glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  --pack-glass-blur: blur(16px) saturate(125%);
+
+  /** 界面缩放：由 JS 写入 localStorage 与 documentElement；首屏见 index.html 内联脚本 */
+  --pack-ui-scale: 1;
+
   font-family: var(--fluent-font);
-  font-size: clamp(12px, calc(9px + 0.7vmin), 20px);
+  /* vmin 随窗口变化；再乘用户档位，整页 rem 联动放大缩小 */
+  font-size: calc(clamp(12px, calc(8px + 0.85vmin), 22px) * var(--pack-ui-scale, 1));
   line-height: 1.5;
   color: var(--fluent-text-primary);
-  background: var(--fluent-bg-page);
+  background: var(--pack-shell-bg);
+  color-scheme: light;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+  transition:
+    background-color 0.22s ease,
+    color 0.18s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fluent-bg-page: #202020;
-    --fluent-bg-card: #2d2d2d;
-    --fluent-bg-subtle: #3b3b3b;
-    --fluent-bg-input: #292929;
-    --fluent-border-stroke: #3f3f3f;
-    --fluent-border-control: #575757;
-    --fluent-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
-    --fluent-shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.4);
+html[data-theme='dark'] {
+  color-scheme: dark;
 
-    --fluent-text-primary: #f3f2f1;
-    --fluent-text-secondary: #d2d0ce;
-    --fluent-text-disabled: #8a8886;
+  /* 与 oclive-launcher 深色 token 对齐，避免两应用切换时「跳色」 */
+  --fluent-bg-page: #1a1d24;
+  --fluent-bg-card: #252830;
+  --fluent-bg-subtle: #2f3440;
+  --fluent-bg-input: #1e2128;
+  --fluent-border-stroke: #3d4451;
+  --fluent-border-control: #4d5565;
+  --fluent-border-focus: #4cc2ff;
+  --fluent-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45);
+  --fluent-shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.35);
 
-    --fluent-accent-subtle: rgba(0, 120, 212, 0.25);
+  --fluent-text-primary: #e8e6e3;
+  --fluent-text-secondary: #b0aca6;
+  --fluent-text-disabled: #8a8580;
 
-    --fluent-danger-bg: #442726;
-    --fluent-danger-border: #f1707b;
-    --fluent-danger-text: #f9a7ad;
+  --fluent-accent: #4da3e8;
+  --fluent-accent-hover: #7eb8f0;
+  --fluent-accent-subtle: rgba(77, 163, 232, 0.22);
 
-    --fluent-success-text: #92c353;
+  --rail-accent-editor: #5ee0c5;
+  --rail-accent-editor-bg: rgba(94, 224, 197, 0.14);
 
-    --fluent-warning-bg: #433519;
-    --fluent-warning-border: #c19c23;
-    --fluent-warning-text: #ffd44d;
-  }
+  --fluent-danger-bg: #442726;
+  --fluent-danger-border: #f1707b;
+  --fluent-danger-text: #f9a7ad;
+
+  --fluent-success-text: #92c353;
+
+  --fluent-warning-bg: #433519;
+  --fluent-warning-border: #c19c23;
+  --fluent-warning-text: #ffd44d;
+
+  --pack-shell-bg:
+    radial-gradient(115% 95% at 0% 0%, rgba(36, 44, 58, 0.85), transparent 58%),
+    radial-gradient(100% 92% at 100% 100%, rgba(28, 34, 48, 0.82), transparent 56%),
+    linear-gradient(168deg, #0f1218 0%, #181c24 45%, #12151c 100%);
+  --pack-glass-fill: color-mix(in srgb, var(--fluent-bg-card) 45%, transparent);
+  --pack-glass-fill-strong: color-mix(in srgb, var(--fluent-bg-card) 58%, transparent);
+  --pack-glass-fill-subtle: color-mix(in srgb, var(--fluent-bg-subtle) 50%, transparent);
+  --pack-glass-fill-page: color-mix(in srgb, var(--fluent-bg-page) 52%, transparent);
+  --pack-glass-border: color-mix(in srgb, var(--fluent-border-stroke) 50%, #8a93a8);
+  --pack-glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 *,
@@ -85,7 +133,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--fluent-bg-page);
+  background: var(--pack-shell-bg);
 }
 
 #app {
@@ -103,8 +151,20 @@ h3 {
 code {
   font-family: var(--fluent-mono);
   font-size: 0.88em;
-  padding: 0.1em 0.35em;
+  padding: 0.12em 0.4em;
   border-radius: var(--fluent-radius);
-  background: var(--fluent-bg-subtle);
-  border: 1px solid var(--fluent-border-stroke);
+  background: color-mix(in srgb, var(--fluent-bg-subtle) 92%, var(--fluent-accent-subtle));
+  border: 1px solid color-mix(in srgb, var(--fluent-border-stroke) 85%, var(--fluent-accent) 15%);
+}
+
+input[type='text'],
+input[type='number'],
+input[type='password'],
+input[type='url'],
+select,
+textarea {
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
 }

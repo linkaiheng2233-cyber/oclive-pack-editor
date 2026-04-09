@@ -2,6 +2,10 @@
 
 本文件随 **Git 标签 / Release** 更新；维护者发版步骤见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
+## [Unreleased]
+
+- **文档**：README「与运行时的关系」补充 **`creator_message.txt`** 与启动器职责链接；CONTRIBUTING **跨仓约定**（文件名与 oclive-launcher 同步）。
+
 ## 0.2.0
 
 ### 编写与导出

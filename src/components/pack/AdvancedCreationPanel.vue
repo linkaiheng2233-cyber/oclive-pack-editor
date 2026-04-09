@@ -8,10 +8,47 @@ import {
   type KnowledgeMeta,
 } from '../../lib/knowledgeFrontMatter'
 import { previewKnowledgeHits } from '../../lib/knowledgeHitPreview'
+import type { CreatorMessageExportMode } from '../../lib/rolePackCreatorMessage'
+import {
+  CORE_FAQ,
+  CREATOR_MSG_FAQ,
+  IMAGES_FAQ,
+  KNOWLEDGE_FILE_FAQ,
+  KNOWLEDGE_PREVIEW_FAQ,
+  MANIFEST_FAQ,
+  SETTINGS_FAQ,
+} from '../../lib/advancedEditorFaq'
+import {
+  ADV_CORE_TXT,
+  ADV_CREATOR_MESSAGE,
+  ADV_KNOWLEDGE_PREVIEW,
+  ADV_MANIFEST,
+  ADV_OVERVIEW,
+  ADV_SETTINGS,
+  ADV_WORLD_KNOWLEDGE,
+  CORE_PERSONALITY_SCOPE_GUIDE,
+  CREATOR_MSG_SCOPE_GUIDE,
+  EMOTION_ASSET_SCOPE_GUIDE,
+  KNOWLEDGE_FILE_SCOPE_GUIDE,
+  KNOWLEDGE_META_GUIDE,
+  KNOWLEDGE_PREVIEW_SCOPE_GUIDE,
+  MANIFEST_FIELD_SCOPE_GUIDE,
+  MANIFEST_KEY_GUIDE,
+  MANIFEST_MERGE_NOTE,
+  SETTINGS_FIELD_SCOPE_GUIDE,
+  SETTINGS_KEY_GUIDE,
+  SETTINGS_MERGE_NOTE,
+} from '../../lib/advancedEditorHints'
+import AdvFaqList from '../AdvFaqList.vue'
+import HelpHint from '../HelpHint.vue'
 
 const manifestText = defineModel<string>('manifestText', { required: true })
 const settingsText = defineModel<string>('settingsText', { required: true })
 const corePersonality = defineModel<string>('corePersonality', { required: true })
+const creatorMessageToOthers = defineModel<string>('creatorMessageToOthers', { default: '' })
+const creatorMessageMode = defineModel<CreatorMessageExportMode>('creatorMessageMode', {
+  default: 'unified',
+})
 const knowledgeFiles = defineModel<KnowledgeMarkdownFile[]>('knowledgeFiles', { required: true })
 const advancedTab = defineModel<'manifest' | 'settings' | 'core' | 'world' | 'images'>('advancedTab', {
   required: true,
@@ -140,6 +177,11 @@ function resetAllPreviewWeightOverrides(): void {
 
 <template>
   <div>
+    <p class="adv-toolbar-lead">
+      高级模式直接编辑文件内容；不懂可先点标题旁的
+      <span class="hint-ico" aria-hidden="true">?</span>。
+      <HelpHint :paragraphs="ADV_OVERVIEW" />
+    </p>
     <div
       class="adv-toolbar"
       role="tablist"
@@ -154,7 +196,10 @@ function resetAllPreviewWeightOverrides(): void {
         :class="{ on: advancedTab === 'manifest' }"
         @click="advancedTab = 'manifest'"
       >
-        manifest.json
+        <span class="tab-stack">
+          <span class="tab-title">角色契约</span>
+          <span class="tab-file">manifest.json</span>
+        </span>
       </button>
       <button
         type="button"
@@ -163,7 +208,10 @@ function resetAllPreviewWeightOverrides(): void {
         :class="{ on: advancedTab === 'settings' }"
         @click="advancedTab = 'settings'"
       >
-        settings.json
+        <span class="tab-stack">
+          <span class="tab-title">对话与插件</span>
+          <span class="tab-file">settings.json</span>
+        </span>
       </button>
       <button
         type="button"
@@ -172,7 +220,10 @@ function resetAllPreviewWeightOverrides(): void {
         :class="{ on: advancedTab === 'core' }"
         @click="advancedTab = 'core'"
       >
-        core_personality.txt
+        <span class="tab-stack">
+          <span class="tab-title">人设与寄语</span>
+          <span class="tab-file">core / 公告</span>
+        </span>
       </button>
       <button
         type="button"
@@ -181,7 +232,10 @@ function resetAllPreviewWeightOverrides(): void {
         :class="{ on: advancedTab === 'world' }"
         @click="advancedTab = 'world'"
       >
-        世界观 world.md
+        <span class="tab-stack">
+          <span class="tab-title">世界观与知识</span>
+          <span class="tab-file">knowledge/*.md</span>
+        </span>
       </button>
       <button
         type="button"
@@ -190,46 +244,270 @@ function resetAllPreviewWeightOverrides(): void {
         :class="{ on: advancedTab === 'images' }"
         @click="advancedTab = 'images'"
       >
-        情绪图片
+        <span class="tab-stack">
+          <span class="tab-title">情绪立绘</span>
+          <span class="tab-file">assets/images</span>
+        </span>
       </button>
     </div>
 
     <section v-show="advancedTab === 'manifest'" class="panel adv-single">
-      <h2>manifest.json</h2>
-      <p class="adv-brain-hint">
-        <strong>版本与键名</strong>：可选 <code>min_runtime_version</code>（semver，如 <code>0.2.0</code>）表示<strong>最低 oclive 宿主版本</strong>，低于则拒绝加载。顶层仅允许契约字段；说明文字请用<strong>下划线</strong>前缀键（如 <code>_note</code>）。详见 oclivenewnew
-        <code>creator-docs/role-pack/PACK_VERSIONING.md</code>。
-      </p>
+      <div class="adv-section-head">
+        <h2 class="adv-h2">
+          <span>角色契约（manifest）</span>
+          <HelpHint :paragraphs="ADV_MANIFEST" />
+        </h2>
+        <p class="adv-lead">管「是谁、叫什么、有哪些场景、和用户关系」等，相当于角色的门面信息。</p>
+        <details class="adv-key-map">
+          <summary>下面这段 JSON，一般在改哪些名字？</summary>
+          <ul class="adv-key-list">
+            <li v-for="row in MANIFEST_KEY_GUIDE" :key="row.key">
+              <code>{{ row.key }}</code>
+              <span class="adv-key-say">{{ row.say }}</span>
+            </li>
+          </ul>
+        </details>
+      </div>
       <textarea v-model="manifestText" spellcheck="false" class="ta" aria-label="manifest.json" />
+      <div class="adv-dock-stack">
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
+          aria-label="manifest 字段说明"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge">重点</span>
+            <span class="adv-examples-dock-title">manifest · 字段说明与可改范围</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <p class="adv-merge-note">{{ MANIFEST_MERGE_NOTE }}</p>
+            <p class="adv-examples-dock-note">
+              对照上方 JSON 逐处修改；<strong>不要用下方代码块整段替换整个文件</strong>。
+            </p>
+            <h4 class="adv-ex-part">每一项：含义与创作者可改范围</h4>
+            <div class="adv-scope-matrix">
+              <ul class="adv-scope-list">
+                <li v-for="row in MANIFEST_FIELD_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
+                  <code class="adv-scope-field">{{ row.field }}</code>
+                  <p class="adv-scope-mean">{{ row.meaning }}</p>
+                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </details>
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
+          aria-label="manifest 常见问题"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
+            <span class="adv-examples-dock-title">常见问题 · manifest（改进前 / 改进后对照）</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <AdvFaqList :items="MANIFEST_FAQ" show-intro />
+          </div>
+        </details>
+      </div>
     </section>
     <section v-show="advancedTab === 'settings'" class="panel adv-single">
-      <h2>settings.json</h2>
-      <p class="adv-brain-hint">
-        <strong>对话推理（大脑）</strong>：<code>model</code> 为本机 Ollama 模型名；
-        <code>plugin_backends.llm</code> 为 <code>ollama</code> 或 <code>remote</code>。运行时可用环境变量
-        <code>OCLIVE_LLM_BACKEND</code> 覆盖（由 oclive-launcher 注入）。云端须配置
-        <code>OCLIVE_REMOTE_LLM_URL</code>，协议见 oclivenewnew <code>REMOTE_PLUGIN_PROTOCOL.md</code>。需要表单化编辑请用<strong>简单创作</strong>中的「对话推理」区块。
-      </p>
+      <div class="adv-section-head">
+        <h2 class="adv-h2">
+          <span>对话与插件（settings）</span>
+          <HelpHint :paragraphs="ADV_SETTINGS" />
+        </h2>
+        <p class="adv-lead">管「用哪个模型、记忆/情绪走哪条插件」等，和 manifest 分工不同。</p>
+        <details class="adv-key-map">
+          <summary>下面这段 JSON，常见要动的键</summary>
+          <ul class="adv-key-list">
+            <li v-for="row in SETTINGS_KEY_GUIDE" :key="row.key">
+              <code>{{ row.key }}</code>
+              <span class="adv-key-say">{{ row.say }}</span>
+            </li>
+          </ul>
+        </details>
+      </div>
       <textarea v-model="settingsText" spellcheck="false" class="ta" aria-label="settings.json" />
+      <div class="adv-dock-stack">
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
+          aria-label="settings 字段说明"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge">重点</span>
+            <span class="adv-examples-dock-title">settings · 字段说明与可改范围</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <p class="adv-merge-note">{{ SETTINGS_MERGE_NOTE }}</p>
+            <p class="adv-examples-dock-note">
+              只改需要的字段；<strong>大括号、逗号要与 JSON 结构一致</strong>，不确定时先备份。
+            </p>
+            <h4 class="adv-ex-part">每一项：含义与创作者可改范围</h4>
+            <div class="adv-scope-matrix">
+              <ul class="adv-scope-list">
+                <li v-for="row in SETTINGS_FIELD_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
+                  <code class="adv-scope-field">{{ row.field }}</code>
+                  <p class="adv-scope-mean">{{ row.meaning }}</p>
+                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </details>
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
+          aria-label="settings 常见问题"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
+            <span class="adv-examples-dock-title">常见问题 · settings（改进前 / 改进后对照）</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <AdvFaqList :items="SETTINGS_FAQ" />
+          </div>
+        </details>
+      </div>
     </section>
     <section v-show="advancedTab === 'core'" class="panel adv-single">
-      <h2>core_personality.txt</h2>
+      <div class="adv-section-head">
+        <h2 class="adv-h2">
+          <span>人设长文（core_personality）</span>
+          <HelpHint :paragraphs="ADV_CORE_TXT" />
+        </h2>
+        <p class="adv-lead">用自然语言写性格与说话习惯即可，不必写代码。</p>
+      </div>
       <textarea
         v-model="corePersonality"
         spellcheck="false"
         class="ta"
         aria-label="core_personality.txt"
       />
+      <div class="adv-dock-stack">
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
+          aria-label="人设长文可改范围"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge">重点</span>
+            <span class="adv-examples-dock-title">人设长文 · 可改范围说明</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <h4 class="adv-ex-part">可改范围</h4>
+            <div class="adv-scope-matrix">
+              <ul class="adv-scope-list">
+                <li v-for="row in CORE_PERSONALITY_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
+                  <code class="adv-scope-field">{{ row.field }}</code>
+                  <p class="adv-scope-mean">{{ row.meaning }}</p>
+                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </details>
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
+          aria-label="人设长文常见问题"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
+            <span class="adv-examples-dock-title">常见问题 · 人设长文（改进前 / 改进后对照）</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <p class="adv-examples-dock-note">对照上方正文；以下为<strong>参考片段</strong>，不必整段复制。</p>
+            <AdvFaqList :items="CORE_FAQ" />
+          </div>
+        </details>
+      </div>
+      <div class="adv-section-head h2-spaced">
+        <h2 class="adv-h2">
+          <span>给玩家的寄语（可选）</span>
+          <HelpHint :paragraphs="ADV_CREATOR_MESSAGE" />
+        </h2>
+        <p class="adv-lead">仅在编写器填写；玩家在启动器等处只读看到。与简单创作共用。</p>
+      </div>
+      <div class="creator-msg-mode" role="radiogroup" aria-label="创作者公告导出方式">
+        <label class="radio-line">
+          <input v-model="creatorMessageMode" type="radio" value="unified" />
+          整包一句（只导出首条非空行）
+        </label>
+        <label class="radio-line">
+          <input v-model="creatorMessageMode" type="radio" value="per_module" />
+          按行多条（每行一条寄语）
+        </label>
+      </div>
+      <textarea
+        v-model="creatorMessageToOthers"
+        class="ta ta--short"
+        :rows="creatorMessageMode === 'unified' ? 3 : 6"
+        spellcheck="true"
+        aria-label="creator_message.txt"
+      />
+      <div class="adv-dock-stack">
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
+          aria-label="玩家寄语可改范围"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge">重点</span>
+            <span class="adv-examples-dock-title">玩家寄语 · 模式与可改范围</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <h4 class="adv-ex-part">模式与可改范围</h4>
+            <div class="adv-scope-matrix">
+              <ul class="adv-scope-list">
+                <li v-for="row in CREATOR_MSG_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
+                  <code class="adv-scope-field">{{ row.field }}</code>
+                  <p class="adv-scope-mean">{{ row.meaning }}</p>
+                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                </li>
+              </ul>
+            </div>
+            <p class="adv-examples-dock-note">
+              结合上方单选；<strong>整包一句</strong>与<strong>按行多条</strong>导出结果不同。
+            </p>
+          </div>
+        </details>
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
+          aria-label="玩家寄语常见问题"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
+            <span class="adv-examples-dock-title">常见问题 · 玩家寄语（改进前 / 改进后对照）</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <AdvFaqList :items="CREATOR_MSG_FAQ" />
+          </div>
+        </details>
+      </div>
     </section>
     <section v-show="advancedTab === 'world'" class="panel adv-single">
-      <h2>knowledge/*.md（世界观）</h2>
-      <p class="base-desc">支持多个知识文档。`knowledge/world.md` 会与简单创作的「世界观」字段自动同步。</p>
+      <div class="adv-section-head">
+        <h2 class="adv-h2">
+          <span>世界观与知识库（Markdown）</span>
+          <HelpHint :paragraphs="ADV_WORLD_KNOWLEDGE" />
+        </h2>
+        <p class="adv-lead">
+          可多份文档；<code>knowledge/world.md</code> 会与简单创作的「世界观」字段同步。
+        </p>
+        <details class="adv-key-map">
+          <summary>每个知识文件顶上的「头信息」字段</summary>
+          <ul class="adv-key-list">
+            <li v-for="row in KNOWLEDGE_META_GUIDE" :key="row.key">
+              <code>{{ row.key }}</code>
+              <span class="adv-key-say">{{ row.say }}</span>
+            </li>
+          </ul>
+        </details>
+      </div>
       <div class="knowledge-actions">
         <button type="button" @click="emit('addKnowledgeFile')">新增知识文件</button>
       </div>
       <div class="knowledge-preview">
-        <h3>知识强调预览 / 调参助手</h3>
-        <p class="base-desc">输入用户消息关键词，预览哪些知识会被强调、为什么被强调（本地近似规则）。</p>
+        <h3 class="adv-h3">
+          <span>命中预览（调试用）</span>
+          <HelpHint :paragraphs="ADV_KNOWLEDGE_PREVIEW" />
+        </h3>
+        <p class="base-desc">输入关键词，看哪些知识可能更靠前（本地近似，仅供参考）。</p>
         <div class="preview-controls">
           <input
             v-model="previewSceneId"
@@ -299,6 +577,44 @@ function resetAllPreviewWeightOverrides(): void {
             </ul>
           </li>
         </ul>
+      </div>
+      <div class="adv-dock-stack">
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
+          aria-label="命中预览控件说明"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge">重点</span>
+            <span class="adv-examples-dock-title">命中预览 · 控件说明与可改范围</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <h4 class="adv-ex-part">每个控件：含义与可改范围</h4>
+            <div class="adv-scope-matrix">
+              <ul class="adv-scope-list">
+                <li v-for="row in KNOWLEDGE_PREVIEW_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
+                  <code class="adv-scope-field">{{ row.field }}</code>
+                  <p class="adv-scope-mean">{{ row.meaning }}</p>
+                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                </li>
+              </ul>
+            </div>
+            <p class="adv-examples-dock-note">
+              对照上方「命中预览」试；结果为<strong>本地近似</strong>，与实机可能略有差别。
+            </p>
+          </div>
+        </details>
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
+          aria-label="命中预览常见问题"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
+            <span class="adv-examples-dock-title">常见问题 · 命中预览（改进前 / 改进后对照）</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <AdvFaqList :items="KNOWLEDGE_PREVIEW_FAQ" />
+          </div>
+        </details>
       </div>
       <div v-if="knowledgeFiles.length === 0" class="empty-tip">
         当前没有知识文件。可点击「新增知识文件」，或在简单创作填写世界观自动生成 `world.md`。
@@ -386,16 +702,92 @@ function resetAllPreviewWeightOverrides(): void {
           @input="updateBody(i, ($event.target as HTMLTextAreaElement).value)"
         />
       </div>
+      <div class="adv-dock-stack">
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
+          aria-label="知识文件字段说明"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge">重点</span>
+            <span class="adv-examples-dock-title">知识文件 · 路径与字段可改范围</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <h4 class="adv-ex-part">路径、头信息与正文：含义与可改范围</h4>
+            <div class="adv-scope-matrix">
+              <ul class="adv-scope-list">
+                <li v-for="row in KNOWLEDGE_FILE_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
+                  <code class="adv-scope-field">{{ row.field }}</code>
+                  <p class="adv-scope-mean">{{ row.meaning }}</p>
+                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                </li>
+              </ul>
+            </div>
+            <p class="adv-examples-dock-note">
+              对照上方各文件的「头信息 + 正文」；已有文件请<strong>逐段修改</strong>，勿整篇覆盖。
+            </p>
+          </div>
+        </details>
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
+          aria-label="知识文件常见问题"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
+            <span class="adv-examples-dock-title">常见问题 · 知识文件（改进前 / 改进后对照）</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <AdvFaqList :items="KNOWLEDGE_FILE_FAQ" />
+          </div>
+        </details>
+      </div>
     </section>
     <section v-show="advancedTab === 'images'" class="panel adv-single">
-      <h2>assets/images/</h2>
-      <p class="base-desc">与简单创作相同，导出时写入角色目录下 <code>assets/images/</code>。</p>
+      <div class="adv-section-head">
+        <h2 class="adv-h2"><span>情绪立绘图片</span></h2>
+        <p class="adv-lead">与简单创作相同，导出时写入 <code>assets/images/</code>；点「情绪图片」旁的问号可看说明。</p>
+      </div>
       <EmotionAssetsControl
         :summary="emotionSummary"
         @pick="emit('emotionPick', $event)"
         @append="emit('emotionAppend', $event)"
         @clear="emit('emotionClear')"
       />
+      <div class="adv-dock-stack">
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
+          aria-label="情绪立绘按钮说明"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge">重点</span>
+            <span class="adv-examples-dock-title">情绪立绘 · 按钮与可改范围</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <h4 class="adv-ex-part">每个按钮：含义与可改范围</h4>
+            <div class="adv-scope-matrix">
+              <ul class="adv-scope-list">
+                <li v-for="row in EMOTION_ASSET_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
+                  <code class="adv-scope-field">{{ row.field }}</code>
+                  <p class="adv-scope-mean">{{ row.meaning }}</p>
+                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                </li>
+              </ul>
+            </div>
+            <p class="adv-examples-dock-note">手动拷文件到包内时需<strong>文件名与引用一致</strong>。</p>
+          </div>
+        </details>
+        <details
+          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
+          aria-label="情绪立绘常见问题"
+        >
+          <summary class="adv-examples-dock-summary">
+            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
+            <span class="adv-examples-dock-title">常见问题 · 情绪立绘（改进前 / 改进后对照）</span>
+          </summary>
+          <div class="adv-examples-dock-body">
+            <AdvFaqList :items="IMAGES_FAQ" />
+          </div>
+        </details>
+      </div>
     </section>
   </div>
 </template>
@@ -404,20 +796,308 @@ function resetAllPreviewWeightOverrides(): void {
 code {
   font-size: 0.88em;
 }
+
+.panel {
+  margin-top: 0.75rem;
+  padding: 1rem 1.125rem 1.1rem;
+  border: 1px solid var(--pack-glass-border);
+  border-radius: var(--fluent-radius-lg);
+  background: var(--pack-glass-fill);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
+  box-shadow: var(--fluent-shadow-card), var(--pack-glass-inset);
+}
+
 .base-desc {
   margin: 0 0 0.75rem;
   font-size: 0.875rem;
   color: var(--fluent-text-secondary);
   line-height: 1.5;
 }
-.adv-brain-hint {
-  margin: 0 0 0.75rem;
+.adv-toolbar-lead {
+  margin: 0 0 0.65rem;
   font-size: 0.8125rem;
   color: var(--fluent-text-secondary);
   line-height: 1.55;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
 }
-.adv-brain-hint strong {
+.hint-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--fluent-border-control) 85%, transparent);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--fluent-text-secondary);
+}
+.adv-section-head {
+  margin-bottom: 0.65rem;
+}
+.adv-h2 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+.adv-h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.adv-lead {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
+  line-height: 1.5;
+}
+.adv-lead code {
+  font-size: 0.78em;
+  background: var(--fluent-bg-subtle);
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+}
+.adv-key-map {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  color: var(--fluent-text-secondary);
+}
+.adv-key-map summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
   color: var(--fluent-text-primary);
+}
+.adv-key-list {
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+.adv-key-list li {
+  line-height: 1.45;
+}
+.adv-key-list code {
+  font-size: 0.72rem;
+  background: var(--fluent-bg-subtle);
+  padding: 0.08rem 0.28rem;
+  border-radius: 3px;
+  margin-right: 0.35rem;
+}
+.adv-key-say {
+  font-size: 0.78rem;
+  color: var(--fluent-text-secondary);
+}
+.adv-dock-stack {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.adv-examples-dock {
+  margin-top: 0;
+  border-radius: var(--fluent-radius-lg);
+  border: 1px solid color-mix(in srgb, var(--fluent-accent) 35%, var(--pack-glass-border));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--fluent-accent) 10%, var(--pack-glass-fill-subtle)) 0%,
+    var(--pack-glass-fill) 48%
+  );
+  box-shadow:
+    var(--fluent-shadow-soft),
+    0 0 0 1px color-mix(in srgb, var(--fluent-accent) 12%, transparent) inset;
+}
+.adv-examples-dock--faq {
+  border-color: color-mix(in srgb, var(--fluent-text-secondary) 28%, var(--pack-glass-border));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--fluent-text-secondary) 6%, var(--pack-glass-fill-subtle)) 0%,
+    var(--pack-glass-fill) 50%
+  );
+}
+.adv-examples-dock:not(.adv-examples-dock--collapsible) {
+  padding: 0.85rem 0.95rem 0.95rem;
+}
+.adv-examples-dock--collapsible {
+  padding: 0;
+}
+.adv-examples-dock-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.85rem 0.95rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.adv-examples-dock-summary::-webkit-details-marker {
+  display: none;
+}
+.adv-examples-dock-summary::before {
+  content: '▸';
+  font-size: 0.75rem;
+  color: var(--fluent-accent);
+  margin-right: 0.15rem;
+  transition: transform 0.15s ease;
+}
+.adv-examples-dock--collapsible[open] .adv-examples-dock-summary::before {
+  transform: rotate(90deg);
+}
+.adv-examples-dock-body {
+  padding: 0 0.95rem 0.95rem;
+}
+/* 重点区：字段表随内容增高，不占固定视窗高度 */
+.adv-examples-dock--keypoints .adv-scope-matrix {
+  max-height: none;
+  overflow: visible;
+  margin-bottom: 0.55rem;
+}
+.adv-examples-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--fluent-accent) 92%, #000) 0%,
+    var(--fluent-accent) 100%
+  );
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--fluent-accent) 35%, transparent);
+}
+.adv-examples-badge--faq {
+  color: var(--fluent-text-primary);
+  background: color-mix(in srgb, var(--fluent-text-secondary) 14%, transparent);
+  box-shadow: none;
+  border: 1px solid color-mix(in srgb, var(--fluent-text-secondary) 22%, transparent);
+}
+.adv-examples-dock-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--fluent-text-primary);
+}
+.adv-examples-dock-note {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--fluent-text-secondary);
+}
+.adv-examples-dock-note strong {
+  color: var(--fluent-accent);
+  font-weight: 700;
+}
+.adv-merge-note {
+  margin: 0 0 0.65rem;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--fluent-text-secondary);
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--fluent-radius);
+  background: var(--fluent-bg-subtle);
+  border: 1px dashed var(--fluent-border-stroke);
+}
+.adv-ex-part {
+  margin: 0.65rem 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--fluent-text-primary);
+}
+.adv-scope-matrix {
+  max-height: min(50vh, 22rem);
+  overflow: auto;
+  margin-bottom: 0.55rem;
+  padding-right: 0.25rem;
+}
+.adv-scope-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.adv-scope-li {
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--pack-glass-border) 80%, transparent);
+}
+.adv-scope-li:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.adv-scope-field {
+  display: block;
+  font-size: 0.72rem;
+  font-family: var(--fluent-mono);
+  margin-bottom: 0.28rem;
+  color: var(--fluent-accent);
+  font-weight: 600;
+  word-break: break-word;
+}
+.adv-scope-mean {
+  margin: 0 0 0.28rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--fluent-text-primary);
+}
+.adv-scope-scope {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--fluent-text-secondary);
+}
+.adv-scope-scope strong {
+  color: var(--fluent-text-primary);
+}
+.adv-ex-block {
+  margin-bottom: 0.85rem;
+  padding-left: 0.55rem;
+  border-left: 3px solid color-mix(in srgb, var(--fluent-accent) 55%, transparent);
+}
+.adv-ex-block:last-child {
+  margin-bottom: 0;
+}
+.adv-ex-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--fluent-accent) 88%, var(--fluent-text-primary));
+}
+.adv-ex-caption {
+  margin: 0 0 0.35rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--fluent-text-secondary);
+}
+.adv-ex-pre {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--fluent-mono);
+  border-radius: var(--fluent-radius);
+  border: 1px solid color-mix(in srgb, var(--fluent-accent) 22%, var(--pack-glass-border));
+  background: color-mix(in srgb, var(--fluent-bg-input) 88%, var(--pack-glass-fill-subtle));
+  color: var(--fluent-text-primary);
+  box-shadow: var(--pack-glass-inset);
 }
 .knowledge-actions {
   margin-bottom: 0.75rem;
@@ -540,11 +1220,14 @@ code {
   margin-bottom: 0.75rem;
 }
 .knowledge-card {
-  border: 1px solid var(--fluent-border-stroke);
+  border: 1px solid var(--pack-glass-border);
   border-radius: var(--fluent-radius-lg);
   padding: 0.6rem;
-  background: var(--fluent-bg-subtle);
+  background: var(--pack-glass-fill-subtle);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
   margin-bottom: 0.75rem;
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
 }
 .knowledge-head {
   display: flex;
@@ -594,12 +1277,15 @@ code {
   margin-top: 1rem;
   padding: 2px;
   border-radius: var(--fluent-radius-lg);
-  background: var(--fluent-bg-subtle);
-  border: 1px solid var(--fluent-border-stroke);
+  background: var(--pack-glass-fill-subtle);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
+  border: 1px solid var(--pack-glass-border);
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
 }
 .adv-toolbar button {
-  padding: 0.4rem 0.75rem;
-  min-height: 30px;
+  padding: 0.38rem 0.65rem;
+  min-height: 42px;
   border-radius: calc(var(--fluent-radius-lg) - 2px);
   border: none;
   background: transparent;
@@ -608,33 +1294,66 @@ code {
   font-size: 0.8125rem;
   font-family: var(--fluent-font);
   font-weight: 500;
-  transition: background 0.12s ease, color 0.12s ease;
+  text-align: left;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.18s ease;
+}
+.tab-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.06rem;
+  line-height: 1.2;
+}
+.tab-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.tab-file {
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--fluent-text-secondary);
+  font-family: var(--fluent-mono);
 }
 .adv-toolbar button.on {
-  background: var(--fluent-bg-card);
+  background: var(--pack-glass-fill-strong);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
   color: var(--fluent-accent);
-  box-shadow: var(--fluent-shadow-soft);
+  box-shadow:
+    var(--fluent-shadow-soft),
+    var(--pack-glass-inset),
+    0 0 0 1px color-mix(in srgb, var(--fluent-accent) 26%, transparent),
+    0 0 10px color-mix(in srgb, var(--fluent-accent) 18%, transparent);
 }
 .adv-toolbar button:not(.on):hover {
   background: rgba(0, 0, 0, 0.05);
 }
-@media (prefers-color-scheme: dark) {
-  .adv-toolbar button:not(.on):hover {
-    background: rgba(255, 255, 255, 0.06);
-  }
+.adv-toolbar button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 4px var(--fluent-border-focus);
+}
+:global(html[data-theme='dark']) .adv-toolbar button:not(.on):hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 .adv-single {
   margin-top: 0.75rem;
-  padding: 0 0.25rem;
+  padding: 0;
+  --adv-editor-min-h: min(62vh, 640px);
 }
-.adv-single h2 {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem;
+.h2-spaced {
+  margin-top: 1.25rem;
+}
+.adv-single :deep(.ta:not(.ta--short)) {
+  min-height: var(--adv-editor-min-h);
 }
 .ta {
   width: 100%;
-  min-height: min(52vh, 420px);
+  min-height: min(62vh, 640px);
   padding: 0.65rem 0.75rem;
   font-family: var(--fluent-mono);
   font-size: 12px;
@@ -650,6 +1369,10 @@ code {
   outline: 2px solid var(--fluent-border-focus);
   outline-offset: -1px;
 }
+.ta--short {
+  min-height: 4.5rem;
+  font-family: var(--fluent-font);
+}
 @media (max-width: 860px) {
   .knowledge-meta {
     grid-template-columns: repeat(2, minmax(140px, 1fr));
@@ -659,5 +1382,25 @@ code {
   .knowledge-meta {
     grid-template-columns: 1fr;
   }
+}
+
+.creator-msg-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0.65rem;
+}
+.radio-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--fluent-text-primary);
+  cursor: pointer;
+}
+.radio-line input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
 }
 </style>

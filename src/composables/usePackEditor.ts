@@ -18,6 +18,7 @@ import { parseJson, runAllPackChecks } from '../lib/packChecks'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from '../lib/knowledgeFiles'
 import { validateKnowledgeFiles } from '../lib/knowledgeFrontMatter'
 import { mergeMarketComposeIntoEditor, parseMarketComposeV1 } from '../lib/marketComposeImport'
+import type { CreatorMessageExportMode } from '../lib/rolePackCreatorMessage'
 import {
   applySimpleManifestToJson,
   applySimpleSettingsToJson,
@@ -33,6 +34,7 @@ import {
 
 const STORAGE_REQUIRE_CHECKS = 'oclive-pack-editor-require-checks-before-export'
 const STORAGE_CREATION_MODE = 'oclive-pack-editor-creation-mode'
+const STORAGE_CREATOR_MSG_MODE = 'oclive-pack-editor-creator-msg-mode'
 
 /** 简单模式表单 → JSON 防抖：避免每次按键都整表序列化，减轻大字段输入卡顿。 */
 const SIMPLE_JSON_DEBOUNCE_MS = 220
@@ -44,6 +46,10 @@ export function usePackEditor() {
   const worldviewMarkdown = ref('')
   const knowledgeMarkdownFiles = ref<KnowledgeMarkdownFile[]>([])
   const emotionImageFiles = ref<File[]>([])
+  /** 随包写入 creator_message.txt，供启动器只读展示（仅编写器可编辑） */
+  const creatorMessageToOthers = ref('')
+  /** unified：全文只导出首条非空行；per_module：每行一条（多模块各写一句时汇总） */
+  const creatorMessageMode = ref<CreatorMessageExportMode>('unified')
 
   const validationErrors = ref<string[]>([])
   /** 最近一次检查是否用 wasm；`null` 表示本会话尚未跑过检查 */
@@ -87,6 +93,8 @@ export function usePackEditor() {
       worldviewMarkdown: worldviewMarkdown.value,
       knowledgeMarkdownFiles: docs,
       emotionImages: emotionImageFiles.value,
+      creatorMessage: creatorMessageToOthers.value,
+      creatorMessageMode: creatorMessageMode.value,
     }
   }
 
@@ -201,6 +209,8 @@ export function usePackEditor() {
       if (v === 'false') requireChecksBeforeExport.value = false
       const cm = localStorage.getItem(STORAGE_CREATION_MODE)
       if (cm === 'advanced' || cm === 'simple') creationMode.value = cm
+      const em = localStorage.getItem(STORAGE_CREATOR_MSG_MODE)
+      if (em === 'unified' || em === 'per_module') creatorMessageMode.value = em
     } catch {
       /* ignore */
     }
@@ -230,6 +240,14 @@ export function usePackEditor() {
   }
 
   watch(requireChecksBeforeExport, persistRequireChecks)
+
+  watch(creatorMessageMode, (m) => {
+    try {
+      localStorage.setItem(STORAGE_CREATOR_MSG_MODE, m)
+    } catch {
+      /* ignore */
+    }
+  })
 
   const folderExportOk = computed(() => isFolderExportSupported())
 
@@ -284,6 +302,7 @@ export function usePackEditor() {
       worldviewMarkdown.value = imp.worldviewMarkdown
       knowledgeMarkdownFiles.value = imp.knowledgeMarkdownFiles
       emotionImageFiles.value = imp.emotionImageFiles
+      creatorMessageToOthers.value = imp.creatorMessage
       syncFormsFromJson()
       setFeedback(
         `已导入角色「${imp.roleId}」。可继续编辑后导出。 ${importedPackBrainHint(imp.settingsJson)}`,
@@ -453,6 +472,8 @@ export function usePackEditor() {
     worldviewMarkdown,
     knowledgeMarkdownFiles,
     emotionImageFiles,
+    creatorMessageToOthers,
+    creatorMessageMode,
     validationErrors,
     validationLastUsedWasm,
     lastExportedRolesRoot,

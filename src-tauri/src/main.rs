@@ -148,6 +148,7 @@ async fn runtime_api_chat(
     role_path: String,
     message: String,
     session_id: Option<String>,
+    scene_id: Option<String>,
 ) -> Result<String, String> {
     let base = validate_http_base_url(&base_url)?;
     let url = format!("{}/chat", base);
@@ -155,7 +156,8 @@ async fn runtime_api_chat(
     let body = serde_json::json!({
         "role_path": role_path,
         "message": message,
-        "session_id": session_id
+        "session_id": session_id,
+        "scene_id": scene_id
     });
     let r = client
         .post(&url)
@@ -171,10 +173,36 @@ async fn runtime_api_chat(
     }
     let v: serde_json::Value =
         serde_json::from_str(&text).map_err(|e| format!("解析 JSON：{}", e))?;
-    v.get("reply")
-        .and_then(|x| x.as_str())
-        .map(|s| s.to_string())
-        .ok_or_else(|| "响应缺少 reply".to_string())
+    if v.get("reply").and_then(|x| x.as_str()).is_none() {
+        return Err("响应缺少 reply".to_string());
+    }
+    Ok(text)
+}
+
+/// 读取角色目录下 `manifest.json` 的 `scenes` 数组（试聊场景下拉）。
+#[tauri::command]
+fn read_role_manifest_scenes(role_dir: String) -> Result<Vec<String>, String> {
+    use std::fs;
+    use std::path::PathBuf;
+
+    let dir = role_dir.trim();
+    if dir.is_empty() {
+        return Err("角色目录不能为空".to_string());
+    }
+    let p = PathBuf::from(dir).join("manifest.json");
+    if !p.is_file() {
+        return Err(format!("未找到 manifest：{}", p.display()));
+    }
+    let raw = fs::read_to_string(&p).map_err(|e| e.to_string())?;
+    let v: serde_json::Value = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
+    let scenes = v
+        .get("scenes")
+        .and_then(|s| s.as_array())
+        .ok_or_else(|| "manifest 缺少 scenes 数组".to_string())?;
+    Ok(scenes
+        .iter()
+        .filter_map(|x| x.as_str().map(str::to_string))
+        .collect())
 }
 
 /// 启动本机 oclive 可执行文件（`--api --port`），用于试聊前拉起运行时。
@@ -212,6 +240,7 @@ fn main() {
             runtime_tcp_listening,
             runtime_api_health,
             runtime_api_chat,
+            read_role_manifest_scenes,
             spawn_oclive_api,
         ])
         .run(tauri::generate_context!())

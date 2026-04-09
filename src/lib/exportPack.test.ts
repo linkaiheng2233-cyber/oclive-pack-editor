@@ -31,4 +31,33 @@ describe('buildRolePackFiles', () => {
     expect(files.has('x/scenes/a/scene.json')).toBe(true)
     expect(files.has('x/scenes/b/description.txt')).toBe(true)
   })
+
+  it('writes creator_message.txt when creatorMessage extra is set', () => {
+    const manifest = {
+      id: 'x',
+      name: 'N',
+      scenes: ['home'],
+      user_relations: { f: { favor_multiplier: 1, initial_favorability: 40 } },
+      default_relation: 'f',
+    }
+    const files = buildRolePackFiles('x', manifest, { schema_version: 1 }, {
+      creatorMessage: 'hello world',
+    })
+    expect(files.get('x/creator_message.txt')).toBe('hello world\n')
+  })
+
+  it('writes multiple lines in per_module mode', () => {
+    const manifest = {
+      id: 'x',
+      name: 'N',
+      scenes: ['home'],
+      user_relations: { f: { favor_multiplier: 1, initial_favorability: 40 } },
+      default_relation: 'f',
+    }
+    const files = buildRolePackFiles('x', manifest, { schema_version: 1 }, {
+      creatorMessage: 'one\ntwo',
+      creatorMessageMode: 'per_module',
+    })
+    expect(files.get('x/creator_message.txt')).toBe('one\ntwo\n')
+  })
 })

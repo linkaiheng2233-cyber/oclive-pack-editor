@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import HelpHint from '../HelpHint.vue'
+import { ADV_EMOTION_IMAGES } from '../../lib/advancedEditorHints'
+
 defineProps<{
   summary: string
 }>()
@@ -12,7 +15,10 @@ const emit = defineEmits<{
 
 <template>
   <div class="emotion-row">
-    <label>情绪图片</label>
+    <div class="emotion-label-row">
+      <label class="emotion-label">情绪图片</label>
+      <HelpHint :paragraphs="ADV_EMOTION_IMAGES" />
+    </div>
     <div class="emotion-actions">
       <label class="btn-lite">
         <input
@@ -41,12 +47,17 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.emotion-row > label:first-child {
-  display: block;
+.emotion-label-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+  margin-bottom: 0.35rem;
+}
+.emotion-label {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--fluent-text-primary);
-  margin-bottom: 0.35rem;
 }
 .emotion-row .emotion-actions {
   margin-top: 0.25rem;
@@ -62,15 +73,21 @@ const emit = defineEmits<{
   min-height: 28px;
   border: 1px solid var(--fluent-border-control);
   border-radius: var(--fluent-radius);
-  background: var(--fluent-bg-card);
+  background: var(--pack-glass-fill-strong);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
   color: var(--fluent-text-primary);
   font-size: 0.8125rem;
   font-family: var(--fluent-font);
   cursor: pointer;
   margin-right: 0.35rem;
   margin-bottom: 0.35rem;
-  box-shadow: var(--fluent-shadow-soft);
-  transition: background 0.12s ease, border-color 0.12s ease;
+  box-shadow: var(--fluent-shadow-soft), var(--pack-glass-inset);
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.1s ease;
 }
 .btn-lite.ghost {
   border-color: var(--fluent-border-stroke);
@@ -80,6 +97,19 @@ const emit = defineEmits<{
 .btn-lite:hover {
   background: var(--fluent-bg-subtle);
   border-color: var(--fluent-text-secondary);
+}
+
+.btn-lite:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--fluent-shadow-soft),
+    var(--pack-glass-inset),
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 0 4px var(--fluent-border-focus);
+}
+
+.btn-lite:active {
+  transform: scale(0.985);
 }
 .sr-only {
   position: absolute;
