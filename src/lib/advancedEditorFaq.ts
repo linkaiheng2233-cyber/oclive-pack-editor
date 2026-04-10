@@ -160,7 +160,7 @@ export const SETTINGS_FAQ: readonly AdvFaqItem[] = [
     id: 's-evolution',
     question: '事件对好感影响太强或太弱，想调一调？',
     plainExplain:
-      '主要在 evolution.event_impact_factor。数字大 → 事件影响更明显；别调到特别夸张，先小步改。',
+      '事件强度主要看 evolution.event_impact_factor（数字大 → 事件对「档案演化」更明显）。另可配合 max_change_per_event 控制单轮更新「可变性格档案」的步子。若 personality_source=profile，可变档案全文由对话模型维护，创作者不能手写，只能通过上述数值调强弱。',
     beforeCode: `"evolution": {
   "event_impact_factor": 1.0,
   "ai_analysis_interval": 15,
@@ -175,6 +175,24 @@ export const SETTINGS_FAQ: readonly AdvFaqItem[] = [
 },`,
     highlightAfter: ['1.2'],
     highlightBefore: ['1.0'],
+  },
+  {
+    id: 's-personality-profile',
+    question: '想让核心性格档案当轴心、七维只当参考？',
+    plainExplain:
+      '在 evolution 里加 "personality_source": "profile"。「可变性格档案」在运行时由模型根据对话更新；七维多为从核心正文归纳的视图。能调的是 event_impact_factor、max_change_per_event 等，不能预设可变档案正文。',
+    beforeCode: `"evolution": {
+  "event_impact_factor": 1.0,
+  "max_change_per_event": 0.05
+},`,
+    afterCode: `"evolution": {
+  "personality_source": "profile",
+  "event_impact_factor": 1.0,
+  "max_change_per_event": 0.05,
+  "max_total_change": 0.5
+},`,
+    highlightAfter: ['profile'],
+    highlightBefore: [],
   },
   {
     id: 's-identity-binding',
@@ -261,7 +279,7 @@ export const SETTINGS_FAQ: readonly AdvFaqItem[] = [
 export const CORE_FAQ: readonly AdvFaqItem[] = [
   {
     id: 'c-habits',
-    question: '人设长文里，怎么写「说话习惯」比较好？',
+    question: '核心性格档案里，怎么写「说话习惯」比较好？',
     plainExplain:
       '就当给朋友写备忘录：口癖、急的时候怎么说、对陌生人 vs 熟人。不用代码格式，分段写最清楚。',
     beforeCode: `（还没写习惯，只有一句性格）`,

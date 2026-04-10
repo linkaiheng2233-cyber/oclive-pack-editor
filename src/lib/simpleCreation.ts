@@ -25,6 +25,8 @@ export const PERSONALITY_LABELS_ZH: Record<(typeof PERSONALITY_KEYS)[number], st
 
 export type PluginBackendOpt = 'builtin' | 'builtin_v2' | 'remote'
 export type LlmBackendOpt = 'ollama' | 'remote'
+/** 与 manifest `evolution.personality_source` 一致 */
+export type PersonalitySourceOpt = 'vector' | 'profile'
 
 /** 与 `KnowledgePackConfigDisk` / PACK_VERSIONING 默认一致 */
 export const DEFAULT_KNOWLEDGE_GLOB = 'knowledge/**/*.md'
@@ -55,6 +57,10 @@ export type SimpleSettingsForm = {
   schemaVersion: number
   model: string
   eventImpactFactor: number
+  /** `vector`：七维增量为主；`profile`：核心性格档案 + 运行时可变档案（模型维护），七维多为视图 */
+  personalitySource: PersonalitySourceOpt
+  /** evolution.max_change_per_event；profile 下约束模型更新可变档案的单轮步长语义 */
+  maxChangePerEvent: number
   identityBinding: 'global' | 'per_scene'
   interactionMode: 'immersive' | 'pure_chat'
   remoteDefaultEnabled: boolean
@@ -121,6 +127,8 @@ export function defaultSimpleSettingsForm(): SimpleSettingsForm {
     schemaVersion: 1,
     model: 'qwen2.5:7b',
     eventImpactFactor: 1,
+    personalitySource: 'vector',
+    maxChangePerEvent: 0.05,
     identityBinding: 'per_scene',
     interactionMode: 'immersive',
     remoteDefaultEnabled: false,
@@ -187,12 +195,17 @@ export function settingsRecordToSimpleForm(s: Record<string, unknown>): SimpleSe
   const pb = (s.plugin_backends ?? {}) as Record<string, unknown>
 
   const eif = Number(evo.event_impact_factor)
+  const mce = Number(evo.max_change_per_event)
   const swm = Number(mem.scene_weight_multiplier)
+  const psRaw = String(evo.personality_source ?? '').toLowerCase()
+  const personalitySource: PersonalitySourceOpt = psRaw === 'profile' ? 'profile' : 'vector'
 
   return {
     schemaVersion: Number.isFinite(s.schema_version as number) ? Number(s.schema_version) : 1,
     model: String(s.model ?? 'qwen2.5:7b'),
     eventImpactFactor: Number.isFinite(eif) ? Math.max(0.05, Math.min(5, eif)) : 1,
+    personalitySource,
+    maxChangePerEvent: Number.isFinite(mce) ? Math.max(0.01, Math.min(0.5, mce)) : 0.05,
     identityBinding: s.identity_binding === 'global' ? 'global' : 'per_scene',
     interactionMode: s.interaction_mode === 'pure_chat' ? 'pure_chat' : 'immersive',
     remoteDefaultEnabled: Boolean(rp.default_enabled),
@@ -276,8 +289,9 @@ export function applySimpleSettingsToJson(
   base.evolution = {
     ...evoPrev,
     event_impact_factor: form.eventImpactFactor,
+    personality_source: form.personalitySource,
     ai_analysis_interval: Number(evoPrev.ai_analysis_interval) || 15,
-    max_change_per_event: Number(evoPrev.max_change_per_event) || 0.05,
+    max_change_per_event: form.maxChangePerEvent,
     max_total_change: Number(evoPrev.max_total_change) || 0.5,
   }
   const memPrev =

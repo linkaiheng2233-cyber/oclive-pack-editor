@@ -15,6 +15,8 @@
 | **本仓库** | 产出 `manifest.json`、`settings.json`、`core_personality.txt`、可选 **`knowledge/**/*.md`**（多文件世界观）、占位场景、`assets/images/` 情绪图等；可选 **`creator_message.txt`**（创作者公告：可「整包一句」或「按行多条」；**oclivenewnew 不参与读取**，由 **oclive-launcher** 只读展示；约定见 [启动器 README](https://github.com/linkaiheng2233-cyber/oclive-launcher/blob/main/README.md#随包寄语与职责边界创作者公告)） |
 | **oclivenewnew** | 加载、校验与对话；契约原文在其仓库 **`creator-docs/`** 与 **`roles/README_MANIFEST.md`** |
 
+**性格档案**：本编写器编辑包内 **核心性格档案**（`core_personality.txt`）与 **`evolution`**（含 **`personality_source`**、`max_change_per_event`）。若选用 **`profile`**，运行时的 **可变性格档案**由 oclive 在数据库中维护，**不可**在包内手写；设计说明见 oclivenewnew **[personality-archive-notes.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/docs/personality-archive-notes.md)**，思路变化见 **[design-axis-evolution.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/docs/design-axis-evolution.md)**。
+
 **版本对齐**：`src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 应与 **oclivenewnew** `src-tauri/Cargo.toml` 的 **`version`** 一致；导出前校验（含可选 wasm）会检查 **`manifest.min_runtime_version`** 与 **`manifest.json` / `settings.json` 顶层键**（见 [PACK_VERSIONING.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/role-pack/PACK_VERSIONING.md)）。
 
 路径约定（Windows 示例）：与 `oclivenewnew` **同级**放置本仓库，例如 `D:\oclive-pack-editor` 与 `D:\oclivenewnew`。
@@ -49,8 +51,8 @@
 ## 创作模式
 
 - **简单创作**
-  - **基础**：人设长文（写入 `core_personality.txt`）与 **情绪图片**（导出至 `assets/images/`，文件名需与 oclive 情绪资源命名一致）。
-  - **进阶**（可折叠）：场景、用户身份、**世界观**（`knowledge/world.md`）、**事件影响系数**（角色受影响程度）等，对应背后的 `manifest.json` / `settings.json`。
+  - **基础**：**核心性格档案**长文（写入 `core_personality.txt`）与 **情绪图片**（导出至 `assets/images/`，文件名需与 oclive 情绪资源命名一致）。
+  - **进阶**（可折叠）：场景、用户身份、**世界观**（`knowledge/world.md`）、**事件影响系数**、**人格来源**（`evolution.personality_source`）、**单轮可变档案步长**（`max_change_per_event`）等，对应背后的 `manifest.json` / `settings.json`。
   - **对话推理（大脑）**（进阶 · 引擎设置）：与 **oclive-launcher** 对齐，选择 **本机 Ollama**（填写 `model`）或 **云端 Remote LLM**（包内 `plugin_backends.llm: remote`）；云端侧车 URL 在启动 oclive 时由启动器注入 `OCLIVE_REMOTE_LLM_URL`，协议见 oclivenewnew `REMOTE_PLUGIN_PROTOCOL.md`。记忆 / 情绪 / 事件 / Prompt 四类后端仍在同页「其他插件后端」中配置。
 - **高级创作**：分标签编辑 **manifest.json**、**settings.json**、**core_personality.txt**、**知识 Markdown（`knowledge/*.md`）**、**情绪图片列表**；适合插件字段、多身份与完整包结构。
 - **世界观与知识文件（高级 · 世界观）**
@@ -60,7 +62,7 @@
   - **知识强调预览 / 调参助手**（仅编辑器内近似）：输入关键词可预览命中与原因、正文片段；可选「预览条件：场景」与严格场景开关；**临时权重滑杆**只影响预览排序，满意后再写入真实 `weight`。运行时召回以 oclivenewnew 为准，预览用于创作调参。
 - **导入角色包**：支持 **`.zip` / `.ocpak`**，解析后回填上述内容，便于在已有包上修改或另存为新包。导入时会校验 zip 内路径：拒绝含 `..` / `.` 段的非法路径（防 zip-slip）；情绪图仅接受 `{roleId}/assets/images/` 下**单层**文件名（不接受子目录）。
 
-**简单创作已覆盖（表单 → JSON）**：`manifest` 侧 `id` / `name` / `version` / `author` / `description` / `min_runtime_version`（可选）/ `scenes` / `default_personality` / 单槽 `user_relations` + `default_relation` / **`knowledge.enabled` 与 `knowledge.glob`**（与 `settings.knowledge` 同步写入，合并时 settings 优先）；`settings` 侧 `schema_version` / `model` / `evolution.event_impact_factor`（其余演化字段保留原 JSON）/ `identity_binding` / `interaction_mode` / `memory_config.scene_weight_multiplier`（`topic_weights` 等保留）/ `remote_presence.default_enabled` / `plugin_backends`。**仍须高级创作或手写 JSON 的典型项**：多身份并存、`life_trajectory` / `life_schedule`、`dev_only`、`autonomous_scene`、逐场景 `topic_weights` 精调等（见 oclivenewnew `PACK_VERSIONING.md`）。
+**简单创作已覆盖（表单 → JSON）**：`manifest` 侧 `id` / `name` / `version` / `author` / `description` / `min_runtime_version`（可选）/ `scenes` / `default_personality` / 单槽 `user_relations` + `default_relation` / **`knowledge.enabled` 与 `knowledge.glob`**（与 `settings.knowledge` 同步写入，合并时 settings 优先）；`settings` 侧 `schema_version` / `model` / `evolution.event_impact_factor` / **`evolution.personality_source`** / **`evolution.max_change_per_event`**（`ai_analysis_interval`、`max_total_change` 等其余演化字段保留原 JSON）/ `identity_binding` / `interaction_mode` / `memory_config.scene_weight_multiplier`（`topic_weights` 等保留）/ `remote_presence.default_enabled` / `plugin_backends`。**仍须高级创作或手写 JSON 的典型项**：多身份并存、`life_trajectory` / `life_schedule`、`dev_only`、`autonomous_scene`、逐场景 `topic_weights` 精调等（见 oclivenewnew `PACK_VERSIONING.md`）。
 
 编写器 **不包含**对话引擎本体；**试聊**页可连接本机已启动的 **oclivenewnew HTTP API**（`--api`，默认端口 `8420`），用与导出包一致的 `role_path` 做快速对话。导出后也可将角色目录放入运行时的 **roles 根** 下，由完整 oclive 进程加载测试。
 

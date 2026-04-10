@@ -221,7 +221,7 @@ function resetAllPreviewWeightOverrides(): void {
         @click="advancedTab = 'core'"
       >
         <span class="tab-stack">
-          <span class="tab-title">人设与寄语</span>
+          <span class="tab-title">核心档案与寄语</span>
           <span class="tab-file">core / 公告</span>
         </span>
       </button>
@@ -370,10 +370,10 @@ function resetAllPreviewWeightOverrides(): void {
     <section v-show="advancedTab === 'core'" class="panel adv-single">
       <div class="adv-section-head">
         <h2 class="adv-h2">
-          <span>人设长文（core_personality）</span>
+          <span>核心性格档案（core_personality.txt）</span>
           <HelpHint :paragraphs="ADV_CORE_TXT" />
         </h2>
-        <p class="adv-lead">用自然语言写性格与说话习惯即可，不必写代码。</p>
+        <p class="adv-lead">用自然语言写性格与说话习惯即可，不必写代码；运行时的「可变性格档案」由模型维护，包内不可手写。</p>
       </div>
       <textarea
         v-model="corePersonality"
@@ -384,11 +384,11 @@ function resetAllPreviewWeightOverrides(): void {
       <div class="adv-dock-stack">
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          aria-label="人设长文可改范围"
+          aria-label="核心性格档案可改范围"
         >
           <summary class="adv-examples-dock-summary">
             <span class="adv-examples-badge">重点</span>
-            <span class="adv-examples-dock-title">人设长文 · 可改范围说明</span>
+            <span class="adv-examples-dock-title">核心性格档案 · 可改范围说明</span>
           </summary>
           <div class="adv-examples-dock-body">
             <h4 class="adv-ex-part">可改范围</h4>
@@ -405,11 +405,11 @@ function resetAllPreviewWeightOverrides(): void {
         </details>
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          aria-label="人设长文常见问题"
+          aria-label="核心性格档案常见问题"
         >
           <summary class="adv-examples-dock-summary">
             <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
-            <span class="adv-examples-dock-title">常见问题 · 人设长文（改进前 / 改进后对照）</span>
+            <span class="adv-examples-dock-title">常见问题 · 核心性格档案（改进前 / 改进后对照）</span>
           </summary>
           <div class="adv-examples-dock-body">
             <p class="adv-examples-dock-note">对照上方正文；以下为<strong>参考片段</strong>，不必整段复制。</p>

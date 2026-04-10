@@ -6,7 +6,7 @@ import type { AdvFaqItem } from './advancedEditorFaq'
 export const SIMPLE_BASE_FAQ: readonly AdvFaqItem[] = [
   {
     id: 'sb-core',
-    question: '人设长文一定要写得很长吗？',
+    question: '核心性格档案一定要写得很长吗？',
     plainExplain: '不用。写清楚「怎么说话、怕什么、对谁亲」就行，长短随你；后面随时能改。',
     beforeCode: `（空着）`,
     afterCode: `性格：表面冷淡，熟悉后会多吐槽两句。
@@ -57,7 +57,8 @@ export const SIMPLE_MANIFEST_FAQ: readonly AdvFaqItem[] = [
   {
     id: 'sm-traits',
     question: '七维数字我瞎填行不行？',
-    plainExplain: '都在 0～1 之间。可以先 0.5 一排，再按性格微调一两个，别全拉满或全归零。',
+    plainExplain:
+      '都在 0～1 之间。可以先 0.5 一排，再按性格微调。若包内选「档案」人格来源，七维在运行时多为视图，仍会写入包作默认。',
     beforeCode: `0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5`,
     afterCode: `0.4, 0.6, 0.5, 0.3, 0.7, 0.5, 0.6`,
     highlightAfter: ['0.4', '0.6'],
@@ -84,10 +85,20 @@ export const SIMPLE_SETTINGS_FAQ: readonly AdvFaqItem[] = [
   {
     id: 'ss-eif',
     question: '「事件影响系数」是干嘛的？',
-    plainExplain: '数字大，剧情事件对好感等影响更明显；先小步改，别一下拉特别夸张。',
+    plainExplain:
+      '数字大，剧情事件对好感等影响更明显。档案人格来源下，七维直接增量会弱化，变化更多走「可变性格档案」。先小步改。',
     beforeCode: `事件影响系数：1.0`,
     afterCode: `事件影响系数：1.2`,
     highlightAfter: ['1.2'],
+  },
+  {
+    id: 'ss-profile',
+    question: '「人格来源」经典和档案有什么区别？',
+    plainExplain:
+      '经典以七维增量等为主。档案以包内核心性格档案为锁定基底，运行时可变档案由模型写；你调 max_change_per_event 等，不能手写可变正文。',
+    beforeCode: `人格来源：经典（vector）`,
+    afterCode: `人格来源：档案（profile）`,
+    highlightAfter: ['profile'],
   },
   {
     id: 'ss-plugins',

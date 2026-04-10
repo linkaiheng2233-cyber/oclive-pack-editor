@@ -5,12 +5,13 @@
 /** 整个「基础」分区：简单创作在干什么 */
 export const SIMPLE_BASE_INTRO = [
   '简单创作用表单代替手写 JSON：你填的每一项，保存或导出时会写进角色包里的对应文件；玩家用 oclive 加载这个包时，就会按这些设定来演角色、显示界面。',
-  '基础区三件事：人设长文（怎么演）、情绪图（长什么样）、创作者公告（可选，只在启动器等地方展示给玩家看）。',
+  '基础区三件事：核心性格档案长文（怎么演）、情绪图（长什么样）、创作者公告（可选，只在启动器等展示给玩家看）。',
 ] as const
 
-/** 人设长文 */
+/** 核心性格档案（core_personality.txt） */
 export const SIMPLE_CORE_PERSONALITY = [
-  '这一大段会写进 core_personality.txt，并进入对话「大脑」用的提示里，直接影响 AI 怎么说话、怎么理解你和世界。',
+  '这一大段是「核心性格档案」：写入 core_personality.txt，进入对话提示；运行时 AI 不得改写该正文。',
+  '另有「可变性格档案」仅存运行时数据库，全由模型在对话后维护；你只能通过 evolution（如单轮变化步长）调强弱，不能手写那份可变正文。',
   '用平常话写性格、口癖、雷区、关系即可；不必写代码。留空或太短，角色可能只剩 manifest 里几行干巴巴的信息。',
 ] as const
 
@@ -50,7 +51,7 @@ export const SIMPLE_FIELD_VERSION_AUTHOR = [
 ] as const
 
 export const SIMPLE_FIELD_DESCRIPTION = [
-  '一两句简介，用在列表、详情里让人快速懂这个角色。不会直接当成长篇设定喂给模型；长篇请写在上方「人设描述」。',
+  '一两句简介，用在列表、详情里让人快速懂这个角色。不会直接当成长篇设定喂给模型；长篇请写在上方「核心性格档案」。',
 ] as const
 
 export const SIMPLE_FIELD_MIN_RUNTIME = [
@@ -63,8 +64,9 @@ export const SIMPLE_FIELD_SCENES = [
 ] as const
 
 export const SIMPLE_TRAITS = [
-  '七个 0～1 的数字描述默认性格倾向：例如更黏人、更话多等。会写进 manifest，供运行时调语气或相关系统使用。',
-  '不是「越大越好」：按角色人设微调即可；全 0.5 表示不偏不倚的中性起点。',
+  '七个 0～1 的数字描述默认性格倾向：会写进 manifest，供运行时调语气或相关系统使用。',
+  '人格来源选「档案」时，按设计七维多为从正文归纳的视图；滑条仍写入包内作为默认与参考。',
+  '不是「越大越好」：按人设微调即可；全 0.5 表示中性起点。',
 ] as const
 
 export const SIMPLE_USER_RELATION = [
@@ -100,7 +102,20 @@ export const SIMPLE_SCHEMA_VERSION = [
 
 export const SIMPLE_EVENT_IMPACT = [
   '事件影响系数：剧情里的事件（例如约会、冲突）对好感、状态等的影响强度。数值越大，同样事件带来的变化越明显。',
+  '人格来源为「档案」时，事件对七维的直接增量会弱化，变化更多通过模型更新「可变性格档案」体现。',
   '建议每次只改一点（例如 0.05），用试聊感受再导出。',
+] as const
+
+/** evolution.personality_source */
+export const SIMPLE_PERSONALITY_SOURCE = [
+  '经典（vector）：仍以七维增量等方式为主驱动性格变化。',
+  '档案（profile）：以「核心性格档案」为锁定的基底；运行时的「可变性格档案」由模型维护，包内只配 evolution，不可手写那份可变正文。',
+] as const
+
+/** evolution.max_change_per_event */
+export const SIMPLE_MAX_CHANGE_PER_EVENT = [
+  '约束模型单轮更新「可变性格档案」的步长语义（概念上类似「每次允许挪多远」）；过小易显呆板，过大可能不稳。常用约 0.01～0.5。',
+  '经典模式下该键仍存在；若主要用档案模式，可更关注此项与上面的档案说明。',
 ] as const
 
 export const SIMPLE_IDENTITY_BINDING = [

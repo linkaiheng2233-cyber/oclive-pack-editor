@@ -20,7 +20,8 @@ export const ADV_SETTINGS = [
 ] as const
 
 export const ADV_CORE_TXT = [
-  '这里是角色的长文设定：性格、说话习惯、禁忌等，会进入对话「大脑」的提示里。',
+  '这里是「核心性格档案」：性格、说话习惯、禁忌等，会进入对话提示；运行时 AI 不得改写该正文。',
+  '「可变性格档案」仅存运行时，由模型在对话后更新；你只能通过 evolution（如 max_change_per_event）调强弱。',
   '用自然语言写即可，不必写代码。段落之间空行有助于阅读；过长可能影响单次请求长度，可按需精简。',
 ] as const
 
@@ -49,7 +50,7 @@ export const MANIFEST_KEY_GUIDE: readonly { key: string; say: string }[] = [
   { key: 'id', say: '角色内部 id，通常和文件夹名一致' },
   { key: 'name / version / author / description', say: '展示名、版本、作者、简介' },
   { key: 'scenes', say: '有哪些场景（字符串数组）' },
-  { key: 'default_personality', say: '性格七维，0～1 的小数' },
+  { key: 'default_personality', say: '性格七维 0～1；选 profile 人格来源时多为视图，仍建议填写' },
   { key: 'user_relations / default_relation', say: '用户身份（好友/恋人等）与默认身份' },
   { key: 'min_runtime_version', say: '可选，最低 oclive 版本，太低会拒绝加载' },
   { key: 'knowledge', say: '是否启用知识库与文件匹配规则等' },
@@ -106,7 +107,8 @@ export const MANIFEST_FIELD_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
   {
     field: 'default_personality',
     meaning: '性格七维，长度 7 的数组，每项 0～1。',
-    scope: '可逐项调小数；顺序对应：倔强、黏人、敏感、强势、宽容、话多、温暖（与 oclive 文档一致）。',
+    scope:
+      '可逐项调小数；顺序对应：倔强、黏人、敏感、强势、宽容、话多、温暖。若 evolution.personality_source 为 profile，运行时展示条多为从正文归纳的视图，包内仍写入作默认与参考。',
   },
   {
     field: 'user_relations',
@@ -181,8 +183,13 @@ export const SETTINGS_FIELD_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
   },
   {
     field: 'evolution.event_impact_factor',
-    meaning: '事件对好感、关系等影响的强度系数。',
-    scope: '可在引擎允许范围内调（简单创作约 0.05～5）；过大可能导致数值波动过激。',
+    meaning: '事件对好感、关系以及（profile 模式下）可变人设档案演化的强度系数。',
+    scope: '可在引擎允许范围内调（简单创作约 0.05～5）；过大可能导致数值或档案波动过激。',
+  },
+  {
+    field: 'evolution.personality_source',
+    meaning: 'vector：传统七维增量；profile：人设档案为核心，七维仅视图。',
+    scope: 'profile 时「可变人设」由运行时模型维护，编写器不能手写该档案，只能调 evolution 数值影响强弱。',
   },
   {
     field: 'evolution.ai_analysis_interval',
@@ -191,8 +198,8 @@ export const SETTINGS_FIELD_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
   },
   {
     field: 'evolution.max_change_per_event / max_total_change',
-    meaning: '单次事件与累计允许的人设/数值变化上限。',
-    scope: '可微调；避免极端值导致人设漂移过快。',
+    meaning: '单次与累计允许的变化上限；在 profile 模式下主要约束 LLM 更新可变档案时的「步子」与长期漂移提醒。',
+    scope: '可微调；过小几乎不动档案，过大易戏剧化。',
   },
   {
     field: 'identity_binding',
@@ -310,7 +317,7 @@ export const EMOTION_ASSET_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
 export const CORE_PERSONALITY_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
   {
     field: '整体内容',
-    meaning: '角色性格、口癖、关系观、禁忌等长文，会进入主对话相关提示。',
+    meaning: '「核心性格档案」：性格、口癖、关系观、禁忌等长文，会进入主对话相关提示；运行时不可被模型改写。',
     scope: '可完全自定义自然语言；不需要 JSON；建议分段写清。',
   },
   {

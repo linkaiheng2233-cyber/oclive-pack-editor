@@ -500,6 +500,10 @@ async function send(): Promise<void> {
               presenceLabel(m.meta.presence_mode)
             }}</span>
             <span v-if="m.meta.relation_state" class="chip">关系 {{ m.meta.relation_state }}</span>
+            <span
+              v-if="m.meta.personality_source"
+              class="chip"
+            >人格·{{ m.meta.personality_source === 'profile' ? '档案' : '七维' }}</span>
             <span v-if="formatFavorMeta(m.meta)" class="chip">{{ formatFavorMeta(m.meta) }}</span>
             <span v-if="m.meta.bot_emotion" class="chip">情绪 {{ m.meta.bot_emotion }}</span>
             <span v-if="m.meta.portrait_emotion" class="chip">立绘 {{ m.meta.portrait_emotion }}</span>

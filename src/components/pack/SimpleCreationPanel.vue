@@ -11,6 +11,7 @@ import {
   SIMPLE_CREATOR_MESSAGE_BODY,
   SIMPLE_CREATOR_MESSAGE_MODE,
   SIMPLE_EVENT_IMPACT,
+  SIMPLE_MAX_CHANGE_PER_EVENT,
   SIMPLE_FIELD_DESCRIPTION,
   SIMPLE_FIELD_DISPLAY_NAME,
   SIMPLE_FIELD_MIN_RUNTIME,
@@ -21,6 +22,7 @@ import {
   SIMPLE_INTERACTION_MODE,
   SIMPLE_KNOWLEDGE,
   SIMPLE_MANIFEST_INTRO,
+  SIMPLE_PERSONALITY_SOURCE,
   SIMPLE_PLUGIN_BACKENDS,
   SIMPLE_REMOTE_PRESENCE,
   SIMPLE_SCENE_WEIGHT,
@@ -68,18 +70,18 @@ const emit = defineEmits<{
 
     <section class="panel base-panel">
       <div class="section-title-row">
-        <h2>基础：人设与情绪图</h2>
+        <h2>基础：核心档案与情绪图</h2>
         <HelpHint :paragraphs="SIMPLE_BASE_INTRO" />
       </div>
       <p class="base-desc">
-        这一页用大白话填表，保存后就会写进包里：<strong>人设</strong>决定 AI 怎么演，
+        这一页用大白话填表，保存后就会写进包里：<strong>核心性格档案</strong>（包内长文）决定 AI 怎么演，
         <strong>情绪图</strong>决定立绘用哪些文件（文件名要和 oclive 约定一致，如
         <code>happy.png</code>），运行时读 <code>core_personality.txt</code> 与
         <code>assets/images/</code>。
       </p>
       <div class="form-row">
         <div class="label-hint-row">
-          <label for="core-ta">人设描述（长文）</label>
+          <label for="core-ta">核心性格档案（长文）</label>
           <HelpHint :paragraphs="SIMPLE_CORE_PERSONALITY" />
         </div>
         <textarea
@@ -132,12 +134,12 @@ const emit = defineEmits<{
           :placeholder="
             creatorMessageMode === 'unified'
               ? '例如：别怕改设定，第三次导出就顺了。'
-              : '第一行：场景模块作者留话\n第二行：人设模块…\n（空行会被忽略）'
+              : '第一行：场景模块作者留话\n第二行：核心档案模块…\n（空行会被忽略）'
           "
         />
       </div>
       <details class="simple-faq-details">
-        <summary class="simple-faq-sum">常见问题 · 基础区（人设、立绘、寄语）</summary>
+        <summary class="simple-faq-sum">常见问题 · 基础区（核心档案、立绘、寄语）</summary>
         <AdvFaqList :items="SIMPLE_BASE_FAQ" show-intro />
       </details>
     </section>
@@ -218,6 +220,9 @@ const emit = defineEmits<{
             <h3 class="h3">性格七维（0～1）</h3>
             <HelpHint :paragraphs="SIMPLE_TRAITS" />
           </div>
+          <p v-if="simpleS.personalitySource === 'profile'" class="hint tiny">
+            当前为「档案」人格来源：七维在运行时多为从正文归纳的视图；下方数字仍会写入包内作默认与参考。
+          </p>
           <div class="traits">
             <div v-for="(k, i) in PERSONALITY_KEYS" :key="k" class="form-row trait">
               <label :for="`p-${k}`">{{ PERSONALITY_LABELS_ZH[k] }}</label>
@@ -386,6 +391,30 @@ const emit = defineEmits<{
               min="0.05"
               max="5"
               step="0.05"
+            />
+          </div>
+          <div class="form-row">
+            <div class="label-hint-row">
+              <label for="f-psrc">人格来源（personality_source）</label>
+              <HelpHint :paragraphs="SIMPLE_PERSONALITY_SOURCE" />
+            </div>
+            <select id="f-psrc" v-model="simpleS.personalitySource">
+              <option value="vector">经典（vector）：七维增量为主</option>
+              <option value="profile">档案（profile）：核心长文 + 运行时可变档案</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="label-hint-row">
+              <label for="f-mce">单轮可变档案步长（max_change_per_event）</label>
+              <HelpHint :paragraphs="SIMPLE_MAX_CHANGE_PER_EVENT" />
+            </div>
+            <input
+              id="f-mce"
+              v-model.number="simpleS.maxChangePerEvent"
+              type="number"
+              min="0.01"
+              max="0.5"
+              step="0.01"
             />
           </div>
           <div class="form-row">

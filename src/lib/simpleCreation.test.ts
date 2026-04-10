@@ -8,6 +8,7 @@ import {
   knowledgeFromPackRecords,
   manifestRecordToSimpleForm,
   normalizeKnowledgeGlob,
+  settingsRecordToSimpleForm,
 } from './simpleCreation'
 
 describe('simpleCreation', () => {
@@ -81,5 +82,30 @@ describe('simpleCreation', () => {
     })
     expect(JSON.parse(mOut).knowledge).toEqual({ enabled: false, glob: 'knowledge/custom/*.md' })
     expect(JSON.parse(sOut).knowledge).toEqual({ enabled: false, glob: 'knowledge/custom/*.md' })
+  })
+
+  it('settings evolution personality_source and max_change_per_event roundtrip', () => {
+    const base = JSON.stringify({
+      evolution: {
+        event_impact_factor: 1,
+        ai_analysis_interval: 20,
+        max_change_per_event: 0.12,
+        max_total_change: 0.4,
+        personality_source: 'profile',
+      },
+    })
+    const rec = JSON.parse(base) as Record<string, unknown>
+    const form = settingsRecordToSimpleForm(rec)
+    expect(form.personalitySource).toBe('profile')
+    expect(form.maxChangePerEvent).toBe(0.12)
+    const out = applySimpleSettingsToJson(base, form, {
+      enabled: true,
+      glob: 'knowledge/**/*.md',
+    })
+    const o = JSON.parse(out) as { evolution: Record<string, unknown> }
+    expect(o.evolution.personality_source).toBe('profile')
+    expect(o.evolution.max_change_per_event).toBe(0.12)
+    expect(o.evolution.ai_analysis_interval).toBe(20)
+    expect(o.evolution.max_total_change).toBe(0.4)
   })
 })

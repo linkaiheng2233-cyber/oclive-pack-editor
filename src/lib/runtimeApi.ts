@@ -18,7 +18,9 @@ export async function runtimeTcpListening(host: string, port: number): Promise<b
 const HEALTH_FETCH_MS = 12_000
 const CHAT_FETCH_MS = 300_000
 
-/** 与 oclive `SendMessageResponse` 对齐的子集（HTTP 试聊 JSON）。字段均可能缺失以兼容旧运行时。 */
+/** 与 oclive `SendMessageResponse` 对齐的子集（HTTP 试聊 JSON），并含 `--api` 回包顶层的 `personality_source`。字段均可能缺失以兼容旧运行时。 */
+export type RuntimePersonalitySource = 'vector' | 'profile'
+
 export interface RuntimeChatMeta {
   api_version?: number
   schema?: number
@@ -36,6 +38,8 @@ export interface RuntimeChatMeta {
   reply_is_fallback?: boolean
   knowledge_chunks_in_prompt?: number
   timestamp?: number
+  /** `evolution.personality_source`；较新 oclive `--api` 在每条 `/chat` 响应中附带 */
+  personality_source?: RuntimePersonalitySource
 }
 
 export interface RuntimeChatResult {
@@ -61,6 +65,7 @@ const CHAT_META_KEYS: (keyof RuntimeChatMeta)[] = [
   'reply_is_fallback',
   'knowledge_chunks_in_prompt',
   'timestamp',
+  'personality_source',
 ]
 
 function parseRuntimeChatJson(text: string): RuntimeChatResult {

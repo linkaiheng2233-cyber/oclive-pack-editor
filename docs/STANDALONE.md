@@ -4,7 +4,7 @@
 
 - **本编写器产品**使用仓库 / 文件夹 **`oclive-pack-editor`**（可与 `oclivenewnew` 同级放在 D 盘等任意路径）。
 - **运行时（玩家端）**在另一仓库 **`oclivenewnew`**；两仓 **不** 互相作为子模块、**不** 共享 `package.json`。
-- **唯一对接面**：本地磁盘上的角色包目录（或 zip），结构与 oclivenewnew 的 `creator-docs/`、`roles/README_MANIFEST.md` 一致。
+- **唯一对接面**：本地磁盘上的角色包目录（或 zip），结构与 oclivenewnew 的 `creator-docs/`、`roles/README_MANIFEST.md` 一致；**性格档案**轴心见 oclivenewnew **`docs/personality-archive-notes.md`**。
 
 在 Cursor / VS Code 中可用多根工作区同时打开两项目；编写器仓内 **不要** 复制或依赖 oclivenewnew 源码，README 链到契约文档即可。
 
