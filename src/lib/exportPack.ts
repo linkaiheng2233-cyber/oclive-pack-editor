@@ -21,6 +21,10 @@ function minimalSceneJson(displayName: string): string {
 }
 
 export type PackExtraFiles = {
+  /** 可选：`roles/{id}/author.json` 全文 */
+  authorJson?: string
+  /** 可选：`roles/{id}/ui.json` 全文 */
+  uiConfigJson?: string
   /** 对应 roles/{id}/core_personality.txt */
   corePersonality: string
   /** 兼容旧路径：有内容时写入 knowledge/world.md（含 front matter） */
@@ -57,6 +61,16 @@ export function buildRolePackFiles(
 
   files.set(`${id}/manifest.json`, JSON.stringify(m, null, 2) + '\n')
   files.set(`${id}/settings.json`, JSON.stringify(settings, null, 2) + '\n')
+
+  const uiRaw = extra?.uiConfigJson?.trim()
+  if (uiRaw) {
+    files.set(`${id}/ui.json`, uiRaw.endsWith('\n') ? uiRaw : `${uiRaw}\n`)
+  }
+
+  const authorRaw = extra?.authorJson?.trim()
+  if (authorRaw) {
+    files.set(`${id}/author.json`, authorRaw.endsWith('\n') ? authorRaw : `${authorRaw}\n`)
+  }
 
   const core = (extra?.corePersonality ?? '').trim()
   files.set(

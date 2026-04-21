@@ -1,6 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::Deserialize;
+use serde::Serialize;
+use std::collections::HashMap;
 use std::sync::OnceLock;
 use std::time::Duration;
 
@@ -205,6 +207,169 @@ fn read_role_manifest_scenes(role_dir: String) -> Result<Vec<String>, String> {
         .collect())
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct UiSlotVariantInfo {
+    slot: String,
+    appearance_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    label: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DirectoryPluginInfo {
+    id: String,
+    version: String,
+    provides: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    plugin_type: Option<String>,
+    is_shell: bool,
+    ui_slot_names: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    ui_slot_variants: Vec<UiSlotVariantInfo>,
+}
+
+fn collect_directory_plugins_from_root(
+    root: &std::path::Path,
+    out: &mut HashMap<String, DirectoryPluginInfo>,
+) -> Result<(), String> {
+    use std::fs;
+    if !root.is_dir() {
+        return Ok(());
+    }
+    for ent in fs::read_dir(root).map_err(|e| e.to_string())? {
+        let ent = ent.map_err(|e| e.to_string())?;
+        let p = ent.path();
+        if !p.is_dir() {
+            continue;
+        }
+        let mf = p.join("manifest.json");
+        if !mf.is_file() {
+            continue;
+        }
+        let raw = fs::read_to_string(&mf).map_err(|e| e.to_string())?;
+        let v: serde_json::Value = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
+        if v.get("schema_version").and_then(|x| x.as_u64()).unwrap_or(0) != 1 {
+            continue;
+        }
+        let id = v
+            .get("id")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if id.is_empty() {
+            continue;
+        }
+        let version = v
+            .get("version")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string();
+        let provides: Vec<String> = v
+            .get("provides")
+            .and_then(|x| x.as_array())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|i| i.as_str().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let plugin_type = v
+            .get("type")
+            .and_then(|x| x.as_str())
+            .map(str::to_string);
+        let is_shell = v.get("shell").is_some();
+        let mut ui_slot_variants: Vec<UiSlotVariantInfo> = Vec::new();
+        let mut ui_slot_names: Vec<String> = Vec::new();
+        if let Some(arr) = v.get("ui_slots").and_then(|x| x.as_array()) {
+            let mut seen_slot: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
+            for o in arr {
+                let Some(slot) = o.get("slot").and_then(|s| s.as_str()).map(str::trim) else {
+                    continue;
+                };
+                if slot.is_empty() {
+                    continue;
+                }
+                let appearance_id = o
+                    .get("appearance_id")
+                    .or_else(|| o.get("appearanceId"))
+                    .and_then(|x| x.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                let label = o
+                    .get("label")
+                    .and_then(|x| x.as_str())
+                    .map(|s| s.to_string());
+                ui_slot_variants.push(UiSlotVariantInfo {
+                    slot: slot.to_string(),
+                    appearance_id,
+                    label,
+                });
+                if seen_slot.insert(slot.to_string()) {
+                    ui_slot_names.push(slot.to_string());
+                }
+            }
+        }
+        out.insert(
+            id.clone(),
+            DirectoryPluginInfo {
+                id,
+                version,
+                provides,
+                plugin_type,
+                is_shell,
+                ui_slot_names,
+                ui_slot_variants,
+            },
+        );
+    }
+    Ok(())
+}
+
+/// 扫描目录插件：`roles_root` 非空时扫描 **其上一级** 的 `plugins/` 与 **当前工作目录** 的 `plugins/`（与主程序导出后行为一致）；
+/// `roles_root` 为空或省略时扫描 **`PLUGINS_GLOBAL_PATH`**（若设置）、**应用数据目录** `plugins/`、以及 **cwd** `plugins/`。
+#[tauri::command]
+fn list_directory_plugins_for_roles_root(
+    app: tauri::AppHandle,
+    roles_root: Option<String>,
+) -> Result<Vec<DirectoryPluginInfo>, String> {
+    use std::path::{Path, PathBuf};
+    let mut map = HashMap::new();
+    let trimmed = roles_root
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("");
+
+    if !trimmed.is_empty() {
+        let root = PathBuf::from(trimmed);
+        if let Some(parent) = root.parent() {
+            let p = parent.join("plugins");
+            collect_directory_plugins_from_root(&p, &mut map)?;
+        }
+        collect_directory_plugins_from_root(&PathBuf::from("plugins"), &mut map)?;
+    } else {
+        if let Ok(v) = std::env::var("PLUGINS_GLOBAL_PATH") {
+            let t = v.trim();
+            if !t.is_empty() {
+                collect_directory_plugins_from_root(Path::new(t), &mut map)?;
+            }
+        }
+        if let Some(ad) = app.path_resolver().app_data_dir() {
+            collect_directory_plugins_from_root(&ad.join("plugins"), &mut map)?;
+        }
+        collect_directory_plugins_from_root(&PathBuf::from("plugins"), &mut map)?;
+    }
+
+    let mut v: Vec<DirectoryPluginInfo> = map.into_values().collect();
+    v.sort_by(|a, b| a.id.cmp(&b.id));
+    Ok(v)
+}
+
 /// 启动本机 oclive 可执行文件（`--api --port`），用于试聊前拉起运行时。
 #[tauri::command]
 fn spawn_oclive_api(exe_path: String, port: u16, host: String) -> Result<(), String> {
@@ -232,16 +397,35 @@ fn spawn_oclive_api(exe_path: String, port: u16, host: String) -> Result<(), Str
     Ok(())
 }
 
+#[tauri::command]
+fn read_text_file(path: String) -> Result<String, String> {
+    std::fs::read_to_string(path.trim()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn write_text_file(path: String, content: String) -> Result<(), String> {
+    use std::fs;
+    use std::path::Path;
+    let p = Path::new(path.trim());
+    if let Some(parent) = p.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    fs::write(p, content.as_bytes()).map_err(|e| e.to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             write_role_pack_files,
             write_role_pack_binaries,
+            read_text_file,
+            write_text_file,
             runtime_tcp_listening,
             runtime_api_health,
             runtime_api_chat,
             read_role_manifest_scenes,
             spawn_oclive_api,
+            list_directory_plugins_for_roles_root,
         ])
         .run(tauri::generate_context!())
         .expect("error while running oclive-pack-editor");

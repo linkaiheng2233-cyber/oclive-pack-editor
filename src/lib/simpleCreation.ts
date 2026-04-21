@@ -23,8 +23,8 @@ export const PERSONALITY_LABELS_ZH: Record<(typeof PERSONALITY_KEYS)[number], st
   warmth: '温暖',
 }
 
-export type PluginBackendOpt = 'builtin' | 'builtin_v2' | 'remote'
-export type LlmBackendOpt = 'ollama' | 'remote'
+export type PluginBackendOpt = 'builtin' | 'builtin_v2' | 'remote' | 'directory'
+export type LlmBackendOpt = 'ollama' | 'remote' | 'directory'
 /** 与 manifest `evolution.personality_source` 一致 */
 export type PersonalitySourceOpt = 'vector' | 'profile'
 
@@ -70,6 +70,12 @@ export type SimpleSettingsForm = {
   pluginEvent: PluginBackendOpt
   pluginPrompt: PluginBackendOpt
   pluginLlm: LlmBackendOpt
+  /** `plugin_backends.directory_plugins.*`，仅当对应模块为 `directory` 时使用 */
+  directoryPluginMemory: string
+  directoryPluginEmotion: string
+  directoryPluginEvent: string
+  directoryPluginPrompt: string
+  directoryPluginLlm: string
 }
 
 const DEFAULT_PERSONALITY = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
@@ -138,6 +144,11 @@ export function defaultSimpleSettingsForm(): SimpleSettingsForm {
     pluginEvent: 'builtin',
     pluginPrompt: 'builtin',
     pluginLlm: 'ollama',
+    directoryPluginMemory: '',
+    directoryPluginEmotion: '',
+    directoryPluginEvent: '',
+    directoryPluginPrompt: '',
+    directoryPluginLlm: '',
   }
 }
 
@@ -188,11 +199,31 @@ export function manifestRecordToSimpleForm(m: Record<string, unknown>): SimpleMa
   }
 }
 
+function parsePluginBackendOpt(raw: unknown): PluginBackendOpt {
+  const s = String(raw ?? '')
+    .trim()
+    .toLowerCase()
+  if (s === 'directory') return 'directory'
+  if (s === 'builtin_v2') return 'builtin_v2'
+  if (s === 'remote') return 'remote'
+  return 'builtin'
+}
+
+function parseLlmBackendOpt(raw: unknown): LlmBackendOpt {
+  const s = String(raw ?? '')
+    .trim()
+    .toLowerCase()
+  if (s === 'directory') return 'directory'
+  if (s === 'remote') return 'remote'
+  return 'ollama'
+}
+
 export function settingsRecordToSimpleForm(s: Record<string, unknown>): SimpleSettingsForm {
   const evo = (s.evolution ?? {}) as Record<string, unknown>
   const mem = (s.memory_config ?? {}) as Record<string, unknown>
   const rp = (s.remote_presence ?? {}) as Record<string, unknown>
   const pb = (s.plugin_backends ?? {}) as Record<string, unknown>
+  const dp = (pb.directory_plugins ?? {}) as Record<string, unknown>
 
   const eif = Number(evo.event_impact_factor)
   const mce = Number(evo.max_change_per_event)
@@ -210,11 +241,16 @@ export function settingsRecordToSimpleForm(s: Record<string, unknown>): SimpleSe
     interactionMode: s.interaction_mode === 'pure_chat' ? 'pure_chat' : 'immersive',
     remoteDefaultEnabled: Boolean(rp.default_enabled),
     sceneWeightMultiplier: Number.isFinite(swm) ? Math.max(0.1, swm) : 1.2,
-    pluginMemory: (pb.memory as PluginBackendOpt) === 'builtin_v2' || (pb.memory as PluginBackendOpt) === 'remote' ? (pb.memory as PluginBackendOpt) : 'builtin',
-    pluginEmotion: (pb.emotion as PluginBackendOpt) === 'builtin_v2' || (pb.emotion as PluginBackendOpt) === 'remote' ? (pb.emotion as PluginBackendOpt) : 'builtin',
-    pluginEvent: (pb.event as PluginBackendOpt) === 'builtin_v2' || (pb.event as PluginBackendOpt) === 'remote' ? (pb.event as PluginBackendOpt) : 'builtin',
-    pluginPrompt: (pb.prompt as PluginBackendOpt) === 'builtin_v2' || (pb.prompt as PluginBackendOpt) === 'remote' ? (pb.prompt as PluginBackendOpt) : 'builtin',
-    pluginLlm: pb.llm === 'remote' ? 'remote' : 'ollama',
+    pluginMemory: parsePluginBackendOpt(pb.memory),
+    pluginEmotion: parsePluginBackendOpt(pb.emotion),
+    pluginEvent: parsePluginBackendOpt(pb.event),
+    pluginPrompt: parsePluginBackendOpt(pb.prompt),
+    pluginLlm: parseLlmBackendOpt(pb.llm),
+    directoryPluginMemory: String(dp.memory ?? '').trim(),
+    directoryPluginEmotion: String(dp.emotion ?? '').trim(),
+    directoryPluginEvent: String(dp.event ?? '').trim(),
+    directoryPluginPrompt: String(dp.prompt ?? '').trim(),
+    directoryPluginLlm: String(dp.llm ?? '').trim(),
   }
 }
 
@@ -306,13 +342,33 @@ export function applySimpleSettingsToJson(
     ...((base.remote_presence as object) ?? {}),
     default_enabled: form.remoteDefaultEnabled,
   }
-  base.plugin_backends = {
+  const pb: Record<string, unknown> = {
     memory: form.pluginMemory,
     emotion: form.pluginEmotion,
     event: form.pluginEvent,
     prompt: form.pluginPrompt,
     llm: form.pluginLlm,
   }
+  const dir: Record<string, string> = {}
+  if (form.pluginMemory === 'directory' && form.directoryPluginMemory.trim()) {
+    dir.memory = form.directoryPluginMemory.trim()
+  }
+  if (form.pluginEmotion === 'directory' && form.directoryPluginEmotion.trim()) {
+    dir.emotion = form.directoryPluginEmotion.trim()
+  }
+  if (form.pluginEvent === 'directory' && form.directoryPluginEvent.trim()) {
+    dir.event = form.directoryPluginEvent.trim()
+  }
+  if (form.pluginPrompt === 'directory' && form.directoryPluginPrompt.trim()) {
+    dir.prompt = form.directoryPluginPrompt.trim()
+  }
+  if (form.pluginLlm === 'directory' && form.directoryPluginLlm.trim()) {
+    dir.llm = form.directoryPluginLlm.trim()
+  }
+  if (Object.keys(dir).length > 0) {
+    pb.directory_plugins = dir
+  }
+  base.plugin_backends = pb
 
   base.knowledge = {
     enabled: knowledge.enabled,

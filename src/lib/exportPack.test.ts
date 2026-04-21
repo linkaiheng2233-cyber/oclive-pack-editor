@@ -46,6 +46,21 @@ describe('buildRolePackFiles', () => {
     expect(files.get('x/creator_message.txt')).toBe('hello world\n')
   })
 
+  it('writes author.json when authorJson extra is set', () => {
+    const manifest = {
+      id: 'x',
+      name: 'N',
+      scenes: ['home'],
+      user_relations: { f: { favor_multiplier: 1, initial_favorability: 40 } },
+      default_relation: 'f',
+    }
+    const body = '{"schema_version":1,"summary":"hi"}\n'
+    const files = buildRolePackFiles('x', manifest, { schema_version: 1 }, {
+      authorJson: body,
+    })
+    expect(files.get('x/author.json')).toBe(body)
+  })
+
   it('writes multiple lines in per_module mode', () => {
     const manifest = {
       id: 'x',

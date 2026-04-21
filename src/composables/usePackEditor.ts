@@ -14,11 +14,23 @@ import { pickRolesRootAndWritePack, isFolderExportSupported } from '../lib/expor
 import { importRolePackFromZip, importedPackBrainHint } from '../lib/importPack'
 import { filterEmotionImageFiles } from '../lib/emotionAssets'
 import { prepareExportPayload } from '../lib/exportPrepare'
+import {
+  mergeEditorReplyQualityAnchor,
+  shouldPromptReplyQualityAnchor,
+} from '../lib/replyQualityAnchorPreset'
 import { parseJson, runAllPackChecks } from '../lib/packChecks'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from '../lib/knowledgeFiles'
 import { validateKnowledgeFiles } from '../lib/knowledgeFrontMatter'
 import { mergeMarketComposeIntoEditor, parseMarketComposeV1 } from '../lib/marketComposeImport'
 import type { CreatorMessageExportMode } from '../lib/rolePackCreatorMessage'
+import {
+  buildAuthorJsonDisk,
+  emptyAuthorRecRow,
+  parseAuthorImport,
+  type AuthorRecRow,
+} from '../lib/authorPack'
+import { parseUiConfigJson, serializeUiConfig } from '../lib/uiConfig'
+import { defaultUiConfig, type UiConfig } from '../types/uiConfig'
 import {
   applySimpleManifestToJson,
   applySimpleSettingsToJson,
@@ -51,6 +63,12 @@ export function usePackEditor() {
   /** unified：全文只导出首条非空行；per_module：每行一条（多模块各写一句时汇总） */
   const creatorMessageMode = ref<CreatorMessageExportMode>('unified')
 
+  const authorSummary = ref('')
+  const authorDetailMarkdown = ref('')
+  const authorRecommendedRows = ref<AuthorRecRow[]>([emptyAuthorRecRow()])
+  const authorIncludeSuggestedUi = ref(false)
+  const authorSuggestedBackendsJson = ref('')
+
   const validationErrors = ref<string[]>([])
   /** 最近一次检查是否用 wasm；`null` 表示本会话尚未跑过检查 */
   const validationLastUsedWasm = ref<boolean | null>(null)
@@ -68,6 +86,7 @@ export function usePackEditor() {
 
   const simpleM = reactive<SimpleManifestForm>(defaultSimpleManifestForm())
   const simpleS = reactive<SimpleSettingsForm>(defaultSimpleSettingsForm())
+  const uiConfig = reactive<UiConfig>(defaultUiConfig())
 
   const multiRelationWarning = computed(
     () => creationMode.value === 'simple' && countUserRelationKeys(manifestText.value) > 1,
@@ -88,13 +107,23 @@ export function usePackEditor() {
 
   function packExtra(): Partial<PackExtraFiles> {
     const docs = knowledgeMarkdownFiles.value.filter((d) => d.content.trim())
+    const authorJson = buildAuthorJsonDisk({
+      summary: authorSummary.value,
+      detailMarkdown: authorDetailMarkdown.value,
+      rows: authorRecommendedRows.value,
+      includeSuggestedUi: authorIncludeSuggestedUi.value,
+      uiConfig,
+      suggestedPluginBackendsJson: authorSuggestedBackendsJson.value,
+    })
     return {
+      uiConfigJson: serializeUiConfig(uiConfig),
       corePersonality: corePersonalityText.value,
       worldviewMarkdown: worldviewMarkdown.value,
       knowledgeMarkdownFiles: docs,
       emotionImages: emotionImageFiles.value,
       creatorMessage: creatorMessageToOthers.value,
       creatorMessageMode: creatorMessageMode.value,
+      ...(authorJson ? { authorJson } : {}),
     }
   }
 
@@ -303,6 +332,30 @@ export function usePackEditor() {
       knowledgeMarkdownFiles.value = imp.knowledgeMarkdownFiles
       emotionImageFiles.value = imp.emotionImageFiles
       creatorMessageToOthers.value = imp.creatorMessage
+      Object.assign(uiConfig, parseUiConfigJson(imp.uiJson || '{}'))
+      if (imp.authorJson.trim()) {
+        const pa = parseAuthorImport(imp.authorJson)
+        if (pa) {
+          authorSummary.value = pa.summary
+          authorDetailMarkdown.value = pa.detailMarkdown
+          authorRecommendedRows.value =
+            pa.rows.length > 0 ? pa.rows : [emptyAuthorRecRow()]
+          authorIncludeSuggestedUi.value = pa.includeSuggestedUi
+          authorSuggestedBackendsJson.value = pa.suggestedPluginBackendsJson
+          if (pa.suggestedUi) {
+            Object.assign(
+              uiConfig,
+              parseUiConfigJson(JSON.stringify(pa.suggestedUi)),
+            )
+          }
+        }
+      } else {
+        authorSummary.value = ''
+        authorDetailMarkdown.value = ''
+        authorRecommendedRows.value = [emptyAuthorRecRow()]
+        authorIncludeSuggestedUi.value = false
+        authorSuggestedBackendsJson.value = ''
+      }
       syncFormsFromJson()
       setFeedback(
         `已导入角色「${imp.roleId}」。可继续编辑后导出。 ${importedPackBrainHint(imp.settingsJson)}`,
@@ -341,6 +394,20 @@ export function usePackEditor() {
     emotionImageFiles.value = []
   }
 
+  function addAuthorRecommendedRow(): void {
+    authorRecommendedRows.value = [
+      ...authorRecommendedRows.value,
+      emptyAuthorRecRow(),
+    ]
+  }
+
+  function removeAuthorRecommendedRow(index: number): void {
+    if (authorRecommendedRows.value.length <= 1) return
+    const next = [...authorRecommendedRows.value]
+    next.splice(index, 1)
+    authorRecommendedRows.value = next
+  }
+
   function addKnowledgeFile(path = 'knowledge/lore.md'): void {
     const p = normalizeKnowledgePath(path)
     if (knowledgeMarkdownFiles.value.some((x) => x.path === p)) return
@@ -365,6 +432,21 @@ export function usePackEditor() {
     next.splice(index, 1)
     knowledgeMarkdownFiles.value = next
     if (prev.path === 'knowledge/world.md') worldviewMarkdown.value = ''
+  }
+
+  /** 导出 zip / 写文件夹前：若尚未配置 `reply_quality_anchor`，询问是否并入编写器推荐文案。 */
+  function applyReplyQualityAnchorPrompt(
+    settings: Record<string, unknown>,
+  ): Record<string, unknown> {
+    if (!shouldPromptReplyQualityAnchor(settings)) {
+      return { ...settings }
+    }
+    const include = window.confirm(
+      '是否在导出的 settings.json 中加入推荐的「回复质量锚点」？\n\n' +
+        '将写入字段 reply_quality_anchor，含：禁止复述用户原句、简短确认时延续话题勿重复开场、按用户信息量调节篇幅（非固定字数）、不替用户拟定台词等（与 oclive 主程序默认一致）。\n\n' +
+        '确定 = 加入推荐内容\n取消 = 不加入，按当前 JSON 原样导出',
+    )
+    return mergeEditorReplyQualityAnchor(settings, include)
   }
 
   /**
@@ -423,7 +505,8 @@ export function usePackEditor() {
       setFeedback(built.message, true)
       return
     }
-    const { roleId, manifest, settings } = built
+    let { roleId, manifest, settings } = built
+    settings = applyReplyQualityAnchorPrompt(settings)
     try {
       const blob = await buildRolePackZipBlob(roleId, manifest, settings, packExtra())
       const name = suggestedZipName(roleId, ocpak)
@@ -444,7 +527,8 @@ export function usePackEditor() {
       setFeedback(built.message, true)
       return
     }
-    const { roleId, manifest, settings } = built
+    let { roleId, manifest, settings } = built
+    settings = applyReplyQualityAnchorPrompt(settings)
     try {
       const result = await pickRolesRootAndWritePack(roleId, manifest, settings, packExtra())
       if (!result.wrote) return
@@ -474,6 +558,11 @@ export function usePackEditor() {
     emotionImageFiles,
     creatorMessageToOthers,
     creatorMessageMode,
+    authorSummary,
+    authorDetailMarkdown,
+    authorRecommendedRows,
+    authorIncludeSuggestedUi,
+    authorSuggestedBackendsJson,
     validationErrors,
     validationLastUsedWasm,
     lastExportedRolesRoot,
@@ -485,6 +574,7 @@ export function usePackEditor() {
     advancedTab,
     simpleM,
     simpleS,
+    uiConfig,
     multiRelationWarning,
     emotionImageSummary,
     folderExportOk,
@@ -494,6 +584,8 @@ export function usePackEditor() {
     onEmotionFilesPick,
     onEmotionFilesAppend,
     clearEmotionImages,
+    addAuthorRecommendedRow,
+    removeAuthorRecommendedRow,
     addKnowledgeFile,
     updateKnowledgeFile,
     removeKnowledgeFile,

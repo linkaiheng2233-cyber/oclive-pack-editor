@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, onMounted, toRef, watch } from 'vue'
 import AdvFaqList from '../AdvFaqList.vue'
 import HelpHint from '../HelpHint.vue'
 import EmotionAssetsControl from './EmotionAssetsControl.vue'
@@ -39,14 +40,32 @@ import {
   type SimpleSettingsForm,
 } from '../../lib/simpleCreation'
 import type { CreatorMessageExportMode } from '../../lib/rolePackCreatorMessage'
+import { pluginsForCapability, useDirectoryPlugins } from '../../composables/useDirectoryPlugins'
+import type { AuthorRecRow } from '../../lib/authorPack'
+import type { UiConfig } from '../../types/uiConfig'
 
-defineProps<{
+const props = defineProps<{
   simpleM: SimpleManifestForm
   simpleS: SimpleSettingsForm
   multiRelationWarning: boolean
   syncFormWarning: string
   emotionSummary: string
+  /** 最近一次「写入文件夹」的 roles 根路径；用于定位同级 `plugins/` 扫描目录插件 */
+  lastExportedRolesRoot: string
 }>()
+
+const rolesRootRef = toRef(props, 'lastExportedRolesRoot')
+const {
+  plugins: directoryPlugins,
+  loadError: directoryPluginsError,
+  loading: directoryPluginsLoading,
+} = useDirectoryPlugins(rolesRootRef)
+
+const memoryPlugins = computed(() => pluginsForCapability(directoryPlugins.value, 'memory'))
+const emotionPlugins = computed(() => pluginsForCapability(directoryPlugins.value, 'emotion'))
+const eventPlugins = computed(() => pluginsForCapability(directoryPlugins.value, 'event'))
+const promptPlugins = computed(() => pluginsForCapability(directoryPlugins.value, 'prompt'))
+const llmPlugins = computed(() => pluginsForCapability(directoryPlugins.value, 'llm'))
 
 const corePersonality = defineModel<string>('corePersonality', { required: true })
 const worldviewMarkdown = defineModel<string>('worldviewMarkdown', { required: true })
@@ -55,10 +74,140 @@ const creatorMessageMode = defineModel<CreatorMessageExportMode>('creatorMessage
   default: 'unified',
 })
 
+const uiConfig = defineModel<UiConfig>('uiConfig', { required: true })
+
+const authorSummary = defineModel<string>('authorSummary', { default: '' })
+const authorDetailMarkdown = defineModel<string>('authorDetailMarkdown', { default: '' })
+const authorRecommendedRows = defineModel<AuthorRecRow[]>('authorRecommendedRows', {
+  default: () => [],
+})
+const authorIncludeSuggestedUi = defineModel<boolean>('authorIncludeSuggestedUi', {
+  default: false,
+})
+const authorSuggestedBackendsJson = defineModel<string>('authorSuggestedBackendsJson', {
+  default: '',
+})
+
+type SlotKey =
+  | 'chat_toolbar'
+  | 'settings_panel'
+  | 'role_detail'
+  | 'sidebar'
+  | 'chat_header'
+  | 'settings_plugins'
+  | 'settings_advanced'
+  | 'overlay_floating'
+  | 'launcher_palette'
+  | 'debug_dock'
+
+const SLOT_META: { key: SlotKey; title: string; disk: string }[] = [
+  { key: 'chat_toolbar', title: '聊天工具栏', disk: 'chat_toolbar' },
+  { key: 'settings_panel', title: '设置扩展', disk: 'settings.panel' },
+  { key: 'role_detail', title: '角色详情扩展', disk: 'role.detail' },
+  { key: 'sidebar', title: '侧边栏扩展', disk: 'sidebar' },
+  { key: 'chat_header', title: '聊天页顶部', disk: 'chat.header' },
+  { key: 'settings_plugins', title: '插件管理页', disk: 'settings.plugins' },
+  { key: 'settings_advanced', title: '设置 · 常规扩展', disk: 'settings.advanced' },
+  { key: 'overlay_floating', title: '全局浮层', disk: 'overlay.floating' },
+  { key: 'launcher_palette', title: '启动器 / 快捷键浮层', disk: 'launcher.palette' },
+  { key: 'debug_dock', title: '调试面板扩展', disk: 'debug.dock' },
+]
+
+const shellPlugins = computed(() =>
+  directoryPlugins.value.filter(
+    (p) => p.isShell && (p.pluginType ?? '').trim() === 'ocliveplugin',
+  ),
+)
+
+function pluginsForSlotDisk(disk: string) {
+  return directoryPlugins.value.filter(
+    (p) => !p.isShell && p.uiSlotNames.includes(disk),
+  )
+}
+
+function ensureSlotOrder(slot: SlotKey) {
+  const meta = SLOT_META.find((m) => m.key === slot)
+  if (!meta) return
+  const sc = uiConfig.value.slots[slot]
+  const avail = pluginsForSlotDisk(meta.disk).map((p) => p.id)
+  const seen = new Set<string>()
+  const nextOrder: string[] = []
+  for (const id of sc.order) {
+    if (avail.includes(id) && !seen.has(id)) {
+      nextOrder.push(id)
+      seen.add(id)
+    }
+  }
+  for (const id of avail.sort()) {
+    if (!seen.has(id)) {
+      nextOrder.push(id)
+      seen.add(id)
+    }
+  }
+  sc.order = nextOrder
+  sc.visible = sc.visible.filter((id) => nextOrder.includes(id))
+  if (!sc.appearance) {
+    sc.appearance = {}
+  }
+  for (const id of nextOrder) {
+    const p = directoryPlugins.value.find((x) => x.id === id)
+    const vars = (p?.uiSlotVariants ?? []).filter((v) => v.slot === meta.disk)
+    if (vars.length <= 1) {
+      delete sc.appearance[id]
+      continue
+    }
+    if (!sc.appearance[id]) {
+      sc.appearance[id] = vars[0]?.appearanceId ?? ''
+    }
+  }
+  for (const k of Object.keys(sc.appearance)) {
+    if (!nextOrder.includes(k)) {
+      delete sc.appearance[k]
+    }
+  }
+  if (Object.keys(sc.appearance).length === 0) {
+    delete sc.appearance
+  }
+}
+
+function syncAllSlotsFromScan() {
+  for (const m of SLOT_META) {
+    ensureSlotOrder(m.key)
+  }
+}
+
+onMounted(syncAllSlotsFromScan)
+watch(directoryPlugins, syncAllSlotsFromScan, { deep: true })
+
+let dragSlot: SlotKey | null = null
+let dragIdx: number | null = null
+
+function onSlotDragStart(slot: SlotKey, i: number) {
+  dragSlot = slot
+  dragIdx = i
+}
+
+function onSlotDragOver(e: DragEvent) {
+  e.preventDefault()
+}
+
+function onSlotDrop(slot: SlotKey, i: number) {
+  if (dragSlot !== slot || dragIdx === null) return
+  const ord = uiConfig.value.slots[slot].order
+  if (dragIdx < 0 || dragIdx >= ord.length) return
+  const [moved] = ord.splice(dragIdx, 1)
+  if (moved === undefined) return
+  ord.splice(i, 0, moved)
+  dragSlot = null
+  dragIdx = null
+}
+
 const emit = defineEmits<{
   emotionPick: [e: Event]
   emotionAppend: [e: Event]
   emotionClear: []
+  addAuthorRecRow: []
+  removeAuthorRecRow: [index: number]
 }>()
 </script>
 
@@ -344,6 +493,7 @@ const emit = defineEmits<{
               <select id="f-brain-mode" v-model="simpleS.pluginLlm">
                 <option value="ollama">本机 Ollama</option>
                 <option value="remote">云端 Remote LLM（HTTP JSON-RPC）</option>
+                <option value="directory">目录插件（JSON-RPC）</option>
               </select>
             </div>
             <div v-if="simpleS.pluginLlm === 'ollama'" class="form-row">
@@ -356,7 +506,7 @@ const emit = defineEmits<{
                 autocomplete="off"
               />
             </div>
-            <div v-else class="form-row brain-remote-note">
+            <div v-else-if="simpleS.pluginLlm === 'remote'" class="form-row brain-remote-note">
               <p>
                 导出包将包含 <code>"llm": "remote"</code>。请使用启动器选择「云端 Remote LLM」并填写侧车地址；协议见 oclivenewnew
                 <code>REMOTE_PLUGIN_PROTOCOL.md</code>。
@@ -367,6 +517,37 @@ const emit = defineEmits<{
                 v-model="simpleS.model"
                 type="text"
                 placeholder="可选，如文档说明用"
+                autocomplete="off"
+              />
+            </div>
+            <div v-else class="form-row brain-dir-note">
+              <label for="f-brain-dir-plugin">目录插件 ID（<code>plugin_backends.directory_plugins.llm</code>）</label>
+              <select id="f-brain-dir-plugin" v-model="simpleS.directoryPluginLlm">
+                <option value="">请选择 manifest id</option>
+                <option v-for="p in llmPlugins" :key="p.id" :value="p.id">
+                  {{ p.id }} — v{{ p.version }}
+                </option>
+              </select>
+              <p v-if="directoryPluginsError" class="hint tiny">{{ directoryPluginsError }}</p>
+              <p v-else-if="directoryPluginsLoading" class="hint tiny">正在扫描插件目录…</p>
+              <p
+                v-else-if="!directoryPlugins.length && !lastExportedRolesRoot.trim()"
+                class="hint tiny"
+              >
+                未检测到目录插件。可将插件放入本应用数据目录下的 <code>plugins/</code>、环境变量
+                <code>PLUGINS_GLOBAL_PATH</code> 指向的目录，或工作目录的 <code>plugins/</code>；导出角色包后也会扫描与
+                <code>roles</code> 同级的 <code>plugins/</code>。
+              </p>
+              <p v-else-if="!lastExportedRolesRoot.trim()" class="hint tiny">
+                当前正列出全局 <code>plugins/</code>；在「检查与导出」写入文件夹后，将优先扫描与 roles 同级的
+                <code>plugins/</code>。
+              </p>
+              <label for="f-model-dir">模型名备注（可选，写入 <code>model</code>）</label>
+              <input
+                id="f-model-dir"
+                v-model="simpleS.model"
+                type="text"
+                placeholder="可选"
                 autocomplete="off"
               />
             </div>
@@ -468,6 +649,16 @@ const emit = defineEmits<{
               <option value="builtin">builtin</option>
               <option value="builtin_v2">builtin_v2</option>
               <option value="remote">remote</option>
+              <option value="directory">directory</option>
+            </select>
+          </div>
+          <div v-if="simpleS.pluginMemory === 'directory'" class="form-row">
+            <label for="f-pl-mem">目录插件 ID</label>
+            <select id="f-pl-mem" v-model="simpleS.directoryPluginMemory">
+              <option value="">请选择 manifest id</option>
+              <option v-for="p in memoryPlugins" :key="p.id" :value="p.id">
+                {{ p.id }} — v{{ p.version }}
+              </option>
             </select>
           </div>
           <div class="form-row">
@@ -476,6 +667,16 @@ const emit = defineEmits<{
               <option value="builtin">builtin</option>
               <option value="builtin_v2">builtin_v2</option>
               <option value="remote">remote</option>
+              <option value="directory">directory</option>
+            </select>
+          </div>
+          <div v-if="simpleS.pluginEmotion === 'directory'" class="form-row">
+            <label for="f-pl-emo">目录插件 ID</label>
+            <select id="f-pl-emo" v-model="simpleS.directoryPluginEmotion">
+              <option value="">请选择 manifest id</option>
+              <option v-for="p in emotionPlugins" :key="p.id" :value="p.id">
+                {{ p.id }} — v{{ p.version }}
+              </option>
             </select>
           </div>
           <div class="form-row">
@@ -484,6 +685,16 @@ const emit = defineEmits<{
               <option value="builtin">builtin</option>
               <option value="builtin_v2">builtin_v2</option>
               <option value="remote">remote</option>
+              <option value="directory">directory</option>
+            </select>
+          </div>
+          <div v-if="simpleS.pluginEvent === 'directory'" class="form-row">
+            <label for="f-pl-ev">目录插件 ID</label>
+            <select id="f-pl-ev" v-model="simpleS.directoryPluginEvent">
+              <option value="">请选择 manifest id</option>
+              <option v-for="p in eventPlugins" :key="p.id" :value="p.id">
+                {{ p.id }} — v{{ p.version }}
+              </option>
             </select>
           </div>
           <div class="form-row">
@@ -492,8 +703,228 @@ const emit = defineEmits<{
               <option value="builtin">builtin</option>
               <option value="builtin_v2">builtin_v2</option>
               <option value="remote">remote</option>
+              <option value="directory">directory</option>
             </select>
           </div>
+          <div v-if="simpleS.pluginPrompt === 'directory'" class="form-row">
+            <label for="f-pl-pr">目录插件 ID</label>
+            <select id="f-pl-pr" v-model="simpleS.directoryPluginPrompt">
+              <option value="">请选择 manifest id</option>
+              <option v-for="p in promptPlugins" :key="p.id" :value="p.id">
+                {{ p.id }} — v{{ p.version }}
+              </option>
+            </select>
+          </div>
+          <p v-if="directoryPluginsError" class="hint tiny">{{ directoryPluginsError }}</p>
+          <p v-else-if="directoryPluginsLoading" class="hint tiny">正在扫描插件目录…</p>
+          <p
+            v-else-if="!directoryPlugins.length && !lastExportedRolesRoot.trim()"
+            class="hint tiny"
+          >
+            未检测到目录插件。可将插件放入应用数据 <code>plugins/</code>、<code>PLUGINS_GLOBAL_PATH</code> 或工作目录
+            <code>plugins/</code>；导出后亦会扫描与 <code>roles</code> 同级的 <code>plugins/</code>。
+          </p>
+          <p v-else-if="!lastExportedRolesRoot.trim()" class="hint tiny">
+            当前列出全局 <code>plugins/</code>；导出到含 <code>roles</code> 的目录后将改为扫描同级 <code>plugins/</code>。
+          </p>
+
+          <details class="ui-design-details">
+            <summary class="ui-design-sum">作者与建议（author.json）</summary>
+            <p class="hint tiny">
+              可选：面向市场的简介、推荐插件列表；若勾选「导出时附带 suggested_ui」，将把下方「前端设计」当前表单一并写入
+              <code>author.json</code>（运行时优先于 <code>ui.json</code> 作为插件布局种子）。<code>suggested_plugin_backends</code>
+              为 JSON 片段，供用户一键应用为会话后端（不写 settings.json）。
+            </p>
+            <div class="form-row">
+              <label for="auth-sum">一句话简介</label>
+              <input
+                id="auth-sum"
+                v-model="authorSummary"
+                type="text"
+                class="txt"
+                autocomplete="off"
+                placeholder="例：慢热型同桌，适合日常陪伴"
+              />
+            </div>
+            <div class="form-row">
+              <label for="auth-md">详情（Markdown）</label>
+              <textarea
+                id="auth-md"
+                v-model="authorDetailMarkdown"
+                rows="4"
+                class="txt"
+                spellcheck="false"
+                placeholder="可选：角色卖点、使用说明、推荐场景…"
+              />
+            </div>
+            <div class="form-row">
+              <label>推荐目录插件</label>
+              <div class="auth-rec-toolbar">
+                <button type="button" class="tiny-btn" @click="emit('addAuthorRecRow')">添加一行</button>
+              </div>
+              <div
+                v-for="(row, idx) in authorRecommendedRows"
+                :key="'ar-' + idx"
+                class="auth-rec-row"
+              >
+                <input v-model="row.id" type="text" placeholder="插件 manifest id" class="txt" />
+                <input
+                  v-model="row.version_range"
+                  type="text"
+                  placeholder="版本范围（可选）"
+                  class="txt"
+                />
+                <input v-model="row.note" type="text" placeholder="备注" class="txt" />
+                <button
+                  type="button"
+                  class="tiny-btn danger"
+                  :disabled="authorRecommendedRows.length <= 1"
+                  @click="emit('removeAuthorRecRow', idx)"
+                >
+                  删除
+                </button>
+              </div>
+            </div>
+            <div class="form-row chk-row">
+              <label class="chk">
+                <input v-model="authorIncludeSuggestedUi" type="checkbox" />
+                导出时在 author.json 附带当前「前端设计」为 suggested_ui
+              </label>
+            </div>
+            <div class="form-row">
+              <label for="auth-be">suggested_plugin_backends（JSON，可选）</label>
+              <textarea
+                id="auth-be"
+                v-model="authorSuggestedBackendsJson"
+                rows="6"
+                class="txt mono"
+                spellcheck="false"
+                placeholder='例：{ "memory": "builtin", "llm": "ollama", ... }'
+              />
+            </div>
+          </details>
+
+          <details class="ui-design-details">
+            <summary class="ui-design-sum">前端设计（ui.json）</summary>
+            <p class="hint tiny">
+              定义主程序加载本包时的默认整壳与嵌入插槽布局；导出时写入包根目录
+              <code>ui.json</code>。用户可在 oclive 插件管理里覆盖；「重置为角色包推荐」可恢复。
+            </p>
+            <div class="form-row">
+              <label for="ui-shell">整壳界面</label>
+              <select id="ui-shell" v-model="uiConfig.shell">
+                <option value="">无（使用内置界面）</option>
+                <option v-for="p in shellPlugins" :key="p.id" :value="p.id">
+                  {{ p.id }} — v{{ p.version }}
+                </option>
+              </select>
+            </div>
+            <p v-if="directoryPluginsLoading" class="hint tiny">正在扫描全局插件…</p>
+            <p v-else-if="!shellPlugins.length" class="hint tiny">
+              未扫描到整壳插件（需 <code>type: ocliveplugin</code> 且含 <code>shell</code>）。请将插件放入应用数据或工作目录的
+              <code>plugins/</code>，或导出到含 <code>plugins/</code> 的目录。
+            </p>
+            <div class="form-row">
+              <label for="ui-theme-primary">主题 · 主色</label>
+              <input
+                id="ui-theme-primary"
+                v-model="uiConfig.theme.primaryColor"
+                type="text"
+                placeholder="#4a6b62"
+                autocomplete="off"
+              />
+            </div>
+            <div class="form-row">
+              <label for="ui-theme-bg">主题 · 背景</label>
+              <input
+                id="ui-theme-bg"
+                v-model="uiConfig.theme.backgroundColor"
+                type="text"
+                placeholder="#e7e2d9"
+                autocomplete="off"
+              />
+            </div>
+            <div class="form-row">
+              <label for="ui-theme-font">主题 · 字体</label>
+              <select id="ui-theme-font" v-model="uiConfig.theme.fontFamily">
+                <option value="">默认（内置）</option>
+                <option value="system-ui, sans-serif">system-ui</option>
+                <option value="'Segoe UI', 'Microsoft YaHei', sans-serif">
+                  Segoe UI / 微软雅黑
+                </option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="ui-monospace, monospace">等宽</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="ui-layout-sidebar">布局 · 侧栏位置</label>
+              <select id="ui-layout-sidebar" v-model="uiConfig.layout.sidebar">
+                <option value="">默认（左）</option>
+                <option value="left">左</option>
+                <option value="right">右</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="ui-layout-input">布局 · 输入框位置</label>
+              <select id="ui-layout-input" v-model="uiConfig.layout.chatInput">
+                <option value="">默认（下）</option>
+                <option value="bottom">下</option>
+                <option value="top">上</option>
+              </select>
+            </div>
+            <div
+              v-for="meta in SLOT_META"
+              :key="meta.key"
+              class="ui-slot-card"
+            >
+              <h4 class="ui-slot-title">{{ meta.title }}</h4>
+              <ol
+                class="ui-slot-order"
+                :aria-label="`${meta.title} 插件顺序`"
+              >
+                <li
+                  v-for="(pid, i) in uiConfig.slots[meta.key].order"
+                  :key="`${meta.key}-${pid}`"
+                  class="ui-slot-row"
+                  draggable="true"
+                  @dragstart="onSlotDragStart(meta.key, i)"
+                  @dragover="onSlotDragOver"
+                  @drop="onSlotDrop(meta.key, i)"
+                >
+                  <span class="ui-grip" aria-hidden="true">⋮⋮</span>
+                  <span class="ui-slot-id">{{ pid }}</span>
+                  <span class="ui-slot-ver">{{
+                    directoryPlugins.find((x) => x.id === pid)?.version ?? '—'
+                  }}</span>
+                  <label class="ui-vis">
+                    <input
+                      type="checkbox"
+                      :checked="uiConfig.slots[meta.key].visible.includes(pid)"
+                      @change="
+                        (e) => {
+                          const el = e.target as HTMLInputElement
+                          const sc = uiConfig.slots[meta.key]
+                          if (el.checked) {
+                            if (!sc.visible.includes(pid)) sc.visible = [...sc.visible, pid]
+                          } else {
+                            sc.visible = sc.visible.filter((x) => x !== pid)
+                          }
+                        }
+                      "
+                    />
+                    默认可见
+                  </label>
+                </li>
+              </ol>
+              <p
+                v-if="!uiConfig.slots[meta.key].order.length"
+                class="hint tiny"
+              >
+                当前插槽无可用插件（请扫描到声明了对应插槽的目录插件）。
+              </p>
+            </div>
+          </details>
+
           <p class="future-note">
             需要完整 JSON 或插件字段时，请切换到<strong>高级创作</strong>直接编辑源码。
           </p>
@@ -723,6 +1154,21 @@ code {
   border-radius: var(--fluent-radius-lg);
   margin: 0 0 0.65rem;
   line-height: 1.45;
+}
+.auth-rec-toolbar {
+  margin-bottom: 0.35rem;
+}
+.auth-rec-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+@media (max-width: 720px) {
+  .auth-rec-row {
+    grid-template-columns: 1fr;
+  }
 }
 .future-note {
   font-size: 0.8125rem;

@@ -15,6 +15,10 @@ export type ImportedRolePack = {
   emotionImageFiles: File[]
   /** roles/{id}/creator_message.txt 全文（可含多行，与导出模式一致） */
   creatorMessage: string
+  /** roles/{id}/ui.json（可选） */
+  uiJson: string
+  /** roles/{id}/author.json（可选） */
+  authorJson: string
 }
 
 function normalizeZipPath(p: string): string {
@@ -97,6 +101,9 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
   /** 保留全文（多行）以便与「按模块各一句」导出一致 */
   const creatorMessage = creatorMessageRaw.replace(/\r\n/g, '\n').replace(/\n+$/, '')
 
+  const uiJson = (await readText('ui.json')).trim()
+  const authorJson = (await readText('author.json')).trim()
+
   const knowledgeMarkdownFiles: KnowledgeMarkdownFile[] = []
   for (const n of names) {
     const path = normalizeZipPath(n)
@@ -138,6 +145,8 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
     knowledgeMarkdownFiles,
     emotionImageFiles,
     creatorMessage,
+    uiJson,
+    authorJson,
   }
 }
 

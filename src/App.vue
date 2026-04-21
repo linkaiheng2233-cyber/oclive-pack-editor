@@ -23,10 +23,18 @@ const {
   advancedTab,
   simpleM,
   simpleS,
+  uiConfig,
   multiRelationWarning,
   emotionImageSummary,
   creatorMessageToOthers,
   creatorMessageMode,
+  authorSummary,
+  authorDetailMarkdown,
+  authorRecommendedRows,
+  authorIncludeSuggestedUi,
+  authorSuggestedBackendsJson,
+  addAuthorRecommendedRow,
+  removeAuthorRecommendedRow,
   folderExportOk,
   manifestRoleId,
   lastExportedRolesRoot,
@@ -228,14 +236,23 @@ const viewTitle = computed(() => {
           v-model:worldview-markdown="worldviewMarkdown"
           v-model:creator-message-to-others="creatorMessageToOthers"
           v-model:creator-message-mode="creatorMessageMode"
+          v-model:ui-config="uiConfig"
+          v-model:author-summary="authorSummary"
+          v-model:author-detail-markdown="authorDetailMarkdown"
+          v-model:author-recommended-rows="authorRecommendedRows"
+          v-model:author-include-suggested-ui="authorIncludeSuggestedUi"
+          v-model:author-suggested-backends-json="authorSuggestedBackendsJson"
           :simple-m="simpleM"
           :simple-s="simpleS"
           :multi-relation-warning="multiRelationWarning"
           :sync-form-warning="syncFormWarning"
           :emotion-summary="emotionImageSummary"
+          :last-exported-roles-root="lastExportedRolesRoot"
           @emotion-pick="onEmotionFilesPick"
           @emotion-append="onEmotionFilesAppend"
           @emotion-clear="clearEmotionImages"
+          @add-author-rec-row="addAuthorRecommendedRow"
+          @remove-author-rec-row="removeAuthorRecommendedRow"
         />
       </div>
 
@@ -284,6 +301,9 @@ const viewTitle = computed(() => {
             写入文件夹（自选 roles 根目录）
           </button>
         </div>
+        <p class="hint muted post-actions-hint export-anchor-hint">
+          若 <code>settings.json</code> 尚未填写 <code>reply_quality_anchor</code>，导出时会询问是否加入推荐的「回复质量锚点」（含状态延续、按用户句长与情绪调节篇幅、禁止复述用户原句等完整约束）。
+        </p>
 
         <div v-if="validationErrors.length" class="errors-block" role="alert">
           <strong>检查结果</strong>
