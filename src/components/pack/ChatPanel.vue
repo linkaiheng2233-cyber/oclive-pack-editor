@@ -3,10 +3,12 @@ import { computed, onMounted, ref, watch } from 'vue'
 import {
   fetchRuntimeChat,
   fetchRuntimeHealth,
+  fetchRuntimeRoleFeedback,
   readRoleManifestScenes,
   runtimeTcpListening,
   spawnOcliveApi,
   type RuntimeChatMeta,
+  type RuntimeRoleFeedbackItem,
 } from '../../lib/runtimeApi'
 import { isTauriRuntime } from '../../lib/exportFolder'
 import AdvFaqList from '../AdvFaqList.vue'
@@ -83,6 +85,11 @@ const scenesLoading = ref(false)
 const scenesLoadError = ref('')
 /** 与 oclive 请求体 `session_id` 一致；按 API 根 + 角色目录分桶持久化（localStorage），供后续后端会话能力接入 */
 const chatSessionId = ref('')
+
+const feedbackOpen = ref(false)
+const feedbackLoading = ref(false)
+const feedbackErr = ref('')
+const feedbackItems = ref<RuntimeRoleFeedbackItem[]>([])
 
 const defaultRolePath = computed(() => {
   const id = props.roleId.trim()
@@ -199,6 +206,24 @@ async function refreshManifestScenes(): Promise<void> {
   } finally {
     scenesLoading.value = false
   }
+}
+
+async function openFeedback(): Promise<void> {
+  feedbackOpen.value = true
+  feedbackErr.value = ''
+  feedbackLoading.value = true
+  try {
+    feedbackItems.value = await fetchRuntimeRoleFeedback(apiBase.value, props.roleId, 80, 0)
+  } catch (e) {
+    feedbackErr.value = e instanceof Error ? e.message : String(e)
+    feedbackItems.value = []
+  } finally {
+    feedbackLoading.value = false
+  }
+}
+
+function closeFeedback(): void {
+  feedbackOpen.value = false
 }
 
 function onComposerKeydown(e: KeyboardEvent): void {
@@ -474,6 +499,11 @@ async function send(): Promise<void> {
         </button>
         <HelpHint :paragraphs="CHAT_HINT.newThread" />
       </span>
+      <span class="action-with-hint">
+        <button type="button" class="secondary" :disabled="!props.roleId" @click="openFeedback">
+          查看反馈（半私密）
+        </button>
+      </span>
     </div>
     <p
       v-if="healthMessage"
@@ -557,6 +587,38 @@ async function send(): Promise<void> {
       <summary class="chat-faq-sum">常见问题 · 试聊连接与路径</summary>
       <AdvFaqList :items="CHAT_FAQ" />
     </details>
+
+    <Teleport to="body">
+      <div
+        v-if="feedbackOpen"
+        class="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        @click="closeFeedback"
+      >
+        <div class="modal-card" @click.stop>
+          <h3 class="modal-title">最近反馈（仅本机存储）</h3>
+          <p class="modal-sub">
+            这些反馈来自用户在 oclive 主程序中提交的「反馈此角色包」。默认仅创作者可见。
+          </p>
+          <p v-if="feedbackLoading" class="modal-sub">读取中…</p>
+          <p v-else-if="feedbackErr" class="modal-err">{{ feedbackErr }}</p>
+          <div v-else class="fb-list">
+            <p v-if="!feedbackItems.length" class="modal-sub">暂无反馈。</p>
+            <div v-for="it in feedbackItems" :key="it.id" class="fb-item">
+              <div class="fb-top">
+                <span class="fb-time">{{ it.created_at }}</span>
+                <span v-if="it.mood_tag" class="fb-tag">情绪：{{ it.mood_tag }}</span>
+              </div>
+              <div class="fb-msg">{{ it.message }}</div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="secondary" @click="closeFeedback">关闭</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </section>
 </template>
 
@@ -707,6 +769,78 @@ async function send(): Promise<void> {
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.55);
+}
+.modal-card {
+  width: 100%;
+  max-width: 720px;
+  padding: 16px 16px 12px;
+  border-radius: var(--fluent-radius-lg);
+  background: var(--pack-glass-fill);
+  border: 1px solid var(--pack-glass-border);
+  box-shadow: var(--fluent-shadow-card), var(--pack-glass-inset);
+  backdrop-filter: var(--pack-glass-blur);
+  -webkit-backdrop-filter: var(--pack-glass-blur);
+}
+.modal-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.modal-sub {
+  margin: 0 0 10px;
+  color: var(--fluent-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+.modal-err {
+  margin: 0 0 10px;
+  color: #ffb4b4;
+  font-size: 0.8125rem;
+}
+.fb-list {
+  max-height: 52vh;
+  overflow: auto;
+  padding-right: 4px;
+}
+.fb-item {
+  border: 1px solid var(--pack-glass-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: rgba(0, 0, 0, 0.12);
+}
+.fb-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.8125rem;
+  color: var(--fluent-text-secondary);
+}
+.fb-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--pack-glass-border);
+  background: rgba(0, 0, 0, 0.18);
+}
+.fb-msg {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 .row-actions button {
   padding: 0.45rem 0.9rem;

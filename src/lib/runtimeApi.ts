@@ -17,6 +17,7 @@ export async function runtimeTcpListening(host: string, port: number): Promise<b
 
 const HEALTH_FETCH_MS = 12_000
 const CHAT_FETCH_MS = 300_000
+const FEEDBACK_FETCH_MS = 20_000
 
 /** 与 oclive `SendMessageResponse` 对齐的子集（HTTP 试聊 JSON），并含 `--api` 回包顶层的 `personality_source`。字段均可能缺失以兼容旧运行时。 */
 export type RuntimePersonalitySource = 'vector' | 'profile'
@@ -221,6 +222,77 @@ export async function fetchRuntimeChat(
       throw new Error(
         `无法连接 ${base}/chat（${e.message}）。请确认 oclive 已用 --api 启动、角色路径正确；浏览器试聊需访问 127.0.0.1 且 CORS 可用。`,
       )
+    }
+    throw e
+  } finally {
+    clearTimeout(t)
+  }
+}
+
+export interface RuntimeRoleFeedbackItem {
+  id: number
+  role_id: string
+  session_id?: string | null
+  mood_tag?: string | null
+  message: string
+  created_at: string
+}
+
+export interface RuntimeRoleFeedbackList {
+  items: RuntimeRoleFeedbackItem[]
+}
+
+function parseRoleFeedbackListJson(text: string): RuntimeRoleFeedbackList {
+  let j: unknown
+  try {
+    j = JSON.parse(text) as unknown
+  } catch {
+    throw new Error(`响应不是合法 JSON：${text.slice(0, 200)}`)
+  }
+  if (typeof j !== 'object' || j === null || !('items' in j)) {
+    throw new Error('响应缺少 items 字段')
+  }
+  const items = (j as { items: unknown }).items
+  if (!Array.isArray(items)) {
+    throw new Error('items 须为数组')
+  }
+  return { items: items as RuntimeRoleFeedbackItem[] }
+}
+
+export async function fetchRuntimeRoleFeedback(
+  baseUrl: string,
+  roleId: string,
+  limit = 50,
+  offset = 0,
+): Promise<RuntimeRoleFeedbackItem[]> {
+  const base = normalizeHttpBaseUrl(baseUrl)
+  const rid = roleId.trim()
+  if (!rid) return []
+  const lim = Math.min(200, Math.max(1, Math.floor(Number(limit) || 50)))
+  const off = Math.max(0, Math.floor(Number(offset) || 0))
+
+  const url = `${base}/role-feedback?role_id=${encodeURIComponent(rid)}&limit=${lim}&offset=${off}`
+  if (isTauriRuntime()) {
+    // 桌面版编写器仍走 fetch：API 仅绑定 127.0.0.1，不涉及跨域；也便于复用同一解析逻辑
+  }
+  const ac = new AbortController()
+  const t = setTimeout(() => ac.abort(), FEEDBACK_FETCH_MS)
+  try {
+    const r = await fetch(url, { signal: ac.signal })
+    const text = await r.text()
+    if (!r.ok) {
+      throw new Error(formatRuntimeApiError(text || `HTTP ${r.status}`))
+    }
+    return parseRoleFeedbackListJson(text).items
+  } catch (e) {
+    if (
+      (e instanceof DOMException || e instanceof Error) &&
+      (e as Error).name === 'AbortError'
+    ) {
+      throw new Error(`请求超时（>${FEEDBACK_FETCH_MS / 1000}s）`)
+    }
+    if (e instanceof TypeError) {
+      throw new Error(`无法连接 ${base}/role-feedback（${e.message}）。请确认 oclive 已用 --api 启动。`)
     }
     throw e
   } finally {
