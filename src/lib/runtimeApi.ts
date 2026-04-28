@@ -236,6 +236,16 @@ export interface RuntimeRoleFeedbackItem {
   mood_tag?: string | null
   message: string
   created_at: string
+  status?: string | null
+  read_at?: string | null
+  handled_at?: string | null
+  handled_note?: string | null
+  scene_id?: string | null
+  presence_mode?: string | null
+  role_version?: string | null
+  runtime_version?: string | null
+  client_version?: string | null
+  source?: string | null
 }
 
 export interface RuntimeRoleFeedbackList {
@@ -295,6 +305,69 @@ export async function fetchRuntimeRoleFeedback(
       throw new Error(`无法连接 ${base}/role-feedback（${e.message}）。请确认 oclive 已用 --api 启动。`)
     }
     throw e
+  } finally {
+    clearTimeout(t)
+  }
+}
+
+export async function markRuntimeRoleFeedbackRead(
+  baseUrl: string,
+  roleId: string,
+  ids: number[],
+): Promise<number> {
+  const base = normalizeHttpBaseUrl(baseUrl)
+  const rid = roleId.trim()
+  const cleanIds = (ids ?? []).filter((x) => Number.isFinite(x) && x > 0)
+  if (!rid || cleanIds.length === 0) return 0
+  const ac = new AbortController()
+  const t = setTimeout(() => ac.abort(), FEEDBACK_FETCH_MS)
+  try {
+    const r = await fetch(`${base}/role-feedback/mark-read`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role_id: rid, ids: cleanIds }),
+      signal: ac.signal,
+    })
+    const text = await r.text()
+    if (!r.ok) throw new Error(formatRuntimeApiError(text || `HTTP ${r.status}`))
+    const j = JSON.parse(text) as unknown
+    const updated =
+      typeof j === 'object' && j !== null && 'updated' in j
+        ? Number((j as any).updated)
+        : 0
+    return Number.isFinite(updated) ? updated : 0
+  } finally {
+    clearTimeout(t)
+  }
+}
+
+export async function setRuntimeRoleFeedbackHandled(
+  baseUrl: string,
+  roleId: string,
+  id: number,
+  handled: boolean,
+  note?: string,
+): Promise<void> {
+  const base = normalizeHttpBaseUrl(baseUrl)
+  const rid = roleId.trim()
+  const fid = Math.floor(Number(id))
+  if (!rid || !Number.isFinite(fid) || fid <= 0) return
+  const ac = new AbortController()
+  const t = setTimeout(() => ac.abort(), FEEDBACK_FETCH_MS)
+  try {
+    const r = await fetch(`${base}/role-feedback/set-handled`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        role_id: rid,
+        id: fid,
+        handled,
+        note: note?.trim() || null,
+      }),
+      signal: ac.signal,
+    })
+    const text = await r.text()
+    if (!r.ok) throw new Error(formatRuntimeApiError(text || `HTTP ${r.status}`))
   } finally {
     clearTimeout(t)
   }

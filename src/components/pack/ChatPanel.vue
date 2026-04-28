@@ -4,6 +4,8 @@ import {
   fetchRuntimeChat,
   fetchRuntimeHealth,
   fetchRuntimeRoleFeedback,
+  markRuntimeRoleFeedbackRead,
+  setRuntimeRoleFeedbackHandled,
   readRoleManifestScenes,
   runtimeTcpListening,
   spawnOcliveApi,
@@ -90,6 +92,8 @@ const feedbackOpen = ref(false)
 const feedbackLoading = ref(false)
 const feedbackErr = ref('')
 const feedbackItems = ref<RuntimeRoleFeedbackItem[]>([])
+const feedbackFilter = ref<'all' | 'open' | 'handled'>('open')
+const feedbackNoteDraft = ref<Record<number, string>>({})
 
 const defaultRolePath = computed(() => {
   const id = props.roleId.trim()
@@ -214,6 +218,13 @@ async function openFeedback(): Promise<void> {
   feedbackLoading.value = true
   try {
     feedbackItems.value = await fetchRuntimeRoleFeedback(apiBase.value, props.roleId, 80, 0)
+    // best-effort mark read (only open modal counts as "creator read")
+    try {
+      const ids = feedbackItems.value.map((x) => x.id)
+      await markRuntimeRoleFeedbackRead(apiBase.value, props.roleId, ids)
+    } catch {
+      /* ignore */
+    }
   } catch (e) {
     feedbackErr.value = e instanceof Error ? e.message : String(e)
     feedbackItems.value = []
@@ -224,6 +235,31 @@ async function openFeedback(): Promise<void> {
 
 function closeFeedback(): void {
   feedbackOpen.value = false
+}
+
+const filteredFeedbackItems = computed(() => {
+  const tab = feedbackFilter.value
+  if (tab === 'all') return feedbackItems.value
+  return feedbackItems.value.filter((x) => {
+    const st = (x.status || '').toLowerCase()
+    return tab === 'handled' ? st === 'handled' : st !== 'handled'
+  })
+})
+
+async function toggleHandled(it: RuntimeRoleFeedbackItem, handled: boolean): Promise<void> {
+  try {
+    await setRuntimeRoleFeedbackHandled(
+      apiBase.value,
+      props.roleId,
+      it.id,
+      handled,
+      feedbackNoteDraft.value[it.id] || it.handled_note || '',
+    )
+    // refresh list to reflect status timestamps
+    feedbackItems.value = await fetchRuntimeRoleFeedback(apiBase.value, props.roleId, 80, 0)
+  } catch (e) {
+    feedbackErr.value = e instanceof Error ? e.message : String(e)
+  }
 }
 
 function onComposerKeydown(e: KeyboardEvent): void {
@@ -605,12 +641,49 @@ async function send(): Promise<void> {
           <p v-else-if="feedbackErr" class="modal-err">{{ feedbackErr }}</p>
           <div v-else class="fb-list">
             <p v-if="!feedbackItems.length" class="modal-sub">暂无反馈。</p>
-            <div v-for="it in feedbackItems" :key="it.id" class="fb-item">
+            <div class="fb-tabs">
+              <button type="button" class="secondary" @click="feedbackFilter = 'open'">
+                未处理
+              </button>
+              <button type="button" class="secondary" @click="feedbackFilter = 'handled'">
+                已处理
+              </button>
+              <button type="button" class="secondary" @click="feedbackFilter = 'all'">
+                全部
+              </button>
+            </div>
+            <div v-for="it in filteredFeedbackItems" :key="it.id" class="fb-item">
               <div class="fb-top">
                 <span class="fb-time">{{ it.created_at }}</span>
                 <span v-if="it.mood_tag" class="fb-tag">情绪：{{ it.mood_tag }}</span>
+                <span v-if="it.scene_id" class="fb-tag">场景：{{ it.scene_id }}</span>
+                <span v-if="it.status" class="fb-tag">状态：{{ it.status }}</span>
               </div>
               <div class="fb-msg">{{ it.message }}</div>
+              <div class="fb-actions">
+                <input
+                  v-model="feedbackNoteDraft[it.id]"
+                  class="fb-note"
+                  type="text"
+                  placeholder="处理备注（可选）"
+                />
+                <button
+                  v-if="(it.status || '').toLowerCase() !== 'handled'"
+                  type="button"
+                  class="secondary"
+                  @click="toggleHandled(it, true)"
+                >
+                  标记已处理
+                </button>
+                <button
+                  v-else
+                  type="button"
+                  class="secondary"
+                  @click="toggleHandled(it, false)"
+                >
+                  取消已处理
+                </button>
+              </div>
             </div>
           </div>
           <div class="modal-actions">
@@ -836,6 +909,28 @@ async function send(): Promise<void> {
 .fb-msg {
   white-space: pre-wrap;
   line-height: 1.5;
+}
+.fb-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.75rem;
+}
+.fb-actions {
+  margin-top: 0.6rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.fb-note {
+  flex: 1 1 240px;
+  min-width: 200px;
+  padding: 0.4rem 0.55rem;
+  border-radius: var(--fluent-radius);
+  border: 1px solid var(--pack-glass-border);
+  background: var(--pack-glass-fill-subtle);
+  color: var(--fluent-text-primary);
 }
 .modal-actions {
   display: flex;
