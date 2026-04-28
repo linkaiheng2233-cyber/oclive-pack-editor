@@ -26,6 +26,14 @@
 
 **版本对齐**：`src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 应与 **oclivenewnew** `src-tauri/Cargo.toml` 的 **`version`** 一致；导出前校验（含可选 wasm）会检查 **`manifest.min_runtime_version`** 与 **`manifest.json` / `settings.json` 顶层键**（见 [PACK_VERSIONING.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/role-pack/PACK_VERSIONING.md)）。
 
+## 角色包反馈（半私密收件箱）
+
+用户在 **oclivenewnew** 主程序里可以对正在使用的角色包提交 **「半私密反馈」**（本机保存，不公开）。  
+创作者可在本编写器的 **试聊面板** 中点 **「查看反馈（半私密）」** 拉取并处理（标记已处理、写处理备注）。
+
+反馈协议与字段说明见：  
+- oclivenewnew 文档 **[ROLE_FEEDBACK_V1.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/role-pack/ROLE_FEEDBACK_V1.md)**
+
 路径约定（Windows 示例）：与 `oclivenewnew` **同级**放置本仓库，例如 `D:\oclive-pack-editor` 与 `D:\oclivenewnew`。
 
 ## 新用户：从下载到第一次对话（与另两仓库的关系）
