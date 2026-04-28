@@ -15,6 +15,13 @@
 | **本仓库** | 产出 `manifest.json`、`settings.json`、`core_personality.txt`、可选 **`knowledge/**/*.md`**（多文件世界观）、占位场景、`assets/images/` 情绪图等；可选 **`creator_message.txt`**（创作者公告：可「整包一句」或「按行多条」；**oclivenewnew 不参与读取**，由 **oclive-launcher** 只读展示；约定见 [启动器 README](https://github.com/linkaiheng2233-cyber/oclive-launcher/blob/main/README.md#随包寄语与职责边界创作者公告)） |
 | **oclivenewnew** | 加载、校验与对话；契约原文在其仓库 **`creator-docs/`** 与 **`roles/README_MANIFEST.md`** |
 
+## 与「插件市场 / 模块条目 / Profile（特征码）」的边界
+
+编写器只负责**角色包内容**（manifest/settings/知识/素材/导出），不负责插件市场与一键部署。
+
+- **插件市场条目（`type: "plugin" | "module" | "profile"`）**：由 `oclivenewnew` 的「插件与后端管理」负责同步索引、安装依赖插件、权限确认与应用后端覆盖。
+- **Profile（特征码/一键部署）**：属于运行时侧的「环境配置 + 依赖声明」能力；编写器不解析/不应用 Profile，只在角色包里提供 `plugin_backends` 等字段供运行时读取。
+
 **性格档案**：本编写器编辑包内 **核心性格档案**（`core_personality.txt`）与 **`evolution`**（含 **`personality_source`**、`max_change_per_event`）。若选用 **`profile`**，运行时的 **可变性格档案**由 oclive 在数据库中维护，**不可**在包内手写；设计说明见 oclivenewnew **[personality-archive-notes.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/docs/personality-archive-notes.md)**，思路变化见 **[design-axis-evolution.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/docs/design-axis-evolution.md)**。
 
 **版本对齐**：`src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 应与 **oclivenewnew** `src-tauri/Cargo.toml` 的 **`version`** 一致；导出前校验（含可选 wasm）会检查 **`manifest.min_runtime_version`** 与 **`manifest.json` / `settings.json` 顶层键**（见 [PACK_VERSIONING.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/role-pack/PACK_VERSIONING.md)）。
