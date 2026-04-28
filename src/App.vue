@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import AdvancedCreationPanel from './components/pack/AdvancedCreationPanel.vue'
 import ChatPanel from './components/pack/ChatPanel.vue'
+import FeedbackWorkspace from './components/pack/FeedbackWorkspace.vue'
 import PackChecksSection from './components/pack/PackChecksSection.vue'
 import SimpleCreationPanel from './components/pack/SimpleCreationPanel.vue'
 import { usePackEditor } from './composables/usePackEditor'
@@ -64,7 +65,7 @@ function onApplyMarketCompose() {
   }
 }
 
-type EditorViewId = 'start' | 'simple' | 'advanced' | 'check' | 'chat'
+type EditorViewId = 'start' | 'simple' | 'advanced' | 'check' | 'chat' | 'feedback'
 
 const editorView = ref<EditorViewId>('start')
 
@@ -78,6 +79,7 @@ const editorNav: { id: EditorViewId; label: string; icon: string }[] = [
   { id: 'advanced', label: '高级', icon: '⚙️' },
   { id: 'check', label: '检查', icon: '✓' },
   { id: 'chat', label: '试聊', icon: '💬' },
+  { id: 'feedback', label: '反馈', icon: '📬' },
 ]
 
 function goEditorView(id: EditorViewId) {
@@ -93,6 +95,7 @@ const viewTitle = computed(() => {
     advanced: '高级创作',
     check: '检查与导出',
     chat: '试聊',
+    feedback: '反馈工作台',
   }
   return m[editorView.value]
 })
@@ -227,6 +230,10 @@ const viewTitle = computed(() => {
             </button>
           </div>
         </section>
+      </div>
+
+      <div v-show="editorView === 'feedback'" class="view-stack">
+        <FeedbackWorkspace :role-id="manifestRoleId" />
       </div>
 
       <!-- 简单创作 -->
