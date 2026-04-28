@@ -1,5 +1,6 @@
 import { isTauriRuntime } from './exportFolder'
 import { defaultUiConfig, type SlotConfig, type UiConfig } from '../types/uiConfig'
+import { invoke } from '@tauri-apps/api/tauri'
 
 type DiskSlotKey =
   | 'chat_toolbar'
@@ -154,7 +155,6 @@ export async function readUiConfig(rolePath: string): Promise<UiConfig> {
     return defaultUiConfig()
   }
   try {
-    const { invoke } = await import('@tauri-apps/api/tauri')
     const path = `${base.replace(/\\/g, '/')}/ui.json`
     const text = await invoke<string>('read_text_file', { path })
     return parseUiConfigJson(text)
@@ -169,7 +169,6 @@ export async function writeUiConfig(rolePath: string, config: UiConfig): Promise
   if (!base || !isTauriRuntime()) {
     return
   }
-  const { invoke } = await import('@tauri-apps/api/tauri')
   const path = `${base.replace(/\\/g, '/')}/ui.json`
   await invoke('write_text_file', { path, content: serializeUiConfig(config) })
 }
