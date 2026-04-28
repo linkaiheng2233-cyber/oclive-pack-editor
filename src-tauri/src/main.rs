@@ -250,7 +250,11 @@ fn collect_directory_plugins_from_root(
         }
         let raw = fs::read_to_string(&mf).map_err(|e| e.to_string())?;
         let v: serde_json::Value = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
-        if v.get("schema_version").and_then(|x| x.as_u64()).unwrap_or(0) != 1 {
+        if v.get("schema_version")
+            .and_then(|x| x.as_u64())
+            .unwrap_or(0)
+            != 1
+        {
             continue;
         }
         let id = v
@@ -272,20 +276,21 @@ fn collect_directory_plugins_from_root(
             .and_then(|x| x.as_array())
             .map(|a| {
                 a.iter()
-                    .filter_map(|i| i.as_str().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string))
+                    .filter_map(|i| {
+                        i.as_str()
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                            .map(str::to_string)
+                    })
                     .collect()
             })
             .unwrap_or_default();
-        let plugin_type = v
-            .get("type")
-            .and_then(|x| x.as_str())
-            .map(str::to_string);
+        let plugin_type = v.get("type").and_then(|x| x.as_str()).map(str::to_string);
         let is_shell = v.get("shell").is_some();
         let mut ui_slot_variants: Vec<UiSlotVariantInfo> = Vec::new();
         let mut ui_slot_names: Vec<String> = Vec::new();
         if let Some(arr) = v.get("ui_slots").and_then(|x| x.as_array()) {
-            let mut seen_slot: std::collections::HashSet<String> =
-                std::collections::HashSet::new();
+            let mut seen_slot: std::collections::HashSet<String> = std::collections::HashSet::new();
             for o in arr {
                 let Some(slot) = o.get("slot").and_then(|s| s.as_str()).map(str::trim) else {
                     continue;
@@ -392,8 +397,7 @@ fn spawn_oclive_api(exe_path: String, port: u16, host: String) -> Result<(), Str
         const CREATE_NEW_CONSOLE: u32 = 0x00000010;
         cmd.creation_flags(CREATE_NEW_CONSOLE);
     }
-    cmd.spawn()
-        .map_err(|e| format!("启动失败：{}", e))?;
+    cmd.spawn().map_err(|e| format!("启动失败：{}", e))?;
     Ok(())
 }
 
