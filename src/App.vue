@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import AdvancedCreationPanel from './components/pack/AdvancedCreationPanel.vue'
 import ChatPanel from './components/pack/ChatPanel.vue'
 import FeedbackWorkspace from './components/pack/FeedbackWorkspace.vue'
 import PackChecksSection from './components/pack/PackChecksSection.vue'
 import SimpleCreationPanel from './components/pack/SimpleCreationPanel.vue'
+import { type EditorViewId, useEditorViewState } from './composables/useEditorViewState'
 import { usePackEditor } from './composables/usePackEditor'
 import { usePackShellPreferences } from './composables/usePackShellPreferences'
 
@@ -65,12 +66,10 @@ function onApplyMarketCompose() {
   }
 }
 
-type EditorViewId = 'start' | 'simple' | 'advanced' | 'check' | 'chat' | 'feedback'
-
-const editorView = ref<EditorViewId>('start')
-
-watch(editorView, (v) => {
-  if (v === 'check' || v === 'chat') flushSimpleToJson()
+const { editorView, shouldMountView } = useEditorViewState((v) => {
+  if (v === 'check' || v === 'chat') {
+    flushSimpleToJson()
+  }
 })
 
 const editorNav: { id: EditorViewId; label: string; icon: string }[] = [
@@ -232,12 +231,12 @@ const viewTitle = computed(() => {
         </section>
       </div>
 
-      <div v-show="editorView === 'feedback'" class="view-stack">
-        <FeedbackWorkspace :role-id="manifestRoleId" />
+      <div v-if="shouldMountView('feedback')" v-show="editorView === 'feedback'" class="view-stack">
+        <FeedbackWorkspace :role-id="manifestRoleId" :active="editorView === 'feedback'" />
       </div>
 
       <!-- 简单创作 -->
-      <div v-show="editorView === 'simple'" class="view-stack">
+      <div v-if="shouldMountView('simple')" v-show="editorView === 'simple'" class="view-stack">
         <SimpleCreationPanel
           v-model:core-personality="corePersonalityText"
           v-model:worldview-markdown="worldviewMarkdown"
@@ -264,7 +263,7 @@ const viewTitle = computed(() => {
       </div>
 
       <!-- 高级创作 -->
-      <div v-show="editorView === 'advanced'" class="view-stack">
+      <div v-if="shouldMountView('advanced')" v-show="editorView === 'advanced'" class="view-stack">
         <AdvancedCreationPanel
           v-model:manifest-text="manifestText"
           v-model:settings-text="settingsText"
@@ -284,12 +283,12 @@ const viewTitle = computed(() => {
       </div>
 
       <!-- 试聊 -->
-      <div v-show="editorView === 'chat'" class="view-stack">
+      <div v-if="shouldMountView('chat')" v-show="editorView === 'chat'" class="view-stack">
         <ChatPanel :role-id="manifestRoleId" :last-roles-root="lastExportedRolesRoot" />
       </div>
 
       <!-- 检查与导出 -->
-      <div v-show="editorView === 'check'" class="view-stack view-stack--check">
+      <div v-if="shouldMountView('check')" v-show="editorView === 'check'" class="view-stack view-stack--check">
         <PackChecksSection
           v-model:require-checks-before-export="requireChecksBeforeExport"
           :validation-last-used-wasm="validationLastUsedWasm"

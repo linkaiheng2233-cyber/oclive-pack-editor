@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   fetchRuntimeHealth,
   fetchRuntimeRoleFeedback,
@@ -11,6 +11,7 @@ import HelpHint from '../HelpHint.vue'
 
 const props = defineProps<{
   roleId: string
+  active?: boolean
 }>()
 
 const STORAGE_API = 'oclive-pack-editor-api-base'
@@ -171,11 +172,20 @@ async function toggleHandled(it: RuntimeRoleFeedbackItem, handled: boolean): Pro
   }
 }
 
-onMounted(() => {
-  loadPersisted()
-  void ping()
-  void refresh(true)
-})
+const workspaceActivated = ref(false)
+
+watch(
+  () => props.active === true,
+  (active) => {
+    if (!active) return
+    if (workspaceActivated.value) return
+    workspaceActivated.value = true
+    loadPersisted()
+    void ping()
+    void refresh(true)
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
