@@ -60,5 +60,6 @@ oclive-pack-editor/
 - **浏览器**：`npm run dev:browser`（自动打开页签）或 `npm run dev` 后手动打开 `http://localhost:5173/`；Windows 也可用 **`start.bat`** 选「仅浏览器」或 `start.bat web`。  
 - **Tauri 窗口（本机启动器形态）**：`npm run tauri:dev`，或 Windows 根目录 **`start.bat`**（默认即 Tauri）；正式安装包用 `npm run tauri:build`，产物在 `src-tauri/target/release/bundle/`（依平台而异）。  
 - **自动化**：`npm test`（单测）、`npm run test:e2e`（需先 `npm run build` 且已 `npx playwright install`）与 CI 一致；日常手测不必强依赖 E2E。  
+- **启动体验（近期优化）**：大面板页面已做异步懒加载；「试聊 → 查看反馈」弹窗按需加载（避免首屏解析成本）。  
 - **无障碍（简要）**：高级创作下 Tab 列表可聚焦后，用 **← / →**、**Home** / **End** 切换分区（与 Fluent 类桌面习惯一致）。  
 - 编写器与 oclive **仍通过磁盘角色包对接**：测试链路以「导出 → 放入 roles 根 → 运行时 `load_role`」为准。

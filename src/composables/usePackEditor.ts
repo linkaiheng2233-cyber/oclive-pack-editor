@@ -253,7 +253,11 @@ export function usePackEditor() {
     } catch {
       /* ignore */
     }
-    syncFormsFromJson()
+    // Avoid parsing large JSON texts at cold start when user is in advanced mode.
+    // When switching to simple mode, the creationMode watcher will sync again.
+    if (creationMode.value === 'simple') {
+      syncFormsFromJson()
+    }
   })
 
   onBeforeUnmount(() => {

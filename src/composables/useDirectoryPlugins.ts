@@ -21,13 +21,19 @@ export function useDirectoryPlugins(rolesRoot: Ref<string>) {
   const plugins = ref<DirectoryPluginInfo[]>([])
   const loadError = ref<string | null>(null)
   const loading = ref(false)
+  let lastLoadedRoot = ''
+  let debounceTimer: number | null = null
 
   async function load(): Promise<void> {
     const root = rolesRoot.value?.trim() ?? ''
+    if (root === lastLoadedRoot && plugins.value.length > 0) {
+      return
+    }
     loading.value = true
     try {
       plugins.value = await listDirectoryPluginsForRolesRoot(root === '' ? null : root)
       loadError.value = null
+      lastLoadedRoot = root
     } catch (e) {
       loadError.value = e instanceof Error ? e.message : String(e)
       plugins.value = []
@@ -36,7 +42,19 @@ export function useDirectoryPlugins(rolesRoot: Ref<string>) {
     }
   }
 
-  watch(rolesRoot, () => void load(), { immediate: true })
+  watch(
+    rolesRoot,
+    () => {
+      if (debounceTimer != null) {
+        window.clearTimeout(debounceTimer)
+      }
+      debounceTimer = window.setTimeout(() => {
+        debounceTimer = null
+        void load()
+      }, 200)
+    },
+    { immediate: true },
+  )
 
   return { plugins, loadError, loading, load }
 }
