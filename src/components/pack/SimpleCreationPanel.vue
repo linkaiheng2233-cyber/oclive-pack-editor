@@ -177,7 +177,14 @@ function syncAllSlotsFromScan() {
 }
 
 onMounted(syncAllSlotsFromScan)
-watch(directoryPlugins, syncAllSlotsFromScan, { deep: true })
+watch(
+  () =>
+    directoryPlugins.value
+      .map((p) => `${p.id}:${(p.uiSlotVariants ?? []).length}`)
+      .sort()
+      .join('|'),
+  syncAllSlotsFromScan,
+)
 
 let dragSlot: SlotKey | null = null
 let dragIdx: number | null = null

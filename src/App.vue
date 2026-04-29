@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import AdvancedCreationPanel from './components/pack/AdvancedCreationPanel.vue'
-import ChatPanel from './components/pack/ChatPanel.vue'
-import FeedbackWorkspace from './components/pack/FeedbackWorkspace.vue'
-import PackChecksSection from './components/pack/PackChecksSection.vue'
-import SimpleCreationPanel from './components/pack/SimpleCreationPanel.vue'
+import { computed, defineAsyncComponent, ref } from 'vue'
 import { type EditorViewId, useEditorViewState } from './composables/useEditorViewState'
 import { usePackEditor } from './composables/usePackEditor'
 import { usePackShellPreferences } from './composables/usePackShellPreferences'
+
+const AdvancedCreationPanel = defineAsyncComponent(() => import('./components/pack/AdvancedCreationPanel.vue'))
+const ChatPanel = defineAsyncComponent(() => import('./components/pack/ChatPanel.vue'))
+const FeedbackWorkspace = defineAsyncComponent(() => import('./components/pack/FeedbackWorkspace.vue'))
+const PackChecksSection = defineAsyncComponent(() => import('./components/pack/PackChecksSection.vue'))
+const SimpleCreationPanel = defineAsyncComponent(() => import('./components/pack/SimpleCreationPanel.vue'))
 
 const {
   manifestText,
