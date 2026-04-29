@@ -802,12 +802,16 @@ async function send(): Promise<void> {
     var(--fluent-shadow-soft),
     0 1px 0 color-mix(in srgb, #fff 18%, transparent);
   transition:
-    background 0.15s ease,
-    transform 0.1s ease,
-    box-shadow 0.15s ease;
+    background var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out),
+    filter var(--motion-fast) var(--ease-out);
+  will-change: transform;
 }
 .row-actions button:hover {
   background: var(--fluent-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--fluent-shadow-card);
 }
 .row-actions button:focus-visible {
   outline: none;
@@ -817,7 +821,8 @@ async function send(): Promise<void> {
     0 0 0 4px var(--fluent-border-focus);
 }
 .row-actions button:active:not(:disabled) {
-  transform: scale(0.985);
+  transform: translateY(0px) scale(0.985);
+  box-shadow: var(--fluent-shadow-soft);
 }
 .row-actions button.secondary {
   background: var(--pack-glass-fill-subtle);

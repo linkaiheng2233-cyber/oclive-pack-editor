@@ -394,12 +394,14 @@ const viewTitle = computed(() => {
   font-size: 0.65rem;
   font-weight: 500;
   transition:
-    color 0.15s ease,
-    transform 0.12s ease;
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+  will-change: transform;
 }
 
 .rail-btn:hover {
   color: var(--fluent-text-primary);
+  transform: translateY(-1px);
 }
 
 .rail-btn:hover .rail-ico {
@@ -446,9 +448,11 @@ const viewTitle = computed(() => {
   font-size: 1.25rem;
   line-height: 1;
   transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    box-shadow 0.2s ease;
+    background var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-med) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+  will-change: transform;
 }
 
 .rail-lbl {
