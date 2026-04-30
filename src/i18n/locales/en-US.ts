@@ -29,6 +29,10 @@ export default {
         "This port is occupied, but the chat service health check failed. Confirm the occupying process is the intended oclive, or change the port in “API base”.",
       spawnAttempted: "Tried to start the process. Re-checking in ~2–5 seconds…",
     },
+    confirms: {
+      launchExe:
+        "This will launch an external executable:\n{path}\n\nPlease confirm this path points to a trusted oclive program.",
+    },
     fields: {
       apiBase: {
         label: "API base (must match oclive port)",

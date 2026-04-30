@@ -26,6 +26,9 @@ export default {
         "该端口已被占用，但试聊服务检测未通过。请确认占用进程是否为目标 oclive，或更换「连接地址」里的端口。",
       spawnAttempted: "已尝试启动进程，约 2～5 秒后再次检测…",
     },
+    confirms: {
+      launchExe: "将启动外部可执行文件：\n{path}\n\n请确认该路径为你信任的 oclive 程序。",
+    },
     fields: {
       apiBase: {
         label: "连接地址（和 oclive 端口一致）",

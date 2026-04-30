@@ -268,7 +268,7 @@ function exeConsentKey(exePath: string): string {
 }
 
 function ensureExeConsent(exePath: string): boolean {
-  const prompt = `将启动外部可执行文件：\n${exePath}\n\n请确认该路径为你信任的 oclive 程序。`
+  const prompt = String(t("chatPanel.confirms.launchExe", { path: exePath }))
   const key = exeConsentKey(exePath)
   try {
     if (localStorage.getItem(key) === 'true') return true
