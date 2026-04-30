@@ -1,6 +1,6 @@
 # oclive-pack-editor
 
-[![CI](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml)
+[![CI](https://github.com/oclive-app/oclive-pack-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/oclive-app/oclive-pack-editor/actions/workflows/ci.yml)
 
 独立 **角色包编写器**（Vite + Vue 3 + TypeScript + 可选 **Tauri 1.x** 桌面壳）：编辑并导出与 **oclivenewnew** 运行时兼容的 **`roles/{角色id}/`** 目录树或 zip（`.zip` / `.ocpak`，均为 zip 格式）。**不包含**对话引擎或运行时源码；两应用的唯一纽带是磁盘上的角色包。
 
@@ -12,7 +12,7 @@
 
 | 项目 | 说明 |
 |------|------|
-| **本仓库** | 产出 `manifest.json`、`settings.json`、`core_personality.txt`、可选 **`knowledge/**/*.md`**（多文件世界观）、占位场景、`assets/images/` 情绪图等；可选 **`creator_message.txt`**（创作者公告：可「整包一句」或「按行多条」；**oclivenewnew 不参与读取**，由 **oclive-launcher** 只读展示；约定见 [启动器 README](https://github.com/linkaiheng2233-cyber/oclive-launcher/blob/main/README.md#随包寄语与职责边界创作者公告)） |
+| **本仓库** | 产出 `manifest.json`、`settings.json`、`core_personality.txt`、可选 **`knowledge/**/*.md`**（多文件世界观）、占位场景、`assets/images/` 情绪图等；可选 **`creator_message.txt`**（创作者公告：可「整包一句」或「按行多条」；**oclivenewnew 不参与读取**，由 **oclive-launcher** 只读展示；约定见 [启动器 README](https://github.com/oclive-app/oclive-launcher/blob/main/README.md#随包寄语与职责边界创作者公告)） |
 | **oclivenewnew** | 加载、校验与对话；契约原文在其仓库 **`creator-docs/`** 与 **`roles/README_MANIFEST.md`** |
 
 ## 与「插件市场 / 模块条目 / Profile（特征码）」的边界
@@ -22,9 +22,9 @@
 - **插件市场条目（`type: "plugin" | "module" | "profile"`）**：由 `oclivenewnew` 的「插件与后端管理」负责同步索引、安装依赖插件、权限确认与应用后端覆盖。
 - **Profile（特征码/一键部署）**：属于运行时侧的「环境配置 + 依赖声明」能力；编写器不解析/不应用 Profile，只在角色包里提供 `plugin_backends` 等字段供运行时读取。
 
-**性格档案**：本编写器编辑包内 **核心性格档案**（`core_personality.txt`）与 **`evolution`**（含 **`personality_source`**、`max_change_per_event`）。若选用 **`profile`**，运行时的 **可变性格档案**由 oclive 在数据库中维护，**不可**在包内手写；设计说明见 oclivenewnew **[personality-archive-notes.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/docs/personality-archive-notes.md)**，思路变化见 **[design-axis-evolution.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/docs/design-axis-evolution.md)**。
+**性格档案**：本编写器编辑包内 **核心性格档案**（`core_personality.txt`）与 **`evolution`**（含 **`personality_source`**、`max_change_per_event`）。若选用 **`profile`**，运行时的 **可变性格档案**由 oclive 在数据库中维护，**不可**在包内手写；设计说明见 oclivenewnew **[personality-archive-notes.md](https://github.com/oclive-app/oclivenewnew/blob/main/docs/personality-archive-notes.md)**，思路变化见 **[design-axis-evolution.md](https://github.com/oclive-app/oclivenewnew/blob/main/docs/design-axis-evolution.md)**。
 
-**版本对齐**：`src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 应与 **oclivenewnew** `src-tauri/Cargo.toml` 的 **`version`** 一致；导出前校验（含可选 wasm）会检查 **`manifest.min_runtime_version`** 与 **`manifest.json` / `settings.json` 顶层键**（见 [PACK_VERSIONING.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/role-pack/PACK_VERSIONING.md)）。
+**版本对齐**：`src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 应与 **oclivenewnew** `src-tauri/Cargo.toml` 的 **`version`** 一致；导出前校验（含可选 wasm）会检查 **`manifest.min_runtime_version`** 与 **`manifest.json` / `settings.json` 顶层键**（见 [PACK_VERSIONING.md](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/role-pack/PACK_VERSIONING.md)）。
 
 ## 角色包反馈（半私密收件箱）
 
@@ -32,7 +32,7 @@
 创作者可在本编写器的 **试聊面板** 中点 **「查看反馈（半私密）」** 拉取并处理（标记已处理、写处理备注）。
 
 反馈协议与字段说明见：  
-- oclivenewnew 文档 **[ROLE_FEEDBACK_V1.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/role-pack/ROLE_FEEDBACK_V1.md)**
+- oclivenewnew 文档 **[ROLE_FEEDBACK_V1.md](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/role-pack/ROLE_FEEDBACK_V1.md)**
 
 路径约定（Windows 示例）：与 `oclivenewnew` **同级**放置本仓库，例如 `D:\oclive-pack-editor` 与 `D:\oclivenewnew`。
 
@@ -41,11 +41,11 @@
 | 步骤 | 说明 |
 |------|------|
 | 1 | 安装 **Node.js**，按需安装 **Ollama**（试聊 / 完整运行时需要）。 |
-| 2 | 克隆 **[oclivenewnew](https://github.com/linkaiheng2233-cyber/oclivenewnew)**（运行时）与本 **编写器**；可选 **[oclive-launcher](https://github.com/linkaiheng2233-cyber/oclive-launcher)** 统一管理路径与 **`OCLIVE_ROLES_DIR`**。 |
-| 3 | 在本编写器中编辑或导入角色包，**导出 .zip / .ocpak** 或使用桌面版 **「写入文件夹」**，使 **`{角色id}/manifest.json`** 出现在某一 **roles 根** 下（该根路径即运行时的 **`OCLIVE_ROLES_DIR`**）。也可使用 **oclive-launcher** 的 **「从 zip 安装角色包」** 解压到该根并选择本机 **Ollama 模型**（见 [启动器 README](https://github.com/linkaiheng2233-cyber/oclive-launcher/blob/main/README.md)）。 |
+| 2 | 克隆 **[oclivenewnew](https://github.com/oclive-app/oclivenewnew)**（运行时）与本 **编写器**；可选 **[oclive-launcher](https://github.com/oclive-app/oclive-launcher)** 统一管理路径与 **`OCLIVE_ROLES_DIR`**。 |
+| 3 | 在本编写器中编辑或导入角色包，**导出 .zip / .ocpak** 或使用桌面版 **「写入文件夹」**，使 **`{角色id}/manifest.json`** 出现在某一 **roles 根** 下（该根路径即运行时的 **`OCLIVE_ROLES_DIR`**）。也可使用 **oclive-launcher** 的 **「从 zip 安装角色包」** 解压到该根并选择本机 **Ollama 模型**（见 [启动器 README](https://github.com/oclive-app/oclive-launcher/blob/main/README.md)）。 |
 | 4 | 启动 **oclivenewnew**，在应用内从该 roles 根加载角色并开始对话；试聊页见下文「试聊」。 |
 
-权威说明：`oclivenewnew` 仓库 **[creator-docs/getting-started/CREATOR_WORKFLOW.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/getting-started/CREATOR_WORKFLOW.md)**；启动器上手路径见 **[oclive-launcher README](https://github.com/linkaiheng2233-cyber/oclive-launcher#新用户从下载到第一次对话推荐路径)**。
+权威说明：`oclivenewnew` 仓库 **[creator-docs/getting-started/CREATOR_WORKFLOW.md](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/getting-started/CREATOR_WORKFLOW.md)**；启动器上手路径见 **[oclive-launcher README](https://github.com/oclive-app/oclive-launcher#新用户从下载到第一次对话推荐路径)**。
 
 界面风格参考 **Fluent Design**（与常见 Fluent 桌面工具如 **qfluentwidgets** 一脉：浅色页背景、卡片层次、主色强调按钮），在 `src/style.css` 中通过 CSS 变量统一，并支持系统深色偏好；日间为 **象牙/卡其暖色**，与 **oclive-launcher** 对齐以便跨应用习惯一致。
 
