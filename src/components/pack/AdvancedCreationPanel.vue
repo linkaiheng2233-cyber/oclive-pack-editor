@@ -500,14 +500,14 @@ function resetAllPreviewWeightOverrides(): void {
     <section v-show="advancedTab === 'world'" class="panel adv-single">
       <div class="adv-section-head">
         <h2 class="adv-h2">
-          <span>世界观与知识库（Markdown）</span>
+          <span>{{ t("advancedCreation.sections.world.title") }}</span>
           <HelpHint :paragraphs="ADV_WORLD_KNOWLEDGE" />
         </h2>
         <p class="adv-lead">
-          可多份文档；<code>knowledge/world.md</code> 会与简单创作的「世界观」字段同步。
+          {{ t("advancedCreation.sections.world.lead") }}
         </p>
         <details class="adv-key-map">
-          <summary>每个知识文件顶上的「头信息」字段</summary>
+          <summary>{{ t("advancedCreation.sections.world.metaSummary") }}</summary>
           <ul class="adv-key-list">
             <li v-for="row in KNOWLEDGE_META_GUIDE" :key="row.key">
               <code>{{ row.key }}</code>
@@ -517,24 +517,24 @@ function resetAllPreviewWeightOverrides(): void {
         </details>
       </div>
       <div class="knowledge-actions">
-        <button type="button" @click="emit('addKnowledgeFile')">新增知识文件</button>
+        <button type="button" @click="emit('addKnowledgeFile')">{{ t("advancedCreation.sections.world.addKnowledgeFile") }}</button>
       </div>
       <div class="knowledge-preview">
         <h3 class="adv-h3">
-          <span>命中预览（调试用）</span>
+          <span>{{ t("advancedCreation.sections.world.preview.title") }}</span>
           <HelpHint :paragraphs="ADV_KNOWLEDGE_PREVIEW" />
         </h3>
-        <p class="base-desc">输入关键词，看哪些知识可能更靠前（本地近似，仅供参考）。</p>
+        <p class="base-desc">{{ t("advancedCreation.sections.world.preview.desc") }}</p>
         <div class="preview-controls">
           <input
             v-model="previewSceneId"
             type="text"
             class="knowledge-scene"
-            placeholder="预览条件：场景（可选），如：station"
+            :placeholder="String(t('advancedCreation.sections.world.preview.scenePlaceholder'))"
           />
           <label class="preview-check">
             <input v-model="previewStrictScene" type="checkbox" />
-            仅预览匹配该场景的知识（调试开关）
+            {{ t("advancedCreation.sections.world.preview.strictScene") }}
           </label>
           <button
             v-if="Object.keys(previewWeightOverrides).length"
@@ -542,17 +542,17 @@ function resetAllPreviewWeightOverrides(): void {
             class="preview-reset"
             @click="resetAllPreviewWeightOverrides"
           >
-            清空临时权重
+            {{ t("advancedCreation.sections.world.preview.resetAllWeights") }}
           </button>
         </div>
         <input
           v-model="knowledgeQuery"
           type="text"
           class="knowledge-query"
-          placeholder="例如：地铁 车站 到达 晚高峰"
+          :placeholder="String(t('advancedCreation.sections.world.preview.queryPlaceholder'))"
         />
         <div v-if="knowledgeQuery.trim() && knowledgeHitPreview.length === 0" class="empty-tip">
-          当前查询无命中。
+          {{ t("advancedCreation.sections.world.preview.noHits") }}
         </div>
         <ul v-if="previewHitsWithOverrides.length" class="knowledge-hits">
           <li v-for="h in previewHitsWithOverrides" :key="h.key">
@@ -561,15 +561,29 @@ function resetAllPreviewWeightOverrides(): void {
               <strong>score {{ h.score }}</strong>
             </div>
             <div class="hit-score">
-              基础分 {{ h.baseScore }} × 权重 {{ h.effectiveWeight }} = {{ h.score }}
-              <span v-if="h.weightOverridden">（临时模拟，原始 {{ h.weight }}）</span>
+              {{
+                t("advancedCreation.sections.world.preview.scoreLine", {
+                  base: h.baseScore,
+                  weight: h.effectiveWeight,
+                  score: h.score,
+                })
+              }}
+              <span v-if="h.weightOverridden">{{
+                t("advancedCreation.sections.world.preview.weightOverridden", { weight: h.weight })
+              }}</span>
               <span v-if="previewSceneId.trim()">
-                （场景{{ h.sceneMatched ? '匹配' : '未匹配' }}）
+                ({{
+                  t("advancedCreation.sections.world.preview.sceneMatched", {
+                    matched: h.sceneMatched
+                      ? t("advancedCreation.sections.world.preview.sceneMatchedYes")
+                      : t("advancedCreation.sections.world.preview.sceneMatchedNo"),
+                  })
+                }})
               </span>
             </div>
             <div class="hit-weight">
               <label>
-                临时权重
+                {{ t("advancedCreation.sections.world.preview.tempWeight") }}
                 <input
                   :value="h.effectiveWeight"
                   type="range"
@@ -585,10 +599,12 @@ function resetAllPreviewWeightOverrides(): void {
                 class="preview-reset-one"
                 @click="resetPreviewWeightOverride(h.key)"
               >
-                还原
+                {{ t("advancedCreation.sections.world.preview.resetOne") }}
               </button>
             </div>
-            <div class="hit-reasons">命中原因：{{ h.reasons.join('；') }}</div>
+            <div class="hit-reasons">
+              {{ t("advancedCreation.sections.world.preview.reasons", { reasons: h.reasons.join("；") }) }}
+            </div>
             <ul v-if="h.snippets.length" class="hit-snippets">
               <li v-for="(s, si) in h.snippets" :key="si">{{ s }}</li>
             </ul>
@@ -598,35 +614,37 @@ function resetAllPreviewWeightOverrides(): void {
       <div class="adv-dock-stack">
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          aria-label="命中预览控件说明"
+          :aria-label="String(t('advancedCreation.sections.world.previewDocks.keypointsAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge">重点</span>
-            <span class="adv-examples-dock-title">命中预览 · 控件说明与可改范围</span>
+            <span class="adv-examples-badge">{{ t("advancedCreation.docks.badges.keypoints") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.world.previewDocks.keypointsTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
-            <h4 class="adv-ex-part">每个控件：含义与可改范围</h4>
+            <h4 class="adv-ex-part">{{ t("advancedCreation.sections.world.previewDocks.eachControlTitle") }}</h4>
             <div class="adv-scope-matrix">
               <ul class="adv-scope-list">
                 <li v-for="row in KNOWLEDGE_PREVIEW_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
                   <code class="adv-scope-field">{{ row.field }}</code>
                   <p class="adv-scope-mean">{{ row.meaning }}</p>
-                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                  <p class="adv-scope-scope">
+                    <strong>{{ t("advancedCreation.docks.scopeStrong") }}</strong>{{ row.scope }}
+                  </p>
                 </li>
               </ul>
             </div>
             <p class="adv-examples-dock-note">
-              对照上方「命中预览」试；结果为<strong>本地近似</strong>，与实机可能略有差别。
+              {{ t("advancedCreation.sections.world.previewDocks.notePrefix") }}<strong>{{ t("advancedCreation.sections.world.previewDocks.noteStrong") }}</strong>{{ t("advancedCreation.sections.world.previewDocks.noteSuffix") }}
             </p>
           </div>
         </details>
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          aria-label="命中预览常见问题"
+          :aria-label="String(t('advancedCreation.sections.world.previewDocks.faqAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
-            <span class="adv-examples-dock-title">常见问题 · 命中预览（改进前 / 改进后对照）</span>
+            <span class="adv-examples-badge adv-examples-badge--faq">{{ t("advancedCreation.docks.badges.faq") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.world.previewDocks.faqTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
             <AdvFaqList :items="KNOWLEDGE_PREVIEW_FAQ" />
@@ -634,7 +652,7 @@ function resetAllPreviewWeightOverrides(): void {
         </details>
       </div>
       <div v-if="knowledgeFiles.length === 0" class="empty-tip">
-        当前没有知识文件。可点击「新增知识文件」，或在简单创作填写世界观自动生成 `world.md`。
+        {{ t("advancedCreation.sections.world.emptyNoFiles") }}
       </div>
       <div v-for="(d, i) in knowledgeFiles" :key="d.path + ':' + i" class="knowledge-card">
         <div class="knowledge-head">
@@ -644,7 +662,7 @@ function resetAllPreviewWeightOverrides(): void {
             class="knowledge-path"
             @input="emit('updateKnowledgeFile', i, { path: ($event.target as HTMLInputElement).value })"
           />
-          <button type="button" class="danger" @click="emit('removeKnowledgeFile', i)">删除</button>
+          <button type="button" class="danger" @click="emit('removeKnowledgeFile', i)">{{ t("advancedCreation.sections.world.delete") }}</button>
         </div>
         <div class="knowledge-meta">
           <label>
@@ -656,7 +674,7 @@ function resetAllPreviewWeightOverrides(): void {
             />
           </label>
           <label>
-            <span>tags（逗号分隔）</span>
+            <span>{{ t("advancedCreation.sections.world.meta.tagsCsv") }}</span>
             <input
               :value="docMeta(d).tags.join(', ')"
               type="text"
@@ -671,7 +689,7 @@ function resetAllPreviewWeightOverrides(): void {
             />
           </label>
           <label>
-            <span>scenes（逗号分隔）</span>
+            <span>{{ t("advancedCreation.sections.world.meta.scenesCsv") }}</span>
             <input
               :value="docMeta(d).scenes.join(', ')"
               type="text"
@@ -696,7 +714,7 @@ function resetAllPreviewWeightOverrides(): void {
             />
           </label>
           <label>
-            <span>event_hints（逗号分隔）</span>
+            <span>{{ t("advancedCreation.sections.world.meta.eventHintsCsv") }}</span>
             <input
               :value="docMeta(d).eventHints.join(', ')"
               type="text"
@@ -722,35 +740,37 @@ function resetAllPreviewWeightOverrides(): void {
       <div class="adv-dock-stack">
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          aria-label="知识文件字段说明"
+          :aria-label="String(t('advancedCreation.sections.world.fileDocks.keypointsAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge">重点</span>
-            <span class="adv-examples-dock-title">知识文件 · 路径与字段可改范围</span>
+            <span class="adv-examples-badge">{{ t("advancedCreation.docks.badges.keypoints") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.world.fileDocks.keypointsTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
-            <h4 class="adv-ex-part">路径、头信息与正文：含义与可改范围</h4>
+            <h4 class="adv-ex-part">{{ t("advancedCreation.sections.world.fileDocks.eachPartTitle") }}</h4>
             <div class="adv-scope-matrix">
               <ul class="adv-scope-list">
                 <li v-for="row in KNOWLEDGE_FILE_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
                   <code class="adv-scope-field">{{ row.field }}</code>
                   <p class="adv-scope-mean">{{ row.meaning }}</p>
-                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                  <p class="adv-scope-scope">
+                    <strong>{{ t("advancedCreation.docks.scopeStrong") }}</strong>{{ row.scope }}
+                  </p>
                 </li>
               </ul>
             </div>
             <p class="adv-examples-dock-note">
-              对照上方各文件的「头信息 + 正文」；已有文件请<strong>逐段修改</strong>，勿整篇覆盖。
+              {{ t("advancedCreation.sections.world.fileDocks.notePrefix") }}<strong>{{ t("advancedCreation.sections.world.fileDocks.noteStrong") }}</strong>{{ t("advancedCreation.sections.world.fileDocks.noteSuffix") }}
             </p>
           </div>
         </details>
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          aria-label="知识文件常见问题"
+          :aria-label="String(t('advancedCreation.sections.world.fileDocks.faqAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
-            <span class="adv-examples-dock-title">常见问题 · 知识文件（改进前 / 改进后对照）</span>
+            <span class="adv-examples-badge adv-examples-badge--faq">{{ t("advancedCreation.docks.badges.faq") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.world.fileDocks.faqTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
             <AdvFaqList :items="KNOWLEDGE_FILE_FAQ" />
