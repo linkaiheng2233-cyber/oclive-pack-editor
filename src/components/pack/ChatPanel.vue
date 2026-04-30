@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
+import { useI18n } from "vue-i18n";
 import {
   fetchRuntimeChat,
   fetchRuntimeHealth,
@@ -16,6 +17,8 @@ import { isTauriRuntime } from '../../lib/exportFolder'
 import AdvFaqList from '../AdvFaqList.vue'
 import HelpHint from '../HelpHint.vue'
 import { CHAT_FAQ } from '../../lib/simpleEditorFaq'
+
+const { t } = useI18n()
 
 /** 试聊区：标题旁与各表单项旁的「?」详细说明（大白话） */
 const CHAT_HINT = {
@@ -178,15 +181,12 @@ function newChatThread(): void {
   messages.value = []
 }
 
-const PRESENCE_LABELS: Record<string, string> = {
-  co_present: '共景',
-  remote_stub: '异地占位',
-  remote_life: '异地心声',
-}
-
 function presenceLabel(mode?: string): string {
   if (!mode) return ''
-  return PRESENCE_LABELS[mode] ?? mode
+  if (mode === 'co_present') return String(t("chatPanel.meta.presence.coPresent"))
+  if (mode === 'remote_stub') return String(t("chatPanel.meta.presence.remoteStub"))
+  if (mode === 'remote_life') return String(t("chatPanel.meta.presence.remoteLife"))
+  return mode
 }
 
 function formatFavorMeta(m: RuntimeChatMeta): string {
@@ -194,7 +194,7 @@ function formatFavorMeta(m: RuntimeChatMeta): string {
   const d = m.favorability_delta
   if (cur === undefined && d === undefined) return ''
   const parts: string[] = []
-  if (cur !== undefined) parts.push(`好感 ${cur.toFixed(1)}`)
+  if (cur !== undefined) parts.push(String(t("chatPanel.meta.favor.current", { v: cur.toFixed(1) })))
   if (d !== undefined) parts.push(`${d >= 0 ? '+' : ''}${d.toFixed(2)}`)
   return parts.join(' ')
 }
@@ -342,14 +342,14 @@ watch(ocliveExe, (v) => {
   }
 })
 async function pingHealth(): Promise<void> {
-  healthMessage.value = '检测中…'
+  healthMessage.value = String(t("chatPanel.health.checking"))
   healthOk.value = null
   try {
     const text = await fetchRuntimeHealth(apiBase.value.trim())
     healthOk.value = text.trim().toLowerCase().includes('ok')
     healthMessage.value = healthOk.value
-      ? '试聊服务已就绪，可以发消息了。'
-      : `意外响应：${text.slice(0, 120)}`
+      ? String(t("chatPanel.health.ready"))
+      : String(t("chatPanel.health.unexpectedResponse", { text: text.slice(0, 120) }))
   } catch (e) {
     healthOk.value = false
     healthMessage.value = e instanceof Error ? e.message : String(e)
@@ -359,12 +359,11 @@ async function pingHealth(): Promise<void> {
 async function trySpawnRuntime(): Promise<void> {
   const exe = ocliveExe.value.trim()
   if (!exe) {
-    healthMessage.value =
-      '一键启动需要先填写「oclive 程序路径」。若你已在终端手动运行了带 --api 的 oclive，可跳过此项，直接点「检测连接」。'
+    healthMessage.value = String(t("chatPanel.health.spawnMissingExe"))
     return
   }
   if (!ensureExeConsent(exe)) {
-    healthMessage.value = '已取消自动启动：请先确认该可执行文件路径可信。'
+    healthMessage.value = String(t("chatPanel.health.spawnCancelledUntrusted"))
     healthOk.value = false
     return
   }
@@ -375,16 +374,15 @@ async function trySpawnRuntime(): Promise<void> {
     if (isTauriRuntime() && (await runtimeTcpListening(host, port))) {
       await pingHealth()
       if (healthOk.value) {
-        healthMessage.value = '该端口已有程序在监听，且试聊服务检测通过，无需再启动 oclive。'
+        healthMessage.value = String(t("chatPanel.health.portAlreadyHealthy"))
         return
       }
-      healthMessage.value =
-        '该端口已被占用，但试聊服务检测未通过。请确认占用进程是否为目标 oclive，或更换「连接地址」里的端口。'
+      healthMessage.value = String(t("chatPanel.health.portOccupiedButNotHealthy"))
       healthOk.value = false
       return
     }
     await spawnOcliveApi(exe, port, host)
-    healthMessage.value = '已尝试启动进程，约 2～5 秒后再次检测…'
+    healthMessage.value = String(t("chatPanel.health.spawnAttempted"))
     await new Promise((r) => setTimeout(r, 2500))
     await pingHealth()
   } catch (e) {
@@ -418,7 +416,7 @@ async function send(): Promise<void> {
     })
   } catch (e) {
     const err = e instanceof Error ? e.message : String(e)
-    messages.value.push({ role: 'assistant', text: `（错误）${err}` })
+    messages.value.push({ role: 'assistant', text: String(t("chatPanel.chat.errorLine", { err })) })
   } finally {
     chatLoading.value = false
   }
@@ -426,56 +424,61 @@ async function send(): Promise<void> {
 </script>
 
 <template>
-  <section class="chat-panel" aria-label="试聊">
+  <section class="chat-panel" :aria-label="String(t('chatPanel.aria'))">
     <div class="chat-header">
       <h2 class="chat-title">
-        试聊
+        {{ t("chatPanel.title") }}
         <HelpHint :paragraphs="CHAT_HINT.intro" />
       </h2>
       <p class="lead">
-        发布前在这里和角色说几句话，看看回复顺不顺眼。下面几项保持默认或按提示填即可；不懂就点旁边的
-        <span class="hint-mark" aria-hidden="true">?</span>。
+        {{ t("chatPanel.leadPrefix") }}
+        <span class="hint-mark" aria-hidden="true">?</span>{{ t("chatPanel.leadSuffix") }}
       </p>
     </div>
     <p v-if="defaultRolePath" class="path-hint" role="status">
-      已从「写入文件夹」猜到你的角色文件夹（也可在下方改成别的路径）：<code>{{ defaultRolePath }}</code>
+      {{ t("chatPanel.defaultRolePathHint", { path: defaultRolePath }) }}
     </p>
 
     <div class="grid">
       <label class="field">
         <span class="field-label-row">
-          <span class="field-label-text">连接地址（和 oclive 端口一致）</span>
+          <span class="field-label-text">{{ t("chatPanel.fields.apiBase.label") }}</span>
           <HelpHint :paragraphs="CHAT_HINT.apiBase" />
         </span>
-        <input v-model="apiBase" type="url" autocomplete="off" placeholder="默认 http://127.0.0.1:8420" />
+        <input
+          v-model="apiBase"
+          type="url"
+          autocomplete="off"
+          :placeholder="String(t('chatPanel.fields.apiBase.placeholder'))"
+        />
       </label>
       <label class="field field-wide">
         <span class="field-label-row">
-          <span class="field-label-text">oclive 程序路径（仅「一键启动」需要）</span>
+          <span class="field-label-text">{{ t("chatPanel.fields.exe.label") }}</span>
           <HelpHint :paragraphs="CHAT_HINT.exe" />
         </span>
         <input
           v-model="ocliveExe"
           type="text"
-          placeholder="例如 D:\...\oclivenewnew.exe"
+          :placeholder="String(t('chatPanel.fields.exe.placeholder'))"
           autocomplete="off"
         />
       </label>
       <label class="field field-wide">
         <span class="field-label-row">
-          <span class="field-label-text">角色文件夹（里面要有 manifest.json）</span>
+          <span class="field-label-text">{{ t("chatPanel.fields.rolePath.label") }}</span>
           <HelpHint :paragraphs="CHAT_HINT.rolePath" />
         </span>
         <input
           v-model="rolePathManual"
           type="text"
-          :placeholder="defaultRolePath || '先导出到文件夹，或粘贴完整路径'"
+          :placeholder="String(defaultRolePath || String(t('chatPanel.fields.rolePath.placeholderNoDefault')))"
           autocomplete="off"
         />
       </label>
       <label class="field field-wide">
         <span class="field-label-row">
-          <span class="field-label-text">从哪个场景聊（可选）</span>
+          <span class="field-label-text">{{ t("chatPanel.fields.scene.label") }}</span>
           <HelpHint :paragraphs="CHAT_HINT.scene" />
         </span>
         <div class="scene-row">
@@ -485,7 +488,7 @@ async function send(): Promise<void> {
             class="scene-select"
             :disabled="!effectiveRolePath"
           >
-            <option value="">让引擎自己决定</option>
+            <option value="">{{ t("chatPanel.fields.scene.auto") }}</option>
             <option v-for="s in sceneOptions" :key="s" :value="s">{{ s }}</option>
           </select>
           <input
@@ -494,7 +497,7 @@ async function send(): Promise<void> {
             type="text"
             class="scene-select"
             :disabled="!effectiveRolePath"
-            placeholder="可留空；或填写 manifest 里 scenes 中的场景 id"
+            :placeholder="String(t('chatPanel.fields.scene.placeholder'))"
             autocomplete="off"
           />
           <button
@@ -504,33 +507,33 @@ async function send(): Promise<void> {
             :disabled="scenesLoading || !effectiveRolePath"
             @click="refreshManifestScenes"
           >
-            {{ scenesLoading ? '读取中…' : '从 manifest 读取场景列表' }}
+            {{ scenesLoading ? t("chatPanel.fields.scene.loading") : t("chatPanel.fields.scene.refresh") }}
           </button>
         </div>
         <span v-if="scenesLoadError" class="scene-err">{{ scenesLoadError }}</span>
       </label>
     </div>
 
-    <div class="row-actions" aria-label="试聊操作">
+    <div class="row-actions" :aria-label="String(t('chatPanel.actions.aria'))">
       <span class="action-with-hint">
-        <button type="button" @click="pingHealth">检测连接</button>
+        <button type="button" @click="pingHealth">{{ t("chatPanel.actions.ping") }}</button>
         <HelpHint :paragraphs="CHAT_HINT.ping" />
       </span>
       <span v-if="isTauriRuntime()" class="action-with-hint">
         <button type="button" class="secondary" :disabled="spawnLoading" @click="trySpawnRuntime">
-          {{ spawnLoading ? '启动中…' : '一键启动试聊服务' }}
+          {{ spawnLoading ? t("chatPanel.actions.spawning") : t("chatPanel.actions.spawn") }}
         </button>
         <HelpHint :paragraphs="CHAT_HINT.spawn" />
       </span>
       <span class="action-with-hint">
         <button type="button" class="secondary" :disabled="!effectiveRolePath" @click="newChatThread">
-          新会话
+          {{ t("chatPanel.actions.newThread") }}
         </button>
         <HelpHint :paragraphs="CHAT_HINT.newThread" />
       </span>
       <span class="action-with-hint">
         <button type="button" class="secondary" :disabled="!props.roleId" @click="openFeedback">
-          查看反馈（半私密）
+          {{ t("chatPanel.actions.feedback") }}
         </button>
       </span>
     </div>
@@ -554,26 +557,33 @@ async function send(): Promise<void> {
         </div>
         <div v-if="m.role === 'assistant' && m.meta" class="meta-panel">
           <div class="meta-chips">
-            <span v-if="m.meta.scene_id" class="chip">场景 {{ m.meta.scene_id }}</span>
+            <span v-if="m.meta.scene_id" class="chip">{{ t("chatPanel.meta.scene", { id: m.meta.scene_id }) }}</span>
             <span v-if="m.meta.presence_mode" class="chip">{{
               presenceLabel(m.meta.presence_mode)
             }}</span>
-            <span v-if="m.meta.relation_state" class="chip">关系 {{ m.meta.relation_state }}</span>
+            <span v-if="m.meta.relation_state" class="chip">{{ t("chatPanel.meta.relation", { s: m.meta.relation_state }) }}</span>
             <span
               v-if="m.meta.personality_source"
               class="chip"
-            >人格·{{ m.meta.personality_source === 'profile' ? '档案' : '七维' }}</span>
+            >{{
+              t("chatPanel.meta.personalitySource", {
+                s:
+                  m.meta.personality_source === "profile"
+                    ? t("chatPanel.meta.personalitySourceProfile")
+                    : t("chatPanel.meta.personalitySourceVector"),
+              })
+            }}</span>
             <span v-if="formatFavorMeta(m.meta)" class="chip">{{ formatFavorMeta(m.meta) }}</span>
-            <span v-if="m.meta.bot_emotion" class="chip">情绪 {{ m.meta.bot_emotion }}</span>
-            <span v-if="m.meta.portrait_emotion" class="chip">立绘 {{ m.meta.portrait_emotion }}</span>
-            <span v-if="m.meta.reply_is_fallback" class="chip warn">备用回复</span>
+            <span v-if="m.meta.bot_emotion" class="chip">{{ t("chatPanel.meta.botEmotion", { s: m.meta.bot_emotion }) }}</span>
+            <span v-if="m.meta.portrait_emotion" class="chip">{{ t("chatPanel.meta.portraitEmotion", { s: m.meta.portrait_emotion }) }}</span>
+            <span v-if="m.meta.reply_is_fallback" class="chip warn">{{ t("chatPanel.meta.fallbackReply") }}</span>
             <span
               v-if="m.meta.knowledge_chunks_in_prompt != null"
               class="chip"
-              >知识块 {{ m.meta.knowledge_chunks_in_prompt }}</span
+              >{{ t("chatPanel.meta.knowledgeChunks", { n: m.meta.knowledge_chunks_in_prompt }) }}</span
             >
-            <span v-if="m.meta.offer_destination_picker" class="chip accent">可选目的地</span>
-            <span v-if="m.meta.offer_together_travel" class="chip accent">可同行</span>
+            <span v-if="m.meta.offer_destination_picker" class="chip accent">{{ t("chatPanel.meta.offerDestinationPicker") }}</span>
+            <span v-if="m.meta.offer_together_travel" class="chip accent">{{ t("chatPanel.meta.offerTogetherTravel") }}</span>
           </div>
           <details v-if="m.meta.events?.length || m.meta.emotion" class="meta-details">
             <summary>调试详情</summary>

@@ -8,6 +8,78 @@ export default {
   helpHint: {
     ariaLabel: "查看说明",
   },
+  chatPanel: {
+    aria: "试聊",
+    title: "试聊",
+    leadPrefix: "发布前在这里和角色说几句话，看看回复顺不顺眼。下面几项保持默认或按提示填即可；不懂就点旁边的",
+    leadSuffix: "。",
+    defaultRolePathHint: "已从「写入文件夹」猜到你的角色文件夹（也可在下方改成别的路径）：{path}",
+    health: {
+      checking: "检测中…",
+      ready: "试聊服务已就绪，可以发消息了。",
+      unexpectedResponse: "意外响应：{text}",
+      spawnMissingExe:
+        "一键启动需要先填写「oclive 程序路径」。若你已在终端手动运行了带 --api 的 oclive，可跳过此项，直接点「检测连接」。",
+      spawnCancelledUntrusted: "已取消自动启动：请先确认该可执行文件路径可信。",
+      portAlreadyHealthy: "该端口已有程序在监听，且试聊服务检测通过，无需再启动 oclive。",
+      portOccupiedButNotHealthy:
+        "该端口已被占用，但试聊服务检测未通过。请确认占用进程是否为目标 oclive，或更换「连接地址」里的端口。",
+      spawnAttempted: "已尝试启动进程，约 2～5 秒后再次检测…",
+    },
+    fields: {
+      apiBase: {
+        label: "连接地址（和 oclive 端口一致）",
+        placeholder: "默认 http://127.0.0.1:8420",
+      },
+      exe: {
+        label: "oclive 程序路径（仅「一键启动」需要）",
+        placeholder: "例如 D:\\...\\oclivenewnew.exe",
+      },
+      rolePath: {
+        label: "角色文件夹（里面要有 manifest.json）",
+        placeholderNoDefault: "先导出到文件夹，或粘贴完整路径",
+      },
+      scene: {
+        label: "从哪个场景聊（可选）",
+        auto: "让引擎自己决定",
+        placeholder: "可留空；或填写 manifest 里 scenes 中的场景 id",
+        loading: "读取中…",
+        refresh: "从 manifest 读取场景列表",
+      },
+    },
+    actions: {
+      aria: "试聊操作",
+      ping: "检测连接",
+      spawning: "启动中…",
+      spawn: "一键启动试聊服务",
+      newThread: "新会话",
+      feedback: "查看反馈（半私密）",
+    },
+    chat: {
+      errorLine: "（错误）{err}",
+    },
+    meta: {
+      scene: "场景 {id}",
+      relation: "关系 {s}",
+      personalitySource: "人格·{s}",
+      personalitySourceProfile: "档案",
+      personalitySourceVector: "七维",
+      botEmotion: "情绪 {s}",
+      portraitEmotion: "立绘 {s}",
+      fallbackReply: "备用回复",
+      knowledgeChunks: "知识块 {n}",
+      offerDestinationPicker: "可选目的地",
+      offerTogetherTravel: "可同行",
+      presence: {
+        coPresent: "共景",
+        remoteStub: "异地占位",
+        remoteLife: "异地心声",
+      },
+      favor: {
+        current: "好感 {v}",
+      },
+    },
+  },
   simpleCreation: {
     syncWarning: "简单表单未与 JSON 完全同步：{detail}",
     base: {
@@ -329,20 +401,6 @@ export default {
           noteSuffix: "，勿整篇覆盖。",
           faqAria: "知识文件常见问题",
           faqTitle: "常见问题 · 知识文件（改进前 / 改进后对照）",
-        },
-      },
-      images: {
-        title: "情绪立绘图片",
-        lead: "与简单创作相同，导出时写入 assets/images/；点「情绪图片」旁的问号可看说明。",
-        docks: {
-          keypointsAria: "情绪立绘按钮说明",
-          keypointsTitle: "情绪立绘 · 按钮与可改范围",
-          eachButtonTitle: "每个按钮：含义与可改范围",
-          notePrefix: "手动拷文件到包内时需",
-          noteStrong: "文件名与引用一致",
-          noteSuffix: "。",
-          faqAria: "情绪立绘常见问题",
-          faqTitle: "常见问题 · 情绪立绘（改进前 / 改进后对照）",
         },
       },
     },

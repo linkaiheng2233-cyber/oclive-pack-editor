@@ -8,6 +8,81 @@ export default {
   helpHint: {
     ariaLabel: "View help",
   },
+  chatPanel: {
+    aria: "Try chat",
+    title: "Try chat",
+    leadPrefix:
+      "Before release, talk to the role here and see if the replies feel right. Keep defaults or fill as guided below. If unsure, click the ",
+    leadSuffix: ".",
+    defaultRolePathHint:
+      "We inferred your role folder from “Write to folder” (you can override below): {path}",
+    health: {
+      checking: "Checking…",
+      ready: "Chat service is ready. You can send messages now.",
+      unexpectedResponse: "Unexpected response: {text}",
+      spawnMissingExe:
+        "One-click launch requires “oclive executable path”. If you already started oclive with --api in a terminal, skip this and just click “Check connection”.",
+      spawnCancelledUntrusted: "Auto launch canceled. Please confirm the executable path is trusted.",
+      portAlreadyHealthy:
+        "A process is already listening on this port and the chat service is healthy. No need to start oclive again.",
+      portOccupiedButNotHealthy:
+        "This port is occupied, but the chat service health check failed. Confirm the occupying process is the intended oclive, or change the port in “API base”.",
+      spawnAttempted: "Tried to start the process. Re-checking in ~2–5 seconds…",
+    },
+    fields: {
+      apiBase: {
+        label: "API base (must match oclive port)",
+        placeholder: "Default http://127.0.0.1:8420",
+      },
+      exe: {
+        label: "oclive executable path (for one-click launch only)",
+        placeholder: "e.g. D:\\...\\oclivenewnew.exe",
+      },
+      rolePath: {
+        label: "Role folder (must contain manifest.json)",
+        placeholderNoDefault: "Export to folder first, or paste an absolute path",
+      },
+      scene: {
+        label: "Start from which scene (optional)",
+        auto: "Let the engine decide",
+        placeholder: "Optional; or enter a scene id from manifest scenes",
+        loading: "Loading…",
+        refresh: "Load scenes from manifest",
+      },
+    },
+    actions: {
+      aria: "Try chat actions",
+      ping: "Check connection",
+      spawning: "Launching…",
+      spawn: "One-click launch chat service",
+      newThread: "New thread",
+      feedback: "View feedback (semi-private)",
+    },
+    chat: {
+      errorLine: "(error) {err}",
+    },
+    meta: {
+      scene: "Scene {id}",
+      relation: "Relation {s}",
+      personalitySource: "Personality · {s}",
+      personalitySourceProfile: "profile",
+      personalitySourceVector: "vector",
+      botEmotion: "Emotion {s}",
+      portraitEmotion: "Portrait {s}",
+      fallbackReply: "Fallback reply",
+      knowledgeChunks: "Knowledge chunks {n}",
+      offerDestinationPicker: "Destination picker",
+      offerTogetherTravel: "Travel together",
+      presence: {
+        coPresent: "Co-present",
+        remoteStub: "Remote stub",
+        remoteLife: "Remote presence",
+      },
+      favor: {
+        current: "Favor {v}",
+      },
+    },
+  },
   simpleCreation: {
     syncWarning: "Simple form is not fully synced with JSON: {detail}",
     base: {
@@ -341,21 +416,6 @@ export default {
           noteSuffix: " and avoid overwriting the whole file at once.",
           faqAria: "Knowledge files FAQ",
           faqTitle: "FAQ · Knowledge files (before / after examples)",
-        },
-      },
-      images: {
-        title: "Emotion assets (images)",
-        lead:
-          "Same as simple creation. Export writes into assets/images/. Click the “Emotion assets” help icon for details.",
-        docks: {
-          keypointsAria: "Emotion assets button notes",
-          keypointsTitle: "Emotion assets · buttons & editable scope",
-          eachButtonTitle: "Each button: meaning & creator scope",
-          notePrefix: "If you copy files manually into the pack, make sure ",
-          noteStrong: "filenames match the references",
-          noteSuffix: ".",
-          faqAria: "Emotion assets FAQ",
-          faqTitle: "FAQ · Emotion assets (before / after examples)",
         },
       },
     },
