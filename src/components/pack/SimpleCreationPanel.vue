@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, toRef, watch } from 'vue'
+import { useI18n } from "vue-i18n";
 import AdvFaqList from '../AdvFaqList.vue'
 import HelpHint from '../HelpHint.vue'
 import EmotionAssetsControl from './EmotionAssetsControl.vue'
@@ -43,6 +44,8 @@ import type { CreatorMessageExportMode } from '../../lib/rolePackCreatorMessage'
 import { pluginsForCapability, useDirectoryPlugins } from '../../composables/useDirectoryPlugins'
 import type { AuthorRecRow } from '../../lib/authorPack'
 import type { UiConfig } from '../../types/uiConfig'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   simpleM: SimpleManifestForm
@@ -101,16 +104,16 @@ type SlotKey =
   | 'debug_dock'
 
 const SLOT_META: { key: SlotKey; title: string; disk: string }[] = [
-  { key: 'chat_toolbar', title: '聊天工具栏', disk: 'chat_toolbar' },
-  { key: 'settings_panel', title: '设置扩展', disk: 'settings.panel' },
-  { key: 'role_detail', title: '角色详情扩展', disk: 'role.detail' },
-  { key: 'sidebar', title: '侧边栏扩展', disk: 'sidebar' },
-  { key: 'chat_header', title: '聊天页顶部', disk: 'chat.header' },
-  { key: 'settings_plugins', title: '插件管理页', disk: 'settings.plugins' },
-  { key: 'settings_advanced', title: '设置 · 常规扩展', disk: 'settings.advanced' },
-  { key: 'overlay_floating', title: '全局浮层', disk: 'overlay.floating' },
-  { key: 'launcher_palette', title: '启动器 / 快捷键浮层', disk: 'launcher.palette' },
-  { key: 'debug_dock', title: '调试面板扩展', disk: 'debug.dock' },
+  { key: 'chat_toolbar', title: String(t("simpleCreation.slots.chatToolbar")), disk: 'chat_toolbar' },
+  { key: 'settings_panel', title: String(t("simpleCreation.slots.settingsPanel")), disk: 'settings.panel' },
+  { key: 'role_detail', title: String(t("simpleCreation.slots.roleDetail")), disk: 'role.detail' },
+  { key: 'sidebar', title: String(t("simpleCreation.slots.sidebar")), disk: 'sidebar' },
+  { key: 'chat_header', title: String(t("simpleCreation.slots.chatHeader")), disk: 'chat.header' },
+  { key: 'settings_plugins', title: String(t("simpleCreation.slots.settingsPlugins")), disk: 'settings.plugins' },
+  { key: 'settings_advanced', title: String(t("simpleCreation.slots.settingsAdvanced")), disk: 'settings.advanced' },
+  { key: 'overlay_floating', title: String(t("simpleCreation.slots.overlayFloating")), disk: 'overlay.floating' },
+  { key: 'launcher_palette', title: String(t("simpleCreation.slots.launcherPalette")), disk: 'launcher.palette' },
+  { key: 'debug_dock', title: String(t("simpleCreation.slots.debugDock")), disk: 'debug.dock' },
 ]
 
 const shellPlugins = computed(() =>
@@ -221,23 +224,20 @@ const emit = defineEmits<{
 <template>
   <div>
     <p v-if="syncFormWarning" class="sync-warn" role="status">
-      简单表单未与 JSON 完全同步：{{ syncFormWarning }}
+      {{ t("simpleCreation.syncWarning", { detail: syncFormWarning }) }}
     </p>
 
     <section class="panel base-panel">
       <div class="section-title-row">
-        <h2>基础：核心档案与情绪图</h2>
+        <h2>{{ t("simpleCreation.base.title") }}</h2>
         <HelpHint :paragraphs="SIMPLE_BASE_INTRO" />
       </div>
       <p class="base-desc">
-        这一页用大白话填表，保存后就会写进包里：<strong>核心性格档案</strong>（包内长文）决定 AI 怎么演，
-        <strong>情绪图</strong>决定立绘用哪些文件（文件名要和 oclive 约定一致，如
-        <code>happy.png</code>），运行时读 <code>core_personality.txt</code> 与
-        <code>assets/images/</code>。
+        {{ t("simpleCreation.base.desc") }}
       </p>
       <div class="form-row">
         <div class="label-hint-row">
-          <label for="core-ta">核心性格档案（长文）</label>
+          <label for="core-ta">{{ t("simpleCreation.base.corePersonalityLabel") }}</label>
           <HelpHint :paragraphs="SIMPLE_CORE_PERSONALITY" />
         </div>
         <textarea

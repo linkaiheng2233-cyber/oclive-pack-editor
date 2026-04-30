@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from "vue-i18n";
 
 const props = defineProps<{
   /** 点击问号后显示的说明；可用连续两个换行分段，或传 `paragraphs` */
@@ -19,6 +20,8 @@ const segments = computed(() => {
     .map((s) => s.trim())
     .filter(Boolean)
 })
+
+const { t } = useI18n()
 
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
@@ -54,7 +57,7 @@ onUnmounted(() => {
       type="button"
       class="help-btn"
       :aria-expanded="open"
-      aria-label="查看说明"
+      :aria-label="String(t('helpHint.ariaLabel'))"
       @click="toggle"
     >
       ?
