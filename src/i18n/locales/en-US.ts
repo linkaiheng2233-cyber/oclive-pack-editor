@@ -202,6 +202,21 @@ export default {
       debugDock: "Debug panel extension",
     },
   },
+  advancedCreation: {
+    toolbar: {
+      leadPrefix: "In advanced mode you edit file contents directly. If unsure, click the ",
+      leadSuffix: " next to each heading first.",
+      aria: "Advanced editor sections",
+    },
+    tabs: {
+      manifest: "Role contract",
+      settings: "Chat & plugins",
+      core: "Core profile & message",
+      coreFile: "core / message",
+      world: "World & knowledge",
+      images: "Emotion assets",
+    },
+  },
   packEditor: {
     aria: {
       nav: "Feature navigation",

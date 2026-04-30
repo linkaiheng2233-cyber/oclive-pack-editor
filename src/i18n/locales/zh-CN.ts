@@ -197,6 +197,21 @@ export default {
       debugDock: "调试面板扩展",
     },
   },
+  advancedCreation: {
+    toolbar: {
+      leadPrefix: "高级模式直接编辑文件内容；不懂可先点标题旁的",
+      leadSuffix: "。",
+      aria: "高级编辑分区",
+    },
+    tabs: {
+      manifest: "角色契约",
+      settings: "对话与插件",
+      core: "核心档案与寄语",
+      coreFile: "core / 公告",
+      world: "世界观与知识",
+      images: "情绪立绘",
+    },
+  },
   packEditor: {
     aria: {
       nav: "功能导航",

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from "vue-i18n";
 import EmotionAssetsControl from './EmotionAssetsControl.vue'
 import type { KnowledgeMarkdownFile } from '../../lib/knowledgeFiles'
 import {
@@ -41,6 +42,8 @@ import {
 } from '../../lib/advancedEditorHints'
 import AdvFaqList from '../AdvFaqList.vue'
 import HelpHint from '../HelpHint.vue'
+
+const { t } = useI18n()
 
 const manifestText = defineModel<string>('manifestText', { required: true })
 const settingsText = defineModel<string>('settingsText', { required: true })
@@ -178,14 +181,14 @@ function resetAllPreviewWeightOverrides(): void {
 <template>
   <div>
     <p class="adv-toolbar-lead">
-      高级模式直接编辑文件内容；不懂可先点标题旁的
-      <span class="hint-ico" aria-hidden="true">?</span>。
+      {{ t("advancedCreation.toolbar.leadPrefix") }}
+      <span class="hint-ico" aria-hidden="true">?</span>{{ t("advancedCreation.toolbar.leadSuffix") }}
       <HelpHint :paragraphs="ADV_OVERVIEW" />
     </p>
     <div
       class="adv-toolbar"
       role="tablist"
-      aria-label="高级编辑分区"
+      :aria-label="String(t('advancedCreation.toolbar.aria'))"
       tabindex="0"
       @keydown="onToolbarKeydown"
     >
@@ -197,7 +200,7 @@ function resetAllPreviewWeightOverrides(): void {
         @click="advancedTab = 'manifest'"
       >
         <span class="tab-stack">
-          <span class="tab-title">角色契约</span>
+          <span class="tab-title">{{ t("advancedCreation.tabs.manifest") }}</span>
           <span class="tab-file">manifest.json</span>
         </span>
       </button>
@@ -209,7 +212,7 @@ function resetAllPreviewWeightOverrides(): void {
         @click="advancedTab = 'settings'"
       >
         <span class="tab-stack">
-          <span class="tab-title">对话与插件</span>
+          <span class="tab-title">{{ t("advancedCreation.tabs.settings") }}</span>
           <span class="tab-file">settings.json</span>
         </span>
       </button>
@@ -221,8 +224,8 @@ function resetAllPreviewWeightOverrides(): void {
         @click="advancedTab = 'core'"
       >
         <span class="tab-stack">
-          <span class="tab-title">核心档案与寄语</span>
-          <span class="tab-file">core / 公告</span>
+          <span class="tab-title">{{ t("advancedCreation.tabs.core") }}</span>
+          <span class="tab-file">{{ t("advancedCreation.tabs.coreFile") }}</span>
         </span>
       </button>
       <button
@@ -233,7 +236,7 @@ function resetAllPreviewWeightOverrides(): void {
         @click="advancedTab = 'world'"
       >
         <span class="tab-stack">
-          <span class="tab-title">世界观与知识</span>
+          <span class="tab-title">{{ t("advancedCreation.tabs.world") }}</span>
           <span class="tab-file">knowledge/*.md</span>
         </span>
       </button>
@@ -245,7 +248,7 @@ function resetAllPreviewWeightOverrides(): void {
         @click="advancedTab = 'images'"
       >
         <span class="tab-stack">
-          <span class="tab-title">情绪立绘</span>
+          <span class="tab-title">{{ t("advancedCreation.tabs.images") }}</span>
           <span class="tab-file">assets/images</span>
         </span>
       </button>
