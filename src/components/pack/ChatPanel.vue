@@ -20,45 +20,15 @@ import { CHAT_FAQ } from '../../lib/simpleEditorFaq'
 
 const { t } = useI18n()
 
-/** 试聊区：标题旁与各表单项旁的「?」详细说明（大白话） */
-const CHAT_HINT = {
-  intro: [
-    '编写器里不会内置「对话大脑」——真正和你说话的是本机安装的 oclive。',
-    '试聊时，编写器把一句话发给你电脑上的 oclive，再把角色的回复显示在下面。你需要：先让 oclive 在后台打开试聊服务（命令行里一般是带 --api、端口常和下面「连接地址」一致），再告诉编写器「角色包在哪个文件夹」。这样不用打开主程序也能快速验人设。',
-  ],
-  apiBase: [
-    '这是 oclive 试聊服务在本机上的「门牌号」，一般是 http://127.0.0.1:8420。',
-    '如果你在命令行里启动时写了别的端口（例如 --port 9000），这里就要改成同一个端口，否则连不上。点「检测连接」可以确认是否已经连上。',
-  ],
-  exe: [
-    '只有桌面版编写器的「一键启动」才需要填这一项。',
-    '请填 oclivenewnew.exe（或你的 oclive 程序）的完整路径。第一次会弹窗让你确认，避免误运行陌生程序。若你习惯自己在终端里已经运行了带 --api 的 oclive，可以不填，只要「检测连接」通过即可。',
-  ],
-  rolePath: [
-    '要试聊的角色包所在的文件夹，这一层里必须有 manifest.json。',
-    '通常是你在编写器里点「写入文件夹」后生成的「roles 根目录 / 角色 id」那一层。上面若已自动填好路径，一般不用改；也可以粘贴别的绝对路径来试别的包。',
-  ],
-  scene: [
-    '和主应用里「场景」的意思一样：你想从哪个场景开始聊。',
-    '选「让引擎自己决定」时，不强行指定场景。桌面版可以从 manifest 刷新列表；在浏览器里开发时，需要手填场景 id 或留空。',
-  ],
-  ping: [
-    '不会真的发聊天内容，只是问一句「试聊服务在不在」。',
-    '若显示失败，请检查 oclive 是否已用试聊模式启动、端口是否和「连接地址」一致。',
-  ],
-  spawn: [
-    '用你填的 oclive 程序路径，尝试自动打开一个新窗口并带上试聊参数。',
-    '若该端口已经有程序在监听且就是 oclive，会提示你不必重复启动。若没填程序路径，会提示你先填路径——你也可以改为自己在终端启动 oclive。',
-  ],
-  newThread: [
-    '清空当前聊天记录，并换一个新的会话编号，相当于和同一角色「重新开始聊一轮」。',
-    '不会删除磁盘上的角色文件，只是试聊窗口里的上下文重来。',
-  ],
-  composer: [
-    'Enter 发送一条消息；Shift+Enter 换行（适合长句子）。',
-    '请先确认「连接地址」检测通过，且「角色文件夹」填写正确，否则可能发不出去或报错。',
-  ],
-} as const
+const chatHintIntro = computed(() => [t("chatPanel.hints.intro1"), t("chatPanel.hints.intro2")])
+const chatHintApiBase = computed(() => [t("chatPanel.hints.apiBase1"), t("chatPanel.hints.apiBase2")])
+const chatHintExe = computed(() => [t("chatPanel.hints.exe1"), t("chatPanel.hints.exe2")])
+const chatHintRolePath = computed(() => [t("chatPanel.hints.rolePath1"), t("chatPanel.hints.rolePath2")])
+const chatHintScene = computed(() => [t("chatPanel.hints.scene1"), t("chatPanel.hints.scene2")])
+const chatHintPing = computed(() => [t("chatPanel.hints.ping1"), t("chatPanel.hints.ping2")])
+const chatHintSpawn = computed(() => [t("chatPanel.hints.spawn1"), t("chatPanel.hints.spawn2")])
+const chatHintNewThread = computed(() => [t("chatPanel.hints.newThread1"), t("chatPanel.hints.newThread2")])
+const chatHintComposer = computed(() => [t("chatPanel.hints.composer1"), t("chatPanel.hints.composer2")])
 
 const props = defineProps<{
   /** manifest.id，用于与 roles 根拼接成试聊目录 */
@@ -428,7 +398,7 @@ async function send(): Promise<void> {
     <div class="chat-header">
       <h2 class="chat-title">
         {{ t("chatPanel.title") }}
-        <HelpHint :paragraphs="CHAT_HINT.intro" />
+        <HelpHint :paragraphs="chatHintIntro" />
       </h2>
       <p class="lead">
         {{ t("chatPanel.leadPrefix") }}
@@ -443,7 +413,7 @@ async function send(): Promise<void> {
       <label class="field">
         <span class="field-label-row">
           <span class="field-label-text">{{ t("chatPanel.fields.apiBase.label") }}</span>
-          <HelpHint :paragraphs="CHAT_HINT.apiBase" />
+          <HelpHint :paragraphs="chatHintApiBase" />
         </span>
         <input
           v-model="apiBase"
@@ -455,7 +425,7 @@ async function send(): Promise<void> {
       <label class="field field-wide">
         <span class="field-label-row">
           <span class="field-label-text">{{ t("chatPanel.fields.exe.label") }}</span>
-          <HelpHint :paragraphs="CHAT_HINT.exe" />
+          <HelpHint :paragraphs="chatHintExe" />
         </span>
         <input
           v-model="ocliveExe"
@@ -467,7 +437,7 @@ async function send(): Promise<void> {
       <label class="field field-wide">
         <span class="field-label-row">
           <span class="field-label-text">{{ t("chatPanel.fields.rolePath.label") }}</span>
-          <HelpHint :paragraphs="CHAT_HINT.rolePath" />
+          <HelpHint :paragraphs="chatHintRolePath" />
         </span>
         <input
           v-model="rolePathManual"
@@ -479,7 +449,7 @@ async function send(): Promise<void> {
       <label class="field field-wide">
         <span class="field-label-row">
           <span class="field-label-text">{{ t("chatPanel.fields.scene.label") }}</span>
-          <HelpHint :paragraphs="CHAT_HINT.scene" />
+          <HelpHint :paragraphs="chatHintScene" />
         </span>
         <div class="scene-row">
           <select
@@ -517,19 +487,19 @@ async function send(): Promise<void> {
     <div class="row-actions" :aria-label="String(t('chatPanel.actions.aria'))">
       <span class="action-with-hint">
         <button type="button" @click="pingHealth">{{ t("chatPanel.actions.ping") }}</button>
-        <HelpHint :paragraphs="CHAT_HINT.ping" />
+        <HelpHint :paragraphs="chatHintPing" />
       </span>
       <span v-if="isTauriRuntime()" class="action-with-hint">
         <button type="button" class="secondary" :disabled="spawnLoading" @click="trySpawnRuntime">
           {{ spawnLoading ? t("chatPanel.actions.spawning") : t("chatPanel.actions.spawn") }}
         </button>
-        <HelpHint :paragraphs="CHAT_HINT.spawn" />
+        <HelpHint :paragraphs="chatHintSpawn" />
       </span>
       <span class="action-with-hint">
         <button type="button" class="secondary" :disabled="!effectiveRolePath" @click="newChatThread">
           {{ t("chatPanel.actions.newThread") }}
         </button>
-        <HelpHint :paragraphs="CHAT_HINT.newThread" />
+        <HelpHint :paragraphs="chatHintNewThread" />
       </span>
       <span class="action-with-hint">
         <button type="button" class="secondary" :disabled="!props.roleId" @click="openFeedback">
@@ -606,7 +576,7 @@ async function send(): Promise<void> {
     <div class="composer-block">
       <div class="field-label-row composer-label">
         <span class="field-label-text">{{ t("chatPanel.composer.label") }}</span>
-        <HelpHint :paragraphs="CHAT_HINT.composer" />
+        <HelpHint :paragraphs="chatHintComposer" />
       </div>
       <div class="composer">
         <textarea

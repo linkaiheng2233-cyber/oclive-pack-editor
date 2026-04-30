@@ -29,6 +29,33 @@ export default {
     confirms: {
       launchExe: "将启动外部可执行文件：\n{path}\n\n请确认该路径为你信任的 oclive 程序。",
     },
+    hints: {
+      intro1: "编写器里不会内置「对话大脑」——真正和你说话的是本机安装的 oclive。",
+      intro2:
+        "试聊时，编写器把一句话发给你电脑上的 oclive，再把角色的回复显示在下面。你需要：先让 oclive 在后台打开试聊服务（命令行里一般是带 --api、端口常和下面「连接地址」一致），再告诉编写器「角色包在哪个文件夹」。这样不用打开主程序也能快速验人设。",
+      apiBase1: "这是 oclive 试聊服务在本机上的「门牌号」，一般是 http://127.0.0.1:8420。",
+      apiBase2:
+        "如果你在命令行里启动时写了别的端口（例如 --port 9000），这里就要改成同一个端口，否则连不上。点「检测连接」可以确认是否已经连上。",
+      exe1: "只有桌面版编写器的「一键启动」才需要填这一项。",
+      exe2:
+        "请填 oclivenewnew.exe（或你的 oclive 程序）的完整路径。第一次会弹窗让你确认，避免误运行陌生程序。若你习惯自己在终端里已经运行了带 --api 的 oclive，可以不填，只要「检测连接」通过即可。",
+      rolePath1: "要试聊的角色包所在的文件夹，这一层里必须有 manifest.json。",
+      rolePath2:
+        "通常是你在编写器里点「写入文件夹」后生成的「roles 根目录 / 角色 id」那一层。上面若已自动填好路径，一般不用改；也可以粘贴别的绝对路径来试别的包。",
+      scene1: "和主应用里「场景」的意思一样：你想从哪个场景开始聊。",
+      scene2:
+        "选「让引擎自己决定」时，不强行指定场景。桌面版可以从 manifest 刷新列表；在浏览器里开发时，需要手填场景 id 或留空。",
+      ping1: "不会真的发聊天内容，只是问一句「试聊服务在不在」。",
+      ping2: "若显示失败，请检查 oclive 是否已用试聊模式启动、端口是否和「连接地址」一致。",
+      spawn1: "用你填的 oclive 程序路径，尝试自动打开一个新窗口并带上试聊参数。",
+      spawn2:
+        "若该端口已经有程序在监听且就是 oclive，会提示你不必重复启动。若没填程序路径，会提示你先填路径——你也可以改为自己在终端启动 oclive。",
+      newThread1:
+        "清空当前聊天记录，并换一个新的会话编号，相当于和同一角色「重新开始聊一轮」。",
+      newThread2: "不会删除磁盘上的角色文件，只是试聊窗口里的上下文重来。",
+      composer1: "Enter 发送一条消息；Shift+Enter 换行（适合长句子）。",
+      composer2: "请先确认「连接地址」检测通过，且「角色文件夹」填写正确，否则可能发不出去或报错。",
+    },
     fields: {
       apiBase: {
         label: "连接地址（和 oclive 端口一致）",
@@ -415,7 +442,103 @@ export default {
           faqTitle: "常见问题 · 知识文件（改进前 / 改进后对照）",
         },
       },
+      images: {
+        title: "情绪立绘图片",
+        lead: "与简单创作相同，导出时写入 assets/images/；点「情绪图片」旁的问号可看说明。",
+        docks: {
+          keypointsAria: "情绪立绘按钮说明",
+          keypointsTitle: "情绪立绘 · 按钮与可改范围",
+          eachButtonTitle: "每个按钮：含义与可改范围",
+          notePrefix: "手动拷文件到包内时需",
+          noteStrong: "文件名与引用一致",
+          noteSuffix: "。",
+          faqAria: "情绪立绘常见问题",
+          faqTitle: "常见问题 · 情绪立绘（改进前 / 改进后对照）",
+        },
+      },
     },
+  },
+  chatFeedbackModal: {
+    title: "最近反馈（仅本机存储）",
+    lead: "这些反馈来自用户在 oclive 主程序中提交的「反馈此角色包」。默认仅创作者可见。",
+    loading: "读取中…",
+    empty: "暂无反馈。",
+    filters: {
+      open: "未处理",
+      handled: "已处理",
+      all: "全部",
+    },
+    tags: {
+      mood: "情绪：{v}",
+      scene: "场景：{v}",
+      status: "状态：{v}",
+    },
+    notePlaceholder: "处理备注（可选）",
+    markHandled: "标记已处理",
+    unmarkHandled: "取消已处理",
+    close: "关闭",
+  },
+  emotionAssetsControl: {
+    label: "情绪图片",
+    pickReplace: "选择图片（覆盖当前列表）",
+    append: "追加图片",
+    clear: "清空列表",
+  },
+  packChecks: {
+    title: "角色包检查",
+    desc:
+      "校验 manifest / settings JSON 与契约一致性。若已用 wasm-pack 生成校验模块，则优先使用与 oclivenewnew 共享的 Rust 逻辑；否则回退到 TypeScript 检查。导出时可选校验，通过后即可把包放入 roles 测试。",
+    status: {
+      neverRan: "尚未运行检查；运行后将显示使用的校验方式（Rust wasm 或 TypeScript）。",
+      lastRustWasm: "最近一次检查：Rust wasm",
+      lastTypeScript: "最近一次检查：TypeScript（wasm 未启用或未构建）",
+    },
+    runAll: "运行全部检查",
+    requireBeforeExport: "导出前校验包内容",
+    sub: "关闭后可直接导出 .zip / 写入文件夹，便于携带未完成包或使用插件在 oclive 中自由实测。",
+    faqTitle: "常见问题 · 检查与导出",
+  },
+  feedbackWorkspace: {
+    title: "反馈工作台（半私密）",
+    lead: "这里显示使用者在主应用提交的「反馈此角色包」。默认仅本机可见；你可以标记已处理并写备注。",
+    actions: {
+      refresh: "刷新",
+      exportJson: "导出 JSON",
+      ping: "检测连接",
+      apply: "应用",
+      markHandled: "标记已处理",
+      unmarkHandled: "取消已处理",
+      loadMore: "加载更多",
+    },
+    fields: {
+      apiBase: "连接地址",
+      search: "搜索",
+      searchPlaceholder: "关键词：内容/场景/版本/来源…",
+      pageSize: "每页",
+      handledNote: "处理备注",
+      handledNotePlaceholder: "（可选）写下你怎么修复/要怎么改…",
+    },
+    health: {
+      unknown: "未检测",
+      ok: "已连接",
+      bad: "连接失败",
+      okLine: "OK：{msg}",
+    },
+    filters: {
+      open: "未处理",
+      handled: "已处理",
+      all: "全部",
+      unreadOnly: "仅未读",
+    },
+    states: {
+      loading: "加载中…",
+      empty: "暂无反馈。",
+    },
+    pills: {
+      open: "未处理",
+      handled: "已处理",
+    },
+    moreCount: "已加载 {loaded} 条 · 当前显示 {shown} 条",
   },
   packEditor: {
     aria: {

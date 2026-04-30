@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RuntimeRoleFeedbackItem } from "../../lib/runtimeApi";
+import { useI18n } from "vue-i18n";
 
 const props = defineProps<{
   open: boolean
@@ -16,6 +17,8 @@ const emit = defineEmits<{
   updateNote: [id: number, v: string]
   toggleHandled: [it: RuntimeRoleFeedbackItem, next: boolean]
 }>()
+
+const { t } = useI18n()
 
 function filteredItems(): RuntimeRoleFeedbackItem[] {
   const tab = props.filter
@@ -38,23 +41,23 @@ function filteredItems(): RuntimeRoleFeedbackItem[] {
       @click="emit('close')"
     >
       <div class="modal-card" @click.stop>
-        <h3 class="modal-title">最近反馈（仅本机存储）</h3>
-        <p class="modal-sub">这些反馈来自用户在 oclive 主程序中提交的「反馈此角色包」。默认仅创作者可见。</p>
-        <p v-if="loading" class="modal-sub">读取中…</p>
+        <h3 class="modal-title">{{ t("chatFeedbackModal.title") }}</h3>
+        <p class="modal-sub">{{ t("chatFeedbackModal.lead") }}</p>
+        <p v-if="loading" class="modal-sub">{{ t("chatFeedbackModal.loading") }}</p>
         <p v-else-if="err" class="modal-err">{{ err }}</p>
         <div v-else class="fb-list">
-          <p v-if="!items.length" class="modal-sub">暂无反馈。</p>
+          <p v-if="!items.length" class="modal-sub">{{ t("chatFeedbackModal.empty") }}</p>
           <div class="fb-tabs">
-            <button type="button" class="secondary" @click="emit('setFilter', 'open')">未处理</button>
-            <button type="button" class="secondary" @click="emit('setFilter', 'handled')">已处理</button>
-            <button type="button" class="secondary" @click="emit('setFilter', 'all')">全部</button>
+            <button type="button" class="secondary" @click="emit('setFilter', 'open')">{{ t("chatFeedbackModal.filters.open") }}</button>
+            <button type="button" class="secondary" @click="emit('setFilter', 'handled')">{{ t("chatFeedbackModal.filters.handled") }}</button>
+            <button type="button" class="secondary" @click="emit('setFilter', 'all')">{{ t("chatFeedbackModal.filters.all") }}</button>
           </div>
           <div v-for="it in filteredItems()" :key="it.id" class="fb-item">
             <div class="fb-top">
               <span class="fb-time">{{ it.created_at }}</span>
-              <span v-if="it.mood_tag" class="fb-tag">情绪：{{ it.mood_tag }}</span>
-              <span v-if="it.scene_id" class="fb-tag">场景：{{ it.scene_id }}</span>
-              <span v-if="it.status" class="fb-tag">状态：{{ it.status }}</span>
+              <span v-if="it.mood_tag" class="fb-tag">{{ t("chatFeedbackModal.tags.mood", { v: it.mood_tag }) }}</span>
+              <span v-if="it.scene_id" class="fb-tag">{{ t("chatFeedbackModal.tags.scene", { v: it.scene_id }) }}</span>
+              <span v-if="it.status" class="fb-tag">{{ t("chatFeedbackModal.tags.status", { v: it.status }) }}</span>
             </div>
             <div class="fb-msg">{{ it.message }}</div>
             <div class="fb-actions">
@@ -62,7 +65,7 @@ function filteredItems(): RuntimeRoleFeedbackItem[] {
                 class="fb-note"
                 type="text"
                 :value="noteDraft[it.id] || it.handled_note || ''"
-                placeholder="处理备注（可选）"
+                :placeholder="String(t('chatFeedbackModal.notePlaceholder'))"
                 @input="emit('updateNote', it.id, ($event.target as HTMLInputElement).value)"
               />
               <button
@@ -71,16 +74,16 @@ function filteredItems(): RuntimeRoleFeedbackItem[] {
                 class="secondary"
                 @click="emit('toggleHandled', it, true)"
               >
-                标记已处理
+                {{ t("chatFeedbackModal.markHandled") }}
               </button>
               <button v-else type="button" class="secondary" @click="emit('toggleHandled', it, false)">
-                取消已处理
+                {{ t("chatFeedbackModal.unmarkHandled") }}
               </button>
             </div>
           </div>
         </div>
         <div class="modal-actions">
-          <button type="button" class="secondary" @click="emit('close')">关闭</button>
+          <button type="button" class="secondary" @click="emit('close')">{{ t("chatFeedbackModal.close") }}</button>
         </div>
       </div>
     </div>

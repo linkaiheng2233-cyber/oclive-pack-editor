@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import HelpHint from '../HelpHint.vue'
 import { ADV_EMOTION_IMAGES } from '../../lib/advancedEditorHints'
+import { useI18n } from "vue-i18n";
 
 defineProps<{
   summary: string
@@ -11,12 +12,14 @@ const emit = defineEmits<{
   append: [e: Event]
   clear: []
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="emotion-row">
     <div class="emotion-label-row">
-      <label class="emotion-label">情绪图片</label>
+      <label class="emotion-label">{{ t("emotionAssetsControl.label") }}</label>
       <HelpHint :paragraphs="ADV_EMOTION_IMAGES" />
     </div>
     <div class="emotion-actions">
@@ -28,7 +31,7 @@ const emit = defineEmits<{
           class="sr-only"
           @change="emit('pick', $event)"
         />
-        选择图片（覆盖当前列表）
+        {{ t("emotionAssetsControl.pickReplace") }}
       </label>
       <label class="btn-lite">
         <input
@@ -38,9 +41,9 @@ const emit = defineEmits<{
           class="sr-only"
           @change="emit('append', $event)"
         />
-        追加图片
+        {{ t("emotionAssetsControl.append") }}
       </label>
-      <button type="button" class="btn-lite ghost" @click="emit('clear')">清空列表</button>
+      <button type="button" class="btn-lite ghost" @click="emit('clear')">{{ t("emotionAssetsControl.clear") }}</button>
     </div>
     <p class="emotion-sum">{{ summary }}</p>
   </div>

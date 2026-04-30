@@ -33,6 +33,37 @@ export default {
       launchExe:
         "This will launch an external executable:\n{path}\n\nPlease confirm this path points to a trusted oclive program.",
     },
+    hints: {
+      intro1: "The editor doesn’t include a “chat brain” — the one talking to you is oclive installed on your machine.",
+      intro2:
+        "In try-chat, the editor sends your message to local oclive and shows the reply below. You need to start oclive’s API service (usually with --api and the same port as “API base”), then tell the editor where the role pack folder is. This lets you validate persona quickly without opening the main app.",
+      apiBase1: "This is the “address” of oclive’s local try-chat API, usually http://127.0.0.1:8420.",
+      apiBase2:
+        "If you started oclive with a different port (e.g. --port 9000), update it here. Click “Check connection” to verify.",
+      exe1: "Only needed for the desktop editor’s “One-click start”.",
+      exe2:
+        "Fill the full path to oclivenewnew.exe (or your oclive program). The first time will ask for confirmation to avoid running unknown executables. If you already started oclive with --api in a terminal, you can leave it empty as long as “Check connection” works.",
+      rolePath1: "The folder of the role pack to try-chat. This folder must contain manifest.json.",
+      rolePath2:
+        "Usually it’s the “roles root / role id” folder generated after clicking “Write to folder”. If it’s already auto-filled, you typically don’t need to change it. You can also paste another absolute path to test another pack.",
+      scene1: "Same meaning as in the main app: which scene you want to start chatting from.",
+      scene2:
+        "If you choose “Let engine decide”, we won’t force a scene. Desktop mode can refresh the list from manifest; in browser dev you can type a scene id or leave it empty.",
+      ping1: "Does not send chat content. It only asks “is the API service up?”.",
+      ping2:
+        "If it fails, check whether oclive is started in try-chat mode and whether the port matches “API base”.",
+      spawn1:
+        "Uses the oclive executable path you provided to open a new window with try-chat parameters.",
+      spawn2:
+        "If something is already listening on that port and it’s oclive, it will tell you you don’t need to start again. If exe path is empty, it will ask you to fill it — or you can start oclive manually in a terminal.",
+      newThread1:
+        "Clears current chat log and generates a new session id — like “start over” with the same role.",
+      newThread2:
+        "It doesn’t delete any files on disk; it only resets the context in this try-chat panel.",
+      composer1: "Enter sends; Shift+Enter inserts a newline (useful for long messages).",
+      composer2:
+        "Make sure “Check connection” passes and role folder is correct; otherwise sending may fail or error.",
+    },
     fields: {
       apiBase: {
         label: "API base (must match oclive port)",
@@ -432,7 +463,107 @@ export default {
           faqTitle: "FAQ · Knowledge files (before / after examples)",
         },
       },
+      images: {
+        title: "Emotion portraits",
+        lead:
+          "Same as Simple Creation. Exported into assets/images/. Click the “?” near “Emotion images” to see the guide.",
+        docks: {
+          keypointsAria: "Emotion portrait buttons guide",
+          keypointsTitle: "Emotion portraits · Buttons & editable scope",
+          eachButtonTitle: "Each button: meaning & editable scope",
+          notePrefix: "When copying files into the pack manually, make sure ",
+          noteStrong: "the filename matches the reference",
+          noteSuffix: ".",
+          faqAria: "Emotion portraits FAQ",
+          faqTitle: "FAQ · Emotion portraits (before/after comparison)",
+        },
+      },
     },
+  },
+  chatFeedbackModal: {
+    title: "Recent feedback (local only)",
+    lead:
+      "These feedback items come from users submitting “Feedback this role pack” in the main oclive app. By default, only creators can see them.",
+    loading: "Loading…",
+    empty: "No feedback yet.",
+    filters: {
+      open: "Open",
+      handled: "Handled",
+      all: "All",
+    },
+    tags: {
+      mood: "Mood: {v}",
+      scene: "Scene: {v}",
+      status: "Status: {v}",
+    },
+    notePlaceholder: "Handled note (optional)",
+    markHandled: "Mark handled",
+    unmarkHandled: "Unmark handled",
+    close: "Close",
+  },
+  emotionAssetsControl: {
+    label: "Emotion images",
+    pickReplace: "Choose images (replace current list)",
+    append: "Add images",
+    clear: "Clear list",
+  },
+  packChecks: {
+    title: "Role pack checks",
+    desc:
+      "Validate manifest/settings JSON against the contract. If the wasm-pack validator is built, we use the shared Rust logic with oclivenewnew; otherwise we fall back to TypeScript checks. You can require checks before export; once passed, you can put the pack into roles for testing.",
+    status: {
+      neverRan: "Checks have not been run yet. After running, we’ll show whether Rust wasm or TypeScript was used.",
+      lastRustWasm: "Last check: Rust wasm",
+      lastTypeScript: "Last check: TypeScript (wasm not enabled or not built)",
+    },
+    runAll: "Run all checks",
+    requireBeforeExport: "Require checks before export",
+    sub:
+      "If turned off, you can export .zip / write to folder directly, which is useful for carrying unfinished packs or free-form testing in oclive with plugins.",
+    faqTitle: "FAQ · Checks & export",
+  },
+  feedbackWorkspace: {
+    title: "Feedback workspace (semi-private)",
+    lead:
+      "Shows “Feedback this role pack” submitted by users in the main app. By default it’s local-only. You can mark handled and leave notes.",
+    actions: {
+      refresh: "Refresh",
+      exportJson: "Export JSON",
+      ping: "Check connection",
+      apply: "Apply",
+      markHandled: "Mark handled",
+      unmarkHandled: "Unmark handled",
+      loadMore: "Load more",
+    },
+    fields: {
+      apiBase: "API base",
+      search: "Search",
+      searchPlaceholder: "Keywords: message / scene / version / source…",
+      pageSize: "Per page",
+      handledNote: "Handled note",
+      handledNotePlaceholder: "(optional) Note what you fixed / what you plan to change…",
+    },
+    health: {
+      unknown: "Not checked",
+      ok: "Connected",
+      bad: "Connection failed",
+      okLine: "OK: {msg}",
+    },
+    filters: {
+      open: "Open",
+      handled: "Handled",
+      all: "All",
+      unreadOnly: "Unread only",
+    },
+    states: {
+      loading: "Loading…",
+      empty: "No feedback.",
+    },
+    pills: {
+      open: "Open",
+      handled: "Handled",
+    },
+    moreCount: "Loaded {loaded} · Showing {shown}",
   },
   packEditor: {
     aria: {

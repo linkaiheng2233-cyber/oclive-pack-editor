@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AdvFaqList from '../AdvFaqList.vue'
 import { CHECKS_FAQ } from '../../lib/simpleEditorFaq'
+import { useI18n } from "vue-i18n";
 
 const requireChecksBeforeExport = defineModel<boolean>('requireChecksBeforeExport', {
   required: true,
@@ -14,36 +15,37 @@ defineProps<{
 const emit = defineEmits<{
   runValidate: []
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <section class="panel checks">
-    <h2>角色包检查</h2>
+    <h2>{{ t("packChecks.title") }}</h2>
     <p class="check-desc">
-      校验 manifest / settings JSON 与契约一致性。若已用 <code>wasm-pack</code> 生成校验模块，则优先使用与
-      oclivenewnew 共享的 Rust 逻辑；否则回退到 TypeScript 检查。导出时可选校验，通过后即可把包放入 roles 测试。
+      {{ t("packChecks.desc") }}
     </p>
     <p v-if="validationLastUsedWasm === null" class="check-wasm check-wasm--muted" role="status">
-      尚未运行检查；运行后将显示使用的校验方式（Rust wasm 或 TypeScript）。
+      {{ t("packChecks.status.neverRan") }}
     </p>
     <p v-else-if="validationLastUsedWasm" class="check-wasm" role="status">
-      最近一次检查：Rust wasm
+      {{ t("packChecks.status.lastRustWasm") }}
     </p>
     <p v-else class="check-wasm check-wasm--muted" role="status">
-      最近一次检查：TypeScript（wasm 未启用或未构建）
+      {{ t("packChecks.status.lastTypeScript") }}
     </p>
     <div class="check-row">
-      <button type="button" @click="emit('runValidate')">运行全部检查</button>
+      <button type="button" @click="emit('runValidate')">{{ t("packChecks.runAll") }}</button>
       <label class="chk">
         <input v-model="requireChecksBeforeExport" type="checkbox" />
-        导出前校验包内容
+        {{ t("packChecks.requireBeforeExport") }}
       </label>
     </div>
     <p class="check-sub">
-      关闭后可直接导出 .zip / 写入文件夹，便于携带未完成包或使用插件在 oclive 中自由实测。
+      {{ t("packChecks.sub") }}
     </p>
     <details class="checks-faq-details">
-      <summary class="checks-faq-sum">常见问题 · 检查与导出</summary>
+      <summary class="checks-faq-sum">{{ t("packChecks.faqTitle") }}</summary>
       <AdvFaqList :items="CHECKS_FAQ" />
     </details>
   </section>

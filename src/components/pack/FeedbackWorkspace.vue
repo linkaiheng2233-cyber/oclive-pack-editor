@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from "vue-i18n";
 import {
   fetchRuntimeHealth,
   fetchRuntimeRoleFeedback,
@@ -13,6 +14,8 @@ const props = defineProps<{
   roleId: string
   active?: boolean
 }>()
+
+const { t } = useI18n()
 
 const STORAGE_API = 'oclive-pack-editor-api-base'
 
@@ -55,7 +58,7 @@ async function ping(): Promise<void> {
   try {
     const r = await fetchRuntimeHealth(apiBase.value)
     healthOk.value = true
-    healthMessage.value = r.trim() ? `OK：${r.trim()}` : 'OK'
+    healthMessage.value = r.trim() ? String(t("feedbackWorkspace.health.okLine", { msg: r.trim() })) : String(t("feedbackWorkspace.health.ok"))
   } catch (e) {
     healthOk.value = false
     healthMessage.value = e instanceof Error ? e.message : String(e)
@@ -192,30 +195,30 @@ watch(
   <section class="fbw">
     <header class="fbw-head">
       <div>
-        <h2 class="fbw-h2">反馈工作台（半私密）</h2>
+        <h2 class="fbw-h2">{{ t("feedbackWorkspace.title") }}</h2>
         <p class="fbw-sub">
-          这里显示使用者在主应用提交的「反馈此角色包」。默认仅本机可见；你可以标记已处理并写备注。
+          {{ t("feedbackWorkspace.lead") }}
         </p>
       </div>
       <div class="fbw-actions">
-        <button type="button" class="btn" :disabled="loading" @click="refresh(true)">刷新</button>
+        <button type="button" class="btn" :disabled="loading" @click="refresh(true)">{{ t("feedbackWorkspace.actions.refresh") }}</button>
         <button type="button" class="btn" :disabled="filtered.length === 0" @click="exportJson">
-          导出 JSON
+          {{ t("feedbackWorkspace.actions.exportJson") }}
         </button>
       </div>
     </header>
 
     <div class="fbw-bar">
       <label class="fbw-field">
-        连接地址
+        {{ t("feedbackWorkspace.fields.apiBase") }}
         <input v-model="apiBase" class="input" spellcheck="false" />
       </label>
-      <button type="button" class="btn" @click="ping">检测连接</button>
+      <button type="button" class="btn" @click="ping">{{ t("feedbackWorkspace.actions.ping") }}</button>
       <span
         class="fbw-health"
         :class="healthOk === true ? 'ok' : healthOk === false ? 'bad' : ''"
       >
-        {{ healthOk === null ? '未检测' : healthOk ? '已连接' : '连接失败' }}
+        {{ healthOk === null ? t("feedbackWorkspace.health.unknown") : healthOk ? t("feedbackWorkspace.health.ok") : t("feedbackWorkspace.health.bad") }}
       </span>
       <HelpHint v-if="healthMessage" :lines="[healthMessage]" />
     </div>
@@ -228,7 +231,7 @@ watch(
           :class="{ active: filterStatus === 'open' }"
           @click="filterStatus = 'open'"
         >
-          未处理
+          {{ t("feedbackWorkspace.filters.open") }}
         </button>
         <button
           type="button"
@@ -236,7 +239,7 @@ watch(
           :class="{ active: filterStatus === 'handled' }"
           @click="filterStatus = 'handled'"
         >
-          已处理
+          {{ t("feedbackWorkspace.filters.handled") }}
         </button>
         <button
           type="button"
@@ -244,34 +247,34 @@ watch(
           :class="{ active: filterStatus === 'all' }"
           @click="filterStatus = 'all'"
         >
-          全部
+          {{ t("feedbackWorkspace.filters.all") }}
         </button>
       </div>
       <label class="chk">
         <input v-model="filterUnreadOnly" type="checkbox" />
-        仅未读
+        {{ t("feedbackWorkspace.filters.unreadOnly") }}
       </label>
       <label class="fbw-field grow">
-        搜索
-        <input v-model="q" class="input" placeholder="关键词：内容/场景/版本/来源…" />
+        {{ t("feedbackWorkspace.fields.search") }}
+        <input v-model="q" class="input" :placeholder="String(t('feedbackWorkspace.fields.searchPlaceholder'))" />
       </label>
       <label class="fbw-field">
-        每页
+        {{ t("feedbackWorkspace.fields.pageSize") }}
         <input v-model.number="pageSize" class="input input--sm" type="number" min="10" max="200" />
       </label>
-      <button type="button" class="btn" :disabled="loading" @click="refresh(true)">应用</button>
+      <button type="button" class="btn" :disabled="loading" @click="refresh(true)">{{ t("feedbackWorkspace.actions.apply") }}</button>
     </div>
 
     <p v-if="err" class="err">{{ err }}</p>
-    <p v-else-if="loading && items.length === 0" class="muted">加载中…</p>
-    <p v-else-if="filtered.length === 0" class="muted">暂无反馈。</p>
+    <p v-else-if="loading && items.length === 0" class="muted">{{ t("feedbackWorkspace.states.loading") }}</p>
+    <p v-else-if="filtered.length === 0" class="muted">{{ t("feedbackWorkspace.states.empty") }}</p>
 
     <ul v-else class="fbw-list">
       <li v-for="it in filtered" :key="it.id" class="fbw-item">
         <div class="fbw-item-head">
           <strong>#{{ it.id }}</strong>
           <span class="pill" :class="isHandled(it) ? 'handled' : 'open'">
-            {{ isHandled(it) ? '已处理' : '未处理' }}
+            {{ isHandled(it) ? t("feedbackWorkspace.pills.handled") : t("feedbackWorkspace.pills.open") }}
           </span>
           <span class="muted">· {{ it.created_at }}</span>
           <span v-if="it.scene_id" class="muted">· scene={{ it.scene_id }}</span>
@@ -288,11 +291,11 @@ watch(
         </p>
         <div class="fbw-item-actions">
           <label class="fbw-field grow">
-            处理备注
+            {{ t("feedbackWorkspace.fields.handledNote") }}
             <input
               v-model="noteDraft[it.id]"
               class="input"
-              :placeholder="it.handled_note || '（可选）写下你怎么修复/要怎么改…'"
+              :placeholder="it.handled_note || String(t('feedbackWorkspace.fields.handledNotePlaceholder'))"
             />
           </label>
           <button
@@ -302,7 +305,7 @@ watch(
             :disabled="loading"
             @click="toggleHandled(it, true)"
           >
-            标记已处理
+            {{ t("feedbackWorkspace.actions.markHandled") }}
           </button>
           <button
             v-else
@@ -311,15 +314,15 @@ watch(
             :disabled="loading"
             @click="toggleHandled(it, false)"
           >
-            取消已处理
+            {{ t("feedbackWorkspace.actions.unmarkHandled") }}
           </button>
         </div>
       </li>
     </ul>
 
     <div class="fbw-more">
-      <button type="button" class="btn" :disabled="loading" @click="refresh(false)">加载更多</button>
-      <span class="muted">已加载 {{ items.length }} 条 · 当前显示 {{ filtered.length }} 条</span>
+      <button type="button" class="btn" :disabled="loading" @click="refresh(false)">{{ t("feedbackWorkspace.actions.loadMore") }}</button>
+      <span class="muted">{{ t("feedbackWorkspace.moreCount", { loaded: items.length, shown: filtered.length }) }}</span>
     </div>
   </section>
 </template>
