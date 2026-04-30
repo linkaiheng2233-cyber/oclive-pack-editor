@@ -255,6 +255,41 @@ export default {
           faqTitle: "FAQ · settings (before / after examples)",
         },
       },
+      core: {
+        coreTitle: "Core personality (core_personality.txt)",
+        coreLead:
+          "Write personality and speaking habits in natural language; no code needed. The runtime “mutable personality profile” is maintained by the model and should not be hand-written in the pack.",
+        coreDocks: {
+          keypointsAria: "Core personality editable scope",
+          keypointsTitle: "Core personality · editable scope",
+          scopeTitle: "Editable scope",
+          faqAria: "Core personality FAQ",
+          faqTitle: "FAQ · Core personality (before / after examples)",
+          faqNotePrefix: "Use the text above as reference. The snippets below are ",
+          faqNoteStrong: "reference fragments",
+          faqNoteSuffix: "; no need to copy everything.",
+        },
+        creatorMsgTitle: "Message to players (optional)",
+        creatorMsgLead:
+          "Fill in the editor only. Players read it read-only in launcher, etc. Shared with simple creation.",
+        creatorMsgModeAria: "Creator message export mode",
+        creatorMsgModes: {
+          unified: "One line for the whole pack (exports the first non-empty line only)",
+          perModule: "Multiple lines (one message per line)",
+        },
+        creatorMsgDocks: {
+          keypointsAria: "Player message editable scope",
+          keypointsTitle: "Player message · modes & editable scope",
+          scopeTitle: "Modes & editable scope",
+          notePrefix: "Pair with the radio choice above; export results differ between ",
+          noteStrongUnified: "one-line pack message",
+          noteMiddle: " and ",
+          noteStrongPerModule: "multi-line messages",
+          noteSuffix: ".",
+          faqAria: "Player message FAQ",
+          faqTitle: "FAQ · Player message (before / after examples)",
+        },
+      },
     },
   },
   packEditor: {

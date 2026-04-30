@@ -377,10 +377,10 @@ function resetAllPreviewWeightOverrides(): void {
     <section v-show="advancedTab === 'core'" class="panel adv-single">
       <div class="adv-section-head">
         <h2 class="adv-h2">
-          <span>核心性格档案（core_personality.txt）</span>
+          <span>{{ t("advancedCreation.sections.core.coreTitle") }}</span>
           <HelpHint :paragraphs="ADV_CORE_TXT" />
         </h2>
-        <p class="adv-lead">用自然语言写性格与说话习惯即可，不必写代码；运行时的「可变性格档案」由模型维护，包内不可手写。</p>
+        <p class="adv-lead">{{ t("advancedCreation.sections.core.coreLead") }}</p>
       </div>
       <textarea
         v-model="corePersonality"
@@ -391,20 +391,22 @@ function resetAllPreviewWeightOverrides(): void {
       <div class="adv-dock-stack">
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          aria-label="核心性格档案可改范围"
+          :aria-label="String(t('advancedCreation.sections.core.coreDocks.keypointsAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge">重点</span>
-            <span class="adv-examples-dock-title">核心性格档案 · 可改范围说明</span>
+            <span class="adv-examples-badge">{{ t("advancedCreation.docks.badges.keypoints") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.core.coreDocks.keypointsTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
-            <h4 class="adv-ex-part">可改范围</h4>
+            <h4 class="adv-ex-part">{{ t("advancedCreation.sections.core.coreDocks.scopeTitle") }}</h4>
             <div class="adv-scope-matrix">
               <ul class="adv-scope-list">
                 <li v-for="row in CORE_PERSONALITY_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
                   <code class="adv-scope-field">{{ row.field }}</code>
                   <p class="adv-scope-mean">{{ row.meaning }}</p>
-                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                  <p class="adv-scope-scope">
+                    <strong>{{ t("advancedCreation.docks.scopeStrong") }}</strong>{{ row.scope }}
+                  </p>
                 </li>
               </ul>
             </div>
@@ -412,33 +414,39 @@ function resetAllPreviewWeightOverrides(): void {
         </details>
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          aria-label="核心性格档案常见问题"
+          :aria-label="String(t('advancedCreation.sections.core.coreDocks.faqAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
-            <span class="adv-examples-dock-title">常见问题 · 核心性格档案（改进前 / 改进后对照）</span>
+            <span class="adv-examples-badge adv-examples-badge--faq">{{ t("advancedCreation.docks.badges.faq") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.core.coreDocks.faqTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
-            <p class="adv-examples-dock-note">对照上方正文；以下为<strong>参考片段</strong>，不必整段复制。</p>
+            <p class="adv-examples-dock-note">
+              {{ t("advancedCreation.sections.core.coreDocks.faqNotePrefix") }}<strong>{{ t("advancedCreation.sections.core.coreDocks.faqNoteStrong") }}</strong>{{ t("advancedCreation.sections.core.coreDocks.faqNoteSuffix") }}
+            </p>
             <AdvFaqList :items="CORE_FAQ" />
           </div>
         </details>
       </div>
       <div class="adv-section-head h2-spaced">
         <h2 class="adv-h2">
-          <span>给玩家的寄语（可选）</span>
+          <span>{{ t("advancedCreation.sections.core.creatorMsgTitle") }}</span>
           <HelpHint :paragraphs="ADV_CREATOR_MESSAGE" />
         </h2>
-        <p class="adv-lead">仅在编写器填写；玩家在启动器等处只读看到。与简单创作共用。</p>
+        <p class="adv-lead">{{ t("advancedCreation.sections.core.creatorMsgLead") }}</p>
       </div>
-      <div class="creator-msg-mode" role="radiogroup" aria-label="创作者公告导出方式">
+      <div
+        class="creator-msg-mode"
+        role="radiogroup"
+        :aria-label="String(t('advancedCreation.sections.core.creatorMsgModeAria'))"
+      >
         <label class="radio-line">
           <input v-model="creatorMessageMode" type="radio" value="unified" />
-          整包一句（只导出首条非空行）
+          {{ t("advancedCreation.sections.core.creatorMsgModes.unified") }}
         </label>
         <label class="radio-line">
           <input v-model="creatorMessageMode" type="radio" value="per_module" />
-          按行多条（每行一条寄语）
+          {{ t("advancedCreation.sections.core.creatorMsgModes.perModule") }}
         </label>
       </div>
       <textarea
@@ -451,35 +459,37 @@ function resetAllPreviewWeightOverrides(): void {
       <div class="adv-dock-stack">
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          aria-label="玩家寄语可改范围"
+          :aria-label="String(t('advancedCreation.sections.core.creatorMsgDocks.keypointsAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge">重点</span>
-            <span class="adv-examples-dock-title">玩家寄语 · 模式与可改范围</span>
+            <span class="adv-examples-badge">{{ t("advancedCreation.docks.badges.keypoints") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.core.creatorMsgDocks.keypointsTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
-            <h4 class="adv-ex-part">模式与可改范围</h4>
+            <h4 class="adv-ex-part">{{ t("advancedCreation.sections.core.creatorMsgDocks.scopeTitle") }}</h4>
             <div class="adv-scope-matrix">
               <ul class="adv-scope-list">
                 <li v-for="row in CREATOR_MSG_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
                   <code class="adv-scope-field">{{ row.field }}</code>
                   <p class="adv-scope-mean">{{ row.meaning }}</p>
-                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                  <p class="adv-scope-scope">
+                    <strong>{{ t("advancedCreation.docks.scopeStrong") }}</strong>{{ row.scope }}
+                  </p>
                 </li>
               </ul>
             </div>
             <p class="adv-examples-dock-note">
-              结合上方单选；<strong>整包一句</strong>与<strong>按行多条</strong>导出结果不同。
+              {{ t("advancedCreation.sections.core.creatorMsgDocks.notePrefix") }}<strong>{{ t("advancedCreation.sections.core.creatorMsgDocks.noteStrongUnified") }}</strong>{{ t("advancedCreation.sections.core.creatorMsgDocks.noteMiddle") }}<strong>{{ t("advancedCreation.sections.core.creatorMsgDocks.noteStrongPerModule") }}</strong>{{ t("advancedCreation.sections.core.creatorMsgDocks.noteSuffix") }}
             </p>
           </div>
         </details>
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          aria-label="玩家寄语常见问题"
+          :aria-label="String(t('advancedCreation.sections.core.creatorMsgDocks.faqAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
-            <span class="adv-examples-dock-title">常见问题 · 玩家寄语（改进前 / 改进后对照）</span>
+            <span class="adv-examples-badge adv-examples-badge--faq">{{ t("advancedCreation.docks.badges.faq") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.core.creatorMsgDocks.faqTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
             <AdvFaqList :items="CREATOR_MSG_FAQ" />
