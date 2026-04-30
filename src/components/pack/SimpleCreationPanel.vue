@@ -258,26 +258,31 @@ const emit = defineEmits<{
       </div>
       <div class="form-row">
         <div class="label-hint-row">
-          <span class="labelish">创作者公告（可选，仅在此编写）</span>
+          <span class="labelish">{{ t("simpleCreation.creatorMessage.title") }}</span>
           <HelpHint :paragraphs="SIMPLE_CREATOR_MESSAGE_MODE" />
         </div>
         <p class="hint tiny">
-          下载包的用户只在<strong>启动器</strong>里只读查看；对话里的 AI<strong>不读</strong>这份文件。导出为
-          <code>creator_message.txt</code>，每行最多 160 字。
+          {{ t("simpleCreation.creatorMessage.desc") }}
         </p>
-        <div class="creator-msg-mode" role="radiogroup" aria-label="创作者公告导出方式">
+        <div
+          class="creator-msg-mode"
+          role="radiogroup"
+          :aria-label="String(t('simpleCreation.creatorMessage.modeAria'))"
+        >
           <label class="radio-line">
             <input v-model="creatorMessageMode" type="radio" value="unified" />
-            整包一句
+            {{ t("simpleCreation.creatorMessage.modes.unified") }}
           </label>
           <label class="radio-line">
             <input v-model="creatorMessageMode" type="radio" value="per_module" />
-            按行多条（每行对应一个模块/来源，多模块拼接时启动器会逐条列出）
+            {{ t("simpleCreation.creatorMessage.modes.perModule") }}
           </label>
         </div>
         <div class="label-hint-row">
           <label for="creator-msg-others">{{
-            creatorMessageMode === 'unified' ? '给后来者的一句话' : '每行一条（可多条）'
+            creatorMessageMode === 'unified'
+              ? t("simpleCreation.creatorMessage.bodyLabelUnified")
+              : t("simpleCreation.creatorMessage.bodyLabelPerModule")
           }}</label>
           <HelpHint :paragraphs="SIMPLE_CREATOR_MESSAGE_BODY" />
         </div>
@@ -289,13 +294,13 @@ const emit = defineEmits<{
           spellcheck="true"
           :placeholder="
             creatorMessageMode === 'unified'
-              ? '例如：别怕改设定，第三次导出就顺了。'
-              : '第一行：场景模块作者留话\n第二行：核心档案模块…\n（空行会被忽略）'
+              ? String(t('simpleCreation.creatorMessage.placeholders.unified'))
+              : String(t('simpleCreation.creatorMessage.placeholders.perModule'))
           "
         />
       </div>
       <details class="simple-faq-details">
-        <summary class="simple-faq-sum">常见问题 · 基础区（核心档案、立绘、寄语）</summary>
+        <summary class="simple-faq-sum">{{ t("simpleCreation.base.faqTitle") }}</summary>
         <AdvFaqList :items="SIMPLE_BASE_FAQ" show-intro />
       </details>
     </section>
@@ -303,26 +308,26 @@ const emit = defineEmits<{
     <details class="adv-details">
       <summary class="adv-details-sum">
         <span class="adv-sum-inner">
-          <span>进阶：场景、用户身份、世界观、角色受影响程度等</span>
+          <span>{{ t("simpleCreation.advanced.foldTitle") }}</span>
           <HelpHint :paragraphs="SIMPLE_ADV_FOLD" />
         </span>
       </summary>
       <div class="simple-grid">
         <section class="panel form-panel">
           <div class="section-title-row">
-            <h2>角色信息（manifest）</h2>
+            <h2>{{ t("simpleCreation.manifest.title") }}</h2>
             <HelpHint :paragraphs="SIMPLE_MANIFEST_INTRO" />
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-id">角色 ID（文件夹名）</label>
+              <label for="f-id">{{ t("simpleCreation.manifest.roleIdLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_FIELD_ROLE_ID" />
             </div>
             <input id="f-id" v-model="simpleM.id" type="text" autocomplete="off" />
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-name">显示名称</label>
+              <label for="f-name">{{ t("simpleCreation.manifest.displayNameLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_FIELD_DISPLAY_NAME" />
             </div>
             <input id="f-name" v-model="simpleM.name" type="text" />
@@ -330,26 +335,26 @@ const emit = defineEmits<{
           <div class="form-row two">
             <div>
               <div class="label-hint-row">
-                <label for="f-ver">版本</label>
+                <label for="f-ver">{{ t("simpleCreation.manifest.versionLabel") }}</label>
                 <HelpHint :paragraphs="SIMPLE_FIELD_VERSION_AUTHOR" />
               </div>
               <input id="f-ver" v-model="simpleM.version" type="text" />
             </div>
             <div>
-              <label for="f-author">作者</label>
+              <label for="f-author">{{ t("simpleCreation.manifest.authorLabel") }}</label>
               <input id="f-author" v-model="simpleM.author" type="text" />
             </div>
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-desc">简介</label>
+              <label for="f-desc">{{ t("simpleCreation.manifest.descriptionLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_FIELD_DESCRIPTION" />
             </div>
             <textarea id="f-desc" v-model="simpleM.description" rows="2" class="txt" />
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-minrt">最低 oclive 版本（可选）</label>
+              <label for="f-minrt">{{ t("simpleCreation.manifest.minRuntimeLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_FIELD_MIN_RUNTIME" />
             </div>
             <input
@@ -357,7 +362,7 @@ const emit = defineEmits<{
               v-model="simpleM.minRuntimeVersion"
               type="text"
               autocomplete="off"
-              placeholder="semver，如 0.2.0；与编写器 HOST_RUNTIME_VERSION / 运行时对齐，留空则不限制"
+              :placeholder="String(t('simpleCreation.manifest.minRuntimePlaceholder'))"
             />
           </div>
           <div class="form-row">
