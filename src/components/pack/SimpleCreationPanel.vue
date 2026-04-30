@@ -485,29 +485,28 @@ const emit = defineEmits<{
 
         <section class="panel form-panel">
           <div class="section-title-row">
-            <h2>引擎设置（settings）</h2>
+            <h2>{{ t("simpleCreation.settings.title") }}</h2>
             <HelpHint :paragraphs="SIMPLE_SETTINGS_INTRO" />
           </div>
 
           <section class="brain-panel" aria-labelledby="brain-heading">
             <div class="h3-hint-row">
-              <h3 id="brain-heading" class="h3">对话推理（大脑）</h3>
+              <h3 id="brain-heading" class="h3">{{ t("simpleCreation.settings.brain.title") }}</h3>
               <HelpHint :paragraphs="SIMPLE_BRAIN_LLM" />
             </div>
             <p class="brain-lead">
-              与 <strong>oclive-launcher</strong>「对话推理」一致：包内声明 <code>plugin_backends.llm</code>；本机走
-              Ollama，云端需在启动 oclive 时配置 <code>OCLIVE_REMOTE_LLM_URL</code>（启动器里填 URL）。
+              {{ t("simpleCreation.settings.brain.lead") }}
             </p>
             <div class="form-row">
-              <label for="f-brain-mode">推理方式</label>
+              <label for="f-brain-mode">{{ t("simpleCreation.settings.brain.modeLabel") }}</label>
               <select id="f-brain-mode" v-model="simpleS.pluginLlm">
-                <option value="ollama">本机 Ollama</option>
-                <option value="remote">云端 Remote LLM（HTTP JSON-RPC）</option>
-                <option value="directory">目录插件（JSON-RPC）</option>
+                <option value="ollama">{{ t("simpleCreation.settings.brain.modes.ollama") }}</option>
+                <option value="remote">{{ t("simpleCreation.settings.brain.modes.remote") }}</option>
+                <option value="directory">{{ t("simpleCreation.settings.brain.modes.directory") }}</option>
               </select>
             </div>
             <div v-if="simpleS.pluginLlm === 'ollama'" class="form-row">
-              <label for="f-model">Ollama 模型名（<code>model</code>）</label>
+              <label for="f-model">{{ t("simpleCreation.settings.brain.ollamaModelLabel") }}</label>
               <input
                 id="f-model"
                 v-model="simpleS.model"
@@ -518,46 +517,42 @@ const emit = defineEmits<{
             </div>
             <div v-else-if="simpleS.pluginLlm === 'remote'" class="form-row brain-remote-note">
               <p>
-                导出包将包含 <code>"llm": "remote"</code>。请使用启动器选择「云端 Remote LLM」并填写侧车地址；协议见 oclivenewnew
-                <code>REMOTE_PLUGIN_PROTOCOL.md</code>。
+                {{ t("simpleCreation.settings.brain.remoteNote") }}
               </p>
-              <label for="f-model-remote">模型名备注（可选，写入 <code>model</code>）</label>
+              <label for="f-model-remote">{{ t("simpleCreation.settings.brain.modelNoteLabel") }}</label>
               <input
                 id="f-model-remote"
                 v-model="simpleS.model"
                 type="text"
-                placeholder="可选，如文档说明用"
+                :placeholder="String(t('simpleCreation.settings.brain.modelNotePlaceholder'))"
                 autocomplete="off"
               />
             </div>
             <div v-else class="form-row brain-dir-note">
-              <label for="f-brain-dir-plugin">目录插件 ID（<code>plugin_backends.directory_plugins.llm</code>）</label>
+              <label for="f-brain-dir-plugin">{{ t("simpleCreation.settings.brain.directoryPluginIdLabel") }}</label>
               <select id="f-brain-dir-plugin" v-model="simpleS.directoryPluginLlm">
-                <option value="">请选择 manifest id</option>
+                <option value="">{{ t("simpleCreation.settings.brain.pickManifestId") }}</option>
                 <option v-for="p in llmPlugins" :key="p.id" :value="p.id">
                   {{ p.id }} — v{{ p.version }}
                 </option>
               </select>
               <p v-if="directoryPluginsError" class="hint tiny">{{ directoryPluginsError }}</p>
-              <p v-else-if="directoryPluginsLoading" class="hint tiny">正在扫描插件目录…</p>
+              <p v-else-if="directoryPluginsLoading" class="hint tiny">{{ t("simpleCreation.directoryPlugins.scanning") }}</p>
               <p
                 v-else-if="!directoryPlugins.length && !lastExportedRolesRoot.trim()"
                 class="hint tiny"
               >
-                未检测到目录插件。可将插件放入本应用数据目录下的 <code>plugins/</code>、环境变量
-                <code>PLUGINS_GLOBAL_PATH</code> 指向的目录，或工作目录的 <code>plugins/</code>；导出角色包后也会扫描与
-                <code>roles</code> 同级的 <code>plugins/</code>。
+                {{ t("simpleCreation.directoryPlugins.noneGlobalHint") }}
               </p>
               <p v-else-if="!lastExportedRolesRoot.trim()" class="hint tiny">
-                当前正列出全局 <code>plugins/</code>；在「检查与导出」写入文件夹后，将优先扫描与 roles 同级的
-                <code>plugins/</code>。
+                {{ t("simpleCreation.directoryPlugins.globalListingHint") }}
               </p>
-              <label for="f-model-dir">模型名备注（可选，写入 <code>model</code>）</label>
+              <label for="f-model-dir">{{ t("simpleCreation.settings.brain.modelNoteLabel") }}</label>
               <input
                 id="f-model-dir"
                 v-model="simpleS.model"
                 type="text"
-                placeholder="可选"
+                :placeholder="String(t('simpleCreation.settings.brain.modelNotePlaceholderShort'))"
                 autocomplete="off"
               />
             </div>
@@ -565,14 +560,14 @@ const emit = defineEmits<{
 
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-sv">schema 版本</label>
+              <label for="f-sv">{{ t("simpleCreation.settings.schemaVersionLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_SCHEMA_VERSION" />
             </div>
             <input id="f-sv" v-model.number="simpleS.schemaVersion" type="number" min="1" />
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-eif">事件影响系数（角色受影响程度）</label>
+              <label for="f-eif">{{ t("simpleCreation.settings.eventImpactFactorLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_EVENT_IMPACT" />
             </div>
             <input
@@ -586,12 +581,12 @@ const emit = defineEmits<{
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-psrc">人格来源（personality_source）</label>
+              <label for="f-psrc">{{ t("simpleCreation.settings.personalitySourceLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_PERSONALITY_SOURCE" />
             </div>
             <select id="f-psrc" v-model="simpleS.personalitySource">
-              <option value="vector">经典（vector）：七维增量为主</option>
-              <option value="profile">档案（profile）：核心长文 + 运行时可变档案</option>
+              <option value="vector">{{ t("simpleCreation.settings.personalitySource.vector") }}</option>
+              <option value="profile">{{ t("simpleCreation.settings.personalitySource.profile") }}</option>
             </select>
           </div>
           <div class="form-row">
@@ -644,15 +639,15 @@ const emit = defineEmits<{
           <div class="form-row chk-row chk-with-hint">
             <label class="chk-label-wrap">
               <input v-model="simpleS.remoteDefaultEnabled" type="checkbox" />
-              异地心声默认开启（建议）
+              {{ t("simpleCreation.settings.remotePresenceDefaultEnabled") }}
             </label>
             <HelpHint :paragraphs="SIMPLE_REMOTE_PRESENCE" />
           </div>
           <div class="h3-hint-row">
-            <h3 class="h3">其他插件后端（memory / emotion / event / prompt）</h3>
+            <h3 class="h3">{{ t("simpleCreation.settings.otherBackends.title") }}</h3>
             <HelpHint :paragraphs="SIMPLE_PLUGIN_BACKENDS" />
           </div>
-          <p class="plugin-sub">主对话 LLM 已在上方「对话推理」中选择；此处为记忆、情绪、事件、Prompt 四类后端。</p>
+          <p class="plugin-sub">{{ t("simpleCreation.settings.otherBackends.desc") }}</p>
           <div class="form-row">
             <label>memory</label>
             <select v-model="simpleS.pluginMemory">
@@ -663,9 +658,9 @@ const emit = defineEmits<{
             </select>
           </div>
           <div v-if="simpleS.pluginMemory === 'directory'" class="form-row">
-            <label for="f-pl-mem">目录插件 ID</label>
+            <label for="f-pl-mem">{{ t("simpleCreation.settings.otherBackends.directoryPluginIdLabel") }}</label>
             <select id="f-pl-mem" v-model="simpleS.directoryPluginMemory">
-              <option value="">请选择 manifest id</option>
+              <option value="">{{ t("simpleCreation.settings.otherBackends.pickManifestId") }}</option>
               <option v-for="p in memoryPlugins" :key="p.id" :value="p.id">
                 {{ p.id }} — v{{ p.version }}
               </option>
@@ -681,9 +676,9 @@ const emit = defineEmits<{
             </select>
           </div>
           <div v-if="simpleS.pluginEmotion === 'directory'" class="form-row">
-            <label for="f-pl-emo">目录插件 ID</label>
+            <label for="f-pl-emo">{{ t("simpleCreation.settings.otherBackends.directoryPluginIdLabel") }}</label>
             <select id="f-pl-emo" v-model="simpleS.directoryPluginEmotion">
-              <option value="">请选择 manifest id</option>
+              <option value="">{{ t("simpleCreation.settings.otherBackends.pickManifestId") }}</option>
               <option v-for="p in emotionPlugins" :key="p.id" :value="p.id">
                 {{ p.id }} — v{{ p.version }}
               </option>
@@ -699,9 +694,9 @@ const emit = defineEmits<{
             </select>
           </div>
           <div v-if="simpleS.pluginEvent === 'directory'" class="form-row">
-            <label for="f-pl-ev">目录插件 ID</label>
+            <label for="f-pl-ev">{{ t("simpleCreation.settings.otherBackends.directoryPluginIdLabel") }}</label>
             <select id="f-pl-ev" v-model="simpleS.directoryPluginEvent">
-              <option value="">请选择 manifest id</option>
+              <option value="">{{ t("simpleCreation.settings.otherBackends.pickManifestId") }}</option>
               <option v-for="p in eventPlugins" :key="p.id" :value="p.id">
                 {{ p.id }} — v{{ p.version }}
               </option>
@@ -717,25 +712,24 @@ const emit = defineEmits<{
             </select>
           </div>
           <div v-if="simpleS.pluginPrompt === 'directory'" class="form-row">
-            <label for="f-pl-pr">目录插件 ID</label>
+            <label for="f-pl-pr">{{ t("simpleCreation.settings.otherBackends.directoryPluginIdLabel") }}</label>
             <select id="f-pl-pr" v-model="simpleS.directoryPluginPrompt">
-              <option value="">请选择 manifest id</option>
+              <option value="">{{ t("simpleCreation.settings.otherBackends.pickManifestId") }}</option>
               <option v-for="p in promptPlugins" :key="p.id" :value="p.id">
                 {{ p.id }} — v{{ p.version }}
               </option>
             </select>
           </div>
           <p v-if="directoryPluginsError" class="hint tiny">{{ directoryPluginsError }}</p>
-          <p v-else-if="directoryPluginsLoading" class="hint tiny">正在扫描插件目录…</p>
+          <p v-else-if="directoryPluginsLoading" class="hint tiny">{{ t("simpleCreation.directoryPlugins.scanning") }}</p>
           <p
             v-else-if="!directoryPlugins.length && !lastExportedRolesRoot.trim()"
             class="hint tiny"
           >
-            未检测到目录插件。可将插件放入应用数据 <code>plugins/</code>、<code>PLUGINS_GLOBAL_PATH</code> 或工作目录
-            <code>plugins/</code>；导出后亦会扫描与 <code>roles</code> 同级的 <code>plugins/</code>。
+            {{ t("simpleCreation.directoryPlugins.noneGlobalHintShort") }}
           </p>
           <p v-else-if="!lastExportedRolesRoot.trim()" class="hint tiny">
-            当前列出全局 <code>plugins/</code>；导出到含 <code>roles</code> 的目录后将改为扫描同级 <code>plugins/</code>。
+            {{ t("simpleCreation.directoryPlugins.globalListingHintShort") }}
           </p>
 
           <details class="ui-design-details">
@@ -939,7 +933,7 @@ const emit = defineEmits<{
             需要完整 JSON 或插件字段时，请切换到<strong>高级创作</strong>直接编辑源码。
           </p>
           <details class="simple-faq-details">
-            <summary class="simple-faq-sum">常见问题 · 引擎设置（settings）</summary>
+          <summary class="simple-faq-sum">{{ t("simpleCreation.settings.faqTitle") }}</summary>
             <AdvFaqList :items="SIMPLE_SETTINGS_FAQ" />
           </details>
         </section>

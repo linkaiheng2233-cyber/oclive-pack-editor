@@ -70,6 +70,55 @@ export default {
       knowledgeGlobLabel: "glob pattern",
       faqTitle: "FAQ · Role info (manifest)",
     },
+    directoryPlugins: {
+      scanning: "Scanning plugin directory…",
+      noneGlobalHint:
+        "No directory plugins detected. Put plugins into the app data plugins/ folder, a folder pointed by PLUGINS_GLOBAL_PATH, or the working directory plugins/ folder. After exporting the role pack, we also scan plugins/ next to roles/.",
+      globalListingHint:
+        "Currently listing global plugins/. After exporting (write to folder) in “Checks & export”, scanning will prefer plugins/ next to roles/.",
+      noneGlobalHintShort:
+        "No directory plugins detected. Put plugins into plugins/ (app data / PLUGINS_GLOBAL_PATH / working directory). After export, plugins/ next to roles/ is also scanned.",
+      globalListingHintShort:
+        "Currently listing global plugins/. After exporting into a folder containing roles/, scanning will switch to sibling plugins/.",
+    },
+    settings: {
+      title: "Engine settings (settings)",
+      brain: {
+        title: "Chat inference (brain)",
+        lead:
+          "Matches the launcher “Chat inference”: declares plugin_backends.llm in the pack. Local uses Ollama; remote requires OCLIVE_REMOTE_LLM_URL when launching oclive (fill URL in the launcher).",
+        modeLabel: "Inference mode",
+        modes: {
+          ollama: "Local Ollama",
+          remote: "Remote LLM (HTTP JSON-RPC)",
+          directory: "Directory plugin (JSON-RPC)",
+        },
+        ollamaModelLabel: "Ollama model name (model)",
+        remoteNote:
+          'Exported pack will include "llm": "remote". Use the launcher to select Remote LLM and fill the sidecar URL. Protocol: oclivenewnew REMOTE_PLUGIN_PROTOCOL.md.',
+        modelNoteLabel: "Model note (optional; writes to model)",
+        modelNotePlaceholder: "Optional, e.g. for documentation",
+        directoryPluginIdLabel: "Directory plugin ID (plugin_backends.directory_plugins.llm)",
+        pickManifestId: "Pick a manifest id",
+        modelNotePlaceholderShort: "Optional",
+      },
+      schemaVersionLabel: "Schema version",
+      eventImpactFactorLabel: "Event impact factor (how strongly the role is affected)",
+      personalitySourceLabel: "Personality source (personality_source)",
+      personalitySource: {
+        vector: "Vector (classic): mainly personality-vector deltas",
+        profile: "Profile: core long text + runtime mutable profile",
+      },
+      remotePresenceDefaultEnabled: "Enable remote presence by default (recommended)",
+      otherBackends: {
+        title: "Other plugin backends (memory / emotion / event / prompt)",
+        desc:
+          "Main chat LLM is selected in “Chat inference” above. This section configures the four backends: memory, emotion, event, prompt.",
+        directoryPluginIdLabel: "Directory plugin ID",
+        pickManifestId: "Pick a manifest id",
+      },
+      faqTitle: "FAQ · Engine settings (settings)",
+    },
     slots: {
       chatToolbar: "Chat toolbar",
       settingsPanel: "Settings extension",
