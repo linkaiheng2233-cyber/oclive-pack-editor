@@ -540,6 +540,15 @@ export default {
     },
     moreCount: "已加载 {loaded} 条 · 当前显示 {shown} 条",
   },
+  advFaqList: {
+    introPrefix: "下面用",
+    introStrong: "问句",
+    introSuffix: "排列；点一下展开，能看到「改进前 / 改进后」对照。下面两栏小框用淡灰标出改进前/后里的重点片段。",
+    beforeLabel: "改进前",
+    afterLabel: "改进后",
+    beforeAria: "改进前",
+    afterAria: "改进后",
+  },
   packEditor: {
     aria: {
       nav: "功能导航",
@@ -554,6 +563,11 @@ export default {
       enlargeAria: "放大界面",
       relativeScaleTitle: "相对默认字号：{label}",
       themeTitle: "主题：{label}（点击切换）",
+      themeLabels: {
+        system: "跟随系统",
+        light: "浅色",
+        dark: "深色",
+      },
     },
     nav: {
       start: "开始",
@@ -570,6 +584,64 @@ export default {
       check: "检查与导出",
       chat: "试聊",
       feedback: "反馈工作台",
+    },
+    shell: {
+      startSubPrefix: "独立工具，仅产出与运行时兼容的目录树；契约见 oclivenewnew 仓库 ",
+      startSubMiddle: " 与 ",
+      startSubSuffix: "。",
+      subMuted: "使用左侧导航在不同功能间切换，避免单页堆砌。",
+    },
+    start: {
+      kickers: {
+        quickStart: "快速开始",
+        community: "与社区站联动",
+        modes: "创作方式",
+      },
+      import: {
+        aria: "导入角色包",
+        button: "导入角色包（.zip / .ocpak）",
+        hint: "导入后可编辑全部内容并另存为新包。",
+      },
+      marketCompose: {
+        aria: "从 OCLive 市场导入模块组合",
+        title: "从市场「模块组合」导入",
+        lead:
+          "在 OCLive 市场的「角色包 → 模块组合」中选好片段后，点「复制组合 JSON」，回到此处粘贴到下方文本框，再点「应用到简单创作」。内容会追加到人设长文、世界观（Markdown）与「语气与关系提示」，不覆盖你已有正文。",
+        placeholder: '粘贴形如 {"version":1,"source":"oclive-plugin-market",...} 的整段 JSON',
+        apply: "应用到简单创作",
+      },
+      quickNav: {
+        aria: "进入创作",
+        leadPrefix: "简单模式用表单填人设；高级模式直接改文件，不懂可点各页的",
+        leadSuffix: "看说明。",
+        tiles: {
+          simple: {
+            title: "简单创作",
+            desc: "人设、情绪图、进阶字段折叠",
+          },
+          advanced: {
+            title: "高级创作",
+            desc: "直接编辑 JSON 与知识库；有白话提示",
+          },
+          check: {
+            title: "检查与导出",
+            desc: "校验契约、导出 zip / 写入文件夹",
+          },
+          chat: {
+            title: "试聊",
+            desc: "连接本机 oclive HTTP API，快速对话",
+          },
+        },
+      },
+    },
+    check: {
+      exportOcpak: "导出 .ocpak（zip）",
+      exportZip: "导出 .zip",
+      exportFolder: "写入文件夹（自选 roles 根目录）",
+      exportAnchorHint:
+        "若 settings.json 尚未填写 reply_quality_anchor，导出时会询问是否加入推荐的「回复质量锚点」（含状态延续、按用户句长与情绪调节篇幅、禁止复述用户原句等完整约束）。",
+      resultsTitle: "检查结果",
+      noErrorsHint: "点击「运行全部检查」查看错误列表；无错误时此处为空。",
     },
   },
 };

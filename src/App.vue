@@ -59,10 +59,22 @@ const {
 
 const marketComposePaste = ref('')
 
-const { themeCycleLabel, cycleTheme, bumpScale, scaleLabel } = usePackShellPreferences()
+const { themePreference, cycleTheme, bumpScale, scaleLabel } = usePackShellPreferences()
 
 const { t } = useI18n();
 const uiLocale = ref<AppLocale>("system");
+
+const themeCycleLabel = computed(() => {
+  if (themePreference.value === 'system') return String(t("packEditor.header.themeLabels.system"))
+  if (themePreference.value === 'dark') return String(t("packEditor.header.themeLabels.dark"))
+  return String(t("packEditor.header.themeLabels.light"))
+})
+
+const themeCycleIcon = computed(() => {
+  if (themePreference.value === 'system') return '◐'
+  if (themePreference.value === 'dark') return '🌙'
+  return '☀️'
+})
 
 function onLocaleChange(v: string) {
   const next = (v as AppLocale) || "system";
@@ -171,22 +183,23 @@ const viewTitle = computed(() => {
               :title="String(t('packEditor.header.themeTitle', { label: themeCycleLabel }))"
               @click="cycleTheme"
             >
-              {{ themeCycleLabel === '跟随系统' ? '◐' : themeCycleLabel === '深色' ? '🌙' : '☀️' }}
+              {{ themeCycleIcon }}
               {{ themeCycleLabel }}
             </button>
           </div>
         </div>
         <p v-if="editorView === 'start'" class="sub">
-          独立工具，仅产出与运行时兼容的目录树；契约见 oclivenewnew 仓库
-          <code>creator-docs/</code> 与 <code>roles/README_MANIFEST.md</code>。
+          {{ t("packEditor.shell.startSubPrefix") }}
+          <code>creator-docs/</code> {{ t("packEditor.shell.startSubMiddle") }}
+          <code>roles/README_MANIFEST.md</code>{{ t("packEditor.shell.startSubSuffix") }}
         </p>
-        <p v-else class="sub sub-muted">使用左侧导航在不同功能间切换，避免单页堆砌。</p>
+        <p v-else class="sub sub-muted">{{ t("packEditor.shell.subMuted") }}</p>
       </header>
 
       <!-- 开始：导入 + 入口 -->
       <div v-show="editorView === 'start'" class="view-stack">
-        <section class="import-wrap" aria-label="导入角色包">
-          <p class="section-kicker">快速开始</p>
+        <section class="import-wrap" :aria-label="String(t('packEditor.start.import.aria'))">
+          <p class="section-kicker">{{ t("packEditor.start.kickers.quickStart") }}</p>
           <div class="import-bar">
             <label class="import-btn">
               <input
@@ -195,56 +208,54 @@ const viewTitle = computed(() => {
                 class="sr-only"
                 @change="onImportPack"
               />
-              导入角色包（.zip / .ocpak）
+              {{ t("packEditor.start.import.button") }}
             </label>
-            <span class="import-hint">导入后可编辑全部内容并另存为新包。</span>
+            <span class="import-hint">{{ t("packEditor.start.import.hint") }}</span>
           </div>
         </section>
 
-        <section class="market-compose-wrap" aria-label="从 OCLive 市场导入模块组合">
-          <p class="section-kicker">与社区站联动</p>
-          <h2 class="mc-h2">从市场「模块组合」导入</h2>
-          <p class="mc-lead">
-            在 <strong>OCLive 市场</strong> 的「角色包 → 模块组合」中选好片段后，点<strong>复制组合 JSON</strong>，回到此处粘贴到下方文本框，再点<strong>应用到简单创作</strong>。内容会<strong>追加</strong>到人设长文、世界观（Markdown）与「语气与关系提示」，不覆盖你已有正文。
-          </p>
+        <section class="market-compose-wrap" :aria-label="String(t('packEditor.start.marketCompose.aria'))">
+          <p class="section-kicker">{{ t("packEditor.start.kickers.community") }}</p>
+          <h2 class="mc-h2">{{ t("packEditor.start.marketCompose.title") }}</h2>
+          <p class="mc-lead">{{ t("packEditor.start.marketCompose.lead") }}</p>
           <textarea
             v-model="marketComposePaste"
             class="mc-textarea"
             rows="8"
             spellcheck="false"
-            placeholder='粘贴形如 {"version":1,"source":"oclive-plugin-market",...} 的整段 JSON'
+            :placeholder="String(t('packEditor.start.marketCompose.placeholder'))"
           />
           <div class="mc-actions">
-            <button type="button" class="mc-btn primary" @click="onApplyMarketCompose">应用到简单创作</button>
+            <button type="button" class="mc-btn primary" @click="onApplyMarketCompose">{{ t("packEditor.start.marketCompose.apply") }}</button>
           </div>
         </section>
 
-        <section class="quick-card" aria-label="进入创作">
-          <p class="section-kicker">创作方式</p>
+        <section class="quick-card" :aria-label="String(t('packEditor.start.quickNav.aria'))">
+          <p class="section-kicker">{{ t("packEditor.start.kickers.modes") }}</p>
           <p class="quick-lead">
-            简单模式用表单填人设；高级模式直接改文件，不懂可点各页的
-            <span class="quick-hint-ico" aria-hidden="true">?</span> 看说明。
+            {{ t("packEditor.start.quickNav.leadPrefix") }}
+            <span class="quick-hint-ico" aria-hidden="true">?</span> {{ t("packEditor.start.quickNav.leadSuffix") }}
           </p>
           <div class="quick-actions">
             <button type="button" class="quick-tile" @click="goEditorView('simple')">
               <span class="quick-tile-ico" aria-hidden="true">📝</span>
-              <span class="quick-tile-title">简单创作</span>
-              <span class="quick-tile-desc">人设、情绪图、进阶字段折叠</span>
+              <span class="quick-tile-title">{{ t("packEditor.start.quickNav.tiles.simple.title") }}</span>
+              <span class="quick-tile-desc">{{ t("packEditor.start.quickNav.tiles.simple.desc") }}</span>
             </button>
             <button type="button" class="quick-tile" @click="goEditorView('advanced')">
               <span class="quick-tile-ico" aria-hidden="true">⚙️</span>
-              <span class="quick-tile-title">高级创作</span>
-              <span class="quick-tile-desc">直接编辑 JSON 与知识库；有白话提示</span>
+              <span class="quick-tile-title">{{ t("packEditor.start.quickNav.tiles.advanced.title") }}</span>
+              <span class="quick-tile-desc">{{ t("packEditor.start.quickNav.tiles.advanced.desc") }}</span>
             </button>
             <button type="button" class="quick-tile quick-tile-accent" @click="goEditorView('check')">
               <span class="quick-tile-ico" aria-hidden="true">✓</span>
-              <span class="quick-tile-title">检查与导出</span>
-              <span class="quick-tile-desc">校验契约、导出 zip / 写入文件夹</span>
+              <span class="quick-tile-title">{{ t("packEditor.start.quickNav.tiles.check.title") }}</span>
+              <span class="quick-tile-desc">{{ t("packEditor.start.quickNav.tiles.check.desc") }}</span>
             </button>
             <button type="button" class="quick-tile" @click="goEditorView('chat')">
               <span class="quick-tile-ico" aria-hidden="true">💬</span>
-              <span class="quick-tile-title">试聊</span>
-              <span class="quick-tile-desc">连接本机 oclive HTTP API，快速对话</span>
+              <span class="quick-tile-title">{{ t("packEditor.start.quickNav.tiles.chat.title") }}</span>
+              <span class="quick-tile-desc">{{ t("packEditor.start.quickNav.tiles.chat.desc") }}</span>
             </button>
           </div>
         </section>
@@ -315,29 +326,29 @@ const viewTitle = computed(() => {
         />
 
         <div class="actions">
-          <button type="button" @click="exportZip(true)">导出 .ocpak（zip）</button>
-          <button type="button" @click="exportZip(false)">导出 .zip</button>
+          <button type="button" @click="exportZip(true)">{{ t("packEditor.check.exportOcpak") }}</button>
+          <button type="button" @click="exportZip(false)">{{ t("packEditor.check.exportZip") }}</button>
           <button
             v-if="folderExportOk"
             type="button"
             class="secondary"
             @click="exportFolder"
           >
-            写入文件夹（自选 roles 根目录）
+            {{ t("packEditor.check.exportFolder") }}
           </button>
         </div>
         <p class="hint muted post-actions-hint export-anchor-hint">
-          若 <code>settings.json</code> 尚未填写 <code>reply_quality_anchor</code>，导出时会询问是否加入推荐的「回复质量锚点」（含状态延续、按用户句长与情绪调节篇幅、禁止复述用户原句等完整约束）。
+          {{ t("packEditor.check.exportAnchorHint") }}
         </p>
 
         <div v-if="validationErrors.length" class="errors-block" role="alert">
-          <strong>检查结果</strong>
+          <strong>{{ t("packEditor.check.resultsTitle") }}</strong>
           <ul>
             <li v-for="(e, i) in validationErrors" :key="i">{{ e }}</li>
           </ul>
         </div>
         <p v-else class="hint muted post-actions-hint">
-          点击「运行全部检查」查看错误列表；无错误时此处为空。
+          {{ t("packEditor.check.noErrorsHint") }}
         </p>
 
         <p

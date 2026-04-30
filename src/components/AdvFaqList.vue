@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from "vue-i18n";
 import type { AdvFaqItem } from '../lib/advancedEditorFaq'
 import { buildHighlightSegments } from '../lib/advancedEditorFaq'
 
@@ -13,6 +14,8 @@ const props = withDefaults(
 )
 
 const activeId = ref<string | null>(null)
+
+const { t } = useI18n()
 
 function onToggle(id: string, ev: Event): void {
   const el = ev.target as HTMLDetailsElement
@@ -35,7 +38,7 @@ function segs(code: string, tokens: readonly string[] | undefined) {
 <template>
   <div class="adv-faq-list" role="region">
     <p v-if="showIntro" class="adv-faq-lead">
-      下面用<strong>问句</strong>排列；点一下展开，能看到「改进前 / 改进后」对照。下面两栏小框用淡灰标出改进前/后里的重点片段。
+      {{ t("advFaqList.introPrefix") }}<strong>{{ t("advFaqList.introStrong") }}</strong>{{ t("advFaqList.introSuffix") }}
     </p>
     <details
       v-for="item in items"
@@ -51,8 +54,8 @@ function segs(code: string, tokens: readonly string[] | undefined) {
         <p class="faq-plain">{{ item.plainExplain }}</p>
         <div class="faq-compare">
           <div class="faq-col">
-            <span class="faq-lbl">改进前</span>
-            <pre class="faq-pre" aria-label="改进前"><template
+            <span class="faq-lbl">{{ t("advFaqList.beforeLabel") }}</span>
+            <pre class="faq-pre" :aria-label="String(t('advFaqList.beforeAria'))"><template
                 v-for="(seg, i) in segs(item.beforeCode, item.highlightBefore)"
                 :key="'b' + item.id + i"
                 ><mark v-if="seg.hl" class="faq-mark">{{ seg.text }}</mark
@@ -60,8 +63,8 @@ function segs(code: string, tokens: readonly string[] | undefined) {
               ></pre>
           </div>
           <div class="faq-col">
-            <span class="faq-lbl">改进后</span>
-            <pre class="faq-pre" aria-label="改进后"><template
+            <span class="faq-lbl">{{ t("advFaqList.afterLabel") }}</span>
+            <pre class="faq-pre" :aria-label="String(t('advFaqList.afterAria'))"><template
                 v-for="(seg, i) in segs(item.afterCode, item.highlightAfter)"
                 :key="'a' + item.id + i"
                 ><mark v-if="seg.hl" class="faq-mark">{{ seg.text }}</mark

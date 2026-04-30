@@ -565,6 +565,16 @@ export default {
     },
     moreCount: "Loaded {loaded} · Showing {shown}",
   },
+  advFaqList: {
+    introPrefix: "Questions are listed below. Click to expand and compare ",
+    introStrong: "before / after",
+    introSuffix:
+      ". The two columns use light gray highlighting to mark important fragments in each version.",
+    beforeLabel: "Before",
+    afterLabel: "After",
+    beforeAria: "Before",
+    afterAria: "After",
+  },
   packEditor: {
     aria: {
       nav: "Feature navigation",
@@ -579,6 +589,11 @@ export default {
       enlargeAria: "Enlarge UI",
       relativeScaleTitle: "Relative to default font size: {label}",
       themeTitle: "Theme: {label} (click to switch)",
+      themeLabels: {
+        system: "System",
+        light: "Light",
+        dark: "Dark",
+      },
     },
     nav: {
       start: "Start",
@@ -595,6 +610,66 @@ export default {
       check: "Checks & export",
       chat: "Try chat",
       feedback: "Feedback workspace",
+    },
+    shell: {
+      startSubPrefix: "A standalone tool that outputs a runtime-compatible directory tree. See the contract in oclivenewnew: ",
+      startSubMiddle: " and ",
+      startSubSuffix: ".",
+      subMuted: "Use the left navigation to switch between features and keep each page focused.",
+    },
+    start: {
+      kickers: {
+        quickStart: "Quick start",
+        community: "Community integration",
+        modes: "Creation modes",
+      },
+      import: {
+        aria: "Import role pack",
+        button: "Import role pack (.zip / .ocpak)",
+        hint: "After importing, you can edit everything and save as a new pack.",
+      },
+      marketCompose: {
+        aria: "Import module composition from OCLive Market",
+        title: "Import “module composition” from Market",
+        lead:
+          "In OCLive Market, pick a fragment under “Role pack → Module composition”, click “Copy composition JSON”, paste it here, then click “Apply to simple creation”. Content will be appended to core personality, world (Markdown), and “tone & relation hints” without overwriting your existing text.",
+        placeholder: 'Paste the full JSON like {"version":1,"source":"oclive-plugin-market",...}',
+        apply: "Apply to simple creation",
+      },
+      quickNav: {
+        aria: "Enter creation",
+        leadPrefix:
+          "Simple mode fills persona via forms; advanced mode edits files directly. If unsure, click the ",
+        leadSuffix: " to read the guide.",
+        tiles: {
+          simple: {
+            title: "Simple creation",
+            desc: "Persona, emotion assets, and advanced fields (collapsed)",
+          },
+          advanced: {
+            title: "Advanced creation",
+            desc: "Edit JSON and knowledge directly, with plain-language guides",
+          },
+          check: {
+            title: "Checks & export",
+            desc: "Validate contract, export zip / write to folder",
+          },
+          chat: {
+            title: "Try chat",
+            desc: "Connect to local oclive HTTP API and chat quickly",
+          },
+        },
+      },
+    },
+    check: {
+      exportOcpak: "Export .ocpak (zip)",
+      exportZip: "Export .zip",
+      exportFolder: "Write to folder (pick roles root)",
+      exportAnchorHint:
+        "If settings.json doesn’t have reply_quality_anchor, export will ask whether to add the recommended “reply quality anchor” (state continuity, length modulation by user sentence length and emotion, no parroting, etc.).",
+      resultsTitle: "Check results",
+      noErrorsHint:
+        "Click “Run all checks” to view the error list. If there are no errors, this area stays empty.",
     },
   },
 };
