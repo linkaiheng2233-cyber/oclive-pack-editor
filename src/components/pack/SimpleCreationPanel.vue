@@ -591,7 +591,7 @@ const emit = defineEmits<{
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-mce">单轮可变档案步长（max_change_per_event）</label>
+              <label for="f-mce">{{ t("simpleCreation.settings.maxChangePerEventLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_MAX_CHANGE_PER_EVENT" />
             </div>
             <input
@@ -605,27 +605,27 @@ const emit = defineEmits<{
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-ib">身份绑定</label>
+              <label for="f-ib">{{ t("simpleCreation.settings.identityBindingLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_IDENTITY_BINDING" />
             </div>
             <select id="f-ib" v-model="simpleS.identityBinding">
-              <option value="per_scene">按场景（per_scene）</option>
-              <option value="global">全局（global）</option>
+              <option value="per_scene">{{ t("simpleCreation.settings.identityBinding.perScene") }}</option>
+              <option value="global">{{ t("simpleCreation.settings.identityBinding.global") }}</option>
             </select>
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-im">交互模式</label>
+              <label for="f-im">{{ t("simpleCreation.settings.interactionModeLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_INTERACTION_MODE" />
             </div>
             <select id="f-im" v-model="simpleS.interactionMode">
-              <option value="immersive">沉浸（immersive）</option>
-              <option value="pure_chat">纯聊（pure_chat）</option>
+              <option value="immersive">{{ t("simpleCreation.settings.interactionMode.immersive") }}</option>
+              <option value="pure_chat">{{ t("simpleCreation.settings.interactionMode.pureChat") }}</option>
             </select>
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-swm">场景记忆权重倍率</label>
+              <label for="f-swm">{{ t("simpleCreation.settings.sceneWeightMultiplierLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_SCENE_WEIGHT" />
             </div>
             <input
@@ -733,103 +733,109 @@ const emit = defineEmits<{
           </p>
 
           <details class="ui-design-details">
-            <summary class="ui-design-sum">作者与建议（author.json）</summary>
+            <summary class="ui-design-sum">{{ t("simpleCreation.author.title") }}</summary>
             <p class="hint tiny">
-              可选：面向市场的简介、推荐插件列表；若勾选「导出时附带 suggested_ui」，将把下方「前端设计」当前表单一并写入
-              <code>author.json</code>（运行时优先于 <code>ui.json</code> 作为插件布局种子）。<code>suggested_plugin_backends</code>
-              为 JSON 片段，供用户一键应用为会话后端（不写 settings.json）。
+              {{ t("simpleCreation.author.desc") }}
             </p>
             <div class="form-row">
-              <label for="auth-sum">一句话简介</label>
+              <label for="auth-sum">{{ t("simpleCreation.author.oneLineSummaryLabel") }}</label>
               <input
                 id="auth-sum"
                 v-model="authorSummary"
                 type="text"
                 class="txt"
                 autocomplete="off"
-                placeholder="例：慢热型同桌，适合日常陪伴"
+                :placeholder="String(t('simpleCreation.author.oneLineSummaryPlaceholder'))"
               />
             </div>
             <div class="form-row">
-              <label for="auth-md">详情（Markdown）</label>
+              <label for="auth-md">{{ t("simpleCreation.author.detailMarkdownLabel") }}</label>
               <textarea
                 id="auth-md"
                 v-model="authorDetailMarkdown"
                 rows="4"
                 class="txt"
                 spellcheck="false"
-                placeholder="可选：角色卖点、使用说明、推荐场景…"
+                :placeholder="String(t('simpleCreation.author.detailMarkdownPlaceholder'))"
               />
             </div>
             <div class="form-row">
-              <label>推荐目录插件</label>
+              <label>{{ t("simpleCreation.author.recommendedDirectoryPluginsLabel") }}</label>
               <div class="auth-rec-toolbar">
-                <button type="button" class="tiny-btn" @click="emit('addAuthorRecRow')">添加一行</button>
+                <button type="button" class="tiny-btn" @click="emit('addAuthorRecRow')">{{ t("simpleCreation.author.addRow") }}</button>
               </div>
               <div
                 v-for="(row, idx) in authorRecommendedRows"
                 :key="'ar-' + idx"
                 class="auth-rec-row"
               >
-                <input v-model="row.id" type="text" placeholder="插件 manifest id" class="txt" />
+                <input
+                  v-model="row.id"
+                  type="text"
+                  :placeholder="String(t('simpleCreation.author.row.pluginIdPlaceholder'))"
+                  class="txt"
+                />
                 <input
                   v-model="row.version_range"
                   type="text"
-                  placeholder="版本范围（可选）"
+                  :placeholder="String(t('simpleCreation.author.row.versionRangePlaceholder'))"
                   class="txt"
                 />
-                <input v-model="row.note" type="text" placeholder="备注" class="txt" />
+                <input
+                  v-model="row.note"
+                  type="text"
+                  :placeholder="String(t('simpleCreation.author.row.notePlaceholder'))"
+                  class="txt"
+                />
                 <button
                   type="button"
                   class="tiny-btn danger"
                   :disabled="authorRecommendedRows.length <= 1"
                   @click="emit('removeAuthorRecRow', idx)"
                 >
-                  删除
+                  {{ t("simpleCreation.author.removeRow") }}
                 </button>
               </div>
             </div>
             <div class="form-row chk-row">
               <label class="chk">
                 <input v-model="authorIncludeSuggestedUi" type="checkbox" />
-                导出时在 author.json 附带当前「前端设计」为 suggested_ui
+                {{ t("simpleCreation.author.includeSuggestedUi") }}
               </label>
             </div>
             <div class="form-row">
-              <label for="auth-be">suggested_plugin_backends（JSON，可选）</label>
+              <label for="auth-be">{{ t("simpleCreation.author.suggestedPluginBackendsLabel") }}</label>
               <textarea
                 id="auth-be"
                 v-model="authorSuggestedBackendsJson"
                 rows="6"
                 class="txt mono"
                 spellcheck="false"
-                placeholder='例：{ "memory": "builtin", "llm": "ollama", ... }'
+                :placeholder="String(t('simpleCreation.author.suggestedPluginBackendsPlaceholder'))"
               />
             </div>
           </details>
 
           <details class="ui-design-details">
-            <summary class="ui-design-sum">前端设计（ui.json）</summary>
+            <summary class="ui-design-sum">{{ t("simpleCreation.ui.title") }}</summary>
             <p class="hint tiny">
-              定义主程序加载本包时的默认整壳与嵌入插槽布局；导出时写入包根目录
-              <code>ui.json</code>。用户可在 oclive 插件管理里覆盖；「重置为角色包推荐」可恢复。
+              {{ t("simpleCreation.ui.desc") }}
             </p>
             <div class="form-row">
-              <label for="ui-shell">整壳界面</label>
+              <label for="ui-shell">{{ t("simpleCreation.ui.shellLabel") }}</label>
               <select id="ui-shell" v-model="uiConfig.shell">
-                <option value="">无（使用内置界面）</option>
+                <option value="">{{ t("simpleCreation.ui.shellNone") }}</option>
                 <option v-for="p in shellPlugins" :key="p.id" :value="p.id">
                   {{ p.id }} — v{{ p.version }}
                 </option>
               </select>
             </div>
-            <p v-if="directoryPluginsLoading" class="hint tiny">正在扫描全局插件…</p>
+            <p v-if="directoryPluginsLoading" class="hint tiny">{{ t("simpleCreation.ui.scanningGlobal") }}</p>
             <p v-else-if="!shellPlugins.length" class="hint tiny">
-              未扫描到整壳插件（需 <code>type: ocliveplugin</code> 且含 <code>shell</code>）。请将插件放入应用数据或工作目录的
-              <code>plugins/</code>，或导出到含 <code>plugins/</code> 的目录。
+              {{ t("simpleCreation.ui.noShellPluginsHint") }}
             </p>
             <div class="form-row">
-              <label for="ui-theme-primary">主题 · 主色</label>
+              <label for="ui-theme-primary">{{ t("simpleCreation.ui.theme.primary") }}</label>
               <input
                 id="ui-theme-primary"
                 v-model="uiConfig.theme.primaryColor"
@@ -839,7 +845,7 @@ const emit = defineEmits<{
               />
             </div>
             <div class="form-row">
-              <label for="ui-theme-bg">主题 · 背景</label>
+              <label for="ui-theme-bg">{{ t("simpleCreation.ui.theme.background") }}</label>
               <input
                 id="ui-theme-bg"
                 v-model="uiConfig.theme.backgroundColor"
@@ -849,31 +855,31 @@ const emit = defineEmits<{
               />
             </div>
             <div class="form-row">
-              <label for="ui-theme-font">主题 · 字体</label>
+              <label for="ui-theme-font">{{ t("simpleCreation.ui.theme.font") }}</label>
               <select id="ui-theme-font" v-model="uiConfig.theme.fontFamily">
-                <option value="">默认（内置）</option>
+                <option value="">{{ t("simpleCreation.ui.common.defaultBuiltin") }}</option>
                 <option value="system-ui, sans-serif">system-ui</option>
                 <option value="'Segoe UI', 'Microsoft YaHei', sans-serif">
-                  Segoe UI / 微软雅黑
+                  {{ t("simpleCreation.ui.theme.fontSegoeAndYahei") }}
                 </option>
                 <option value="Georgia, serif">Georgia</option>
-                <option value="ui-monospace, monospace">等宽</option>
+                <option value="ui-monospace, monospace">{{ t("simpleCreation.ui.theme.fontMono") }}</option>
               </select>
             </div>
             <div class="form-row">
-              <label for="ui-layout-sidebar">布局 · 侧栏位置</label>
+              <label for="ui-layout-sidebar">{{ t("simpleCreation.ui.layout.sidebar") }}</label>
               <select id="ui-layout-sidebar" v-model="uiConfig.layout.sidebar">
-                <option value="">默认（左）</option>
-                <option value="left">左</option>
-                <option value="right">右</option>
+                <option value="">{{ t("simpleCreation.ui.layout.defaultLeft") }}</option>
+                <option value="left">{{ t("simpleCreation.ui.common.left") }}</option>
+                <option value="right">{{ t("simpleCreation.ui.common.right") }}</option>
               </select>
             </div>
             <div class="form-row">
-              <label for="ui-layout-input">布局 · 输入框位置</label>
+              <label for="ui-layout-input">{{ t("simpleCreation.ui.layout.chatInput") }}</label>
               <select id="ui-layout-input" v-model="uiConfig.layout.chatInput">
-                <option value="">默认（下）</option>
-                <option value="bottom">下</option>
-                <option value="top">上</option>
+                <option value="">{{ t("simpleCreation.ui.layout.defaultBottom") }}</option>
+                <option value="bottom">{{ t("simpleCreation.ui.common.bottom") }}</option>
+                <option value="top">{{ t("simpleCreation.ui.common.top") }}</option>
               </select>
             </div>
             <div
@@ -884,7 +890,7 @@ const emit = defineEmits<{
               <h4 class="ui-slot-title">{{ meta.title }}</h4>
               <ol
                 class="ui-slot-order"
-                :aria-label="`${meta.title} 插件顺序`"
+                :aria-label="String(t('simpleCreation.ui.slotOrderAria', { title: meta.title }))"
               >
                 <li
                   v-for="(pid, i) in uiConfig.slots[meta.key].order"
@@ -916,7 +922,7 @@ const emit = defineEmits<{
                         }
                       "
                     />
-                    默认可见
+                    {{ t("simpleCreation.ui.slot.defaultVisible") }}
                   </label>
                 </li>
               </ol>
@@ -924,13 +930,13 @@ const emit = defineEmits<{
                 v-if="!uiConfig.slots[meta.key].order.length"
                 class="hint tiny"
               >
-                当前插槽无可用插件（请扫描到声明了对应插槽的目录插件）。
+                {{ t("simpleCreation.ui.slot.empty") }}
               </p>
             </div>
           </details>
 
           <p class="future-note">
-            需要完整 JSON 或插件字段时，请切换到<strong>高级创作</strong>直接编辑源码。
+            {{ t("simpleCreation.futureNotePrefix") }}<strong>{{ t("simpleCreation.futureNoteStrong") }}</strong>{{ t("simpleCreation.futureNoteSuffix") }}
           </p>
           <details class="simple-faq-details">
           <summary class="simple-faq-sum">{{ t("simpleCreation.settings.faqTitle") }}</summary>
