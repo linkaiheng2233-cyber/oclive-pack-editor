@@ -48,6 +48,27 @@ export default {
       minRuntimeLabel: "Minimum oclive version (optional)",
       minRuntimePlaceholder:
         "semver, e.g. 0.2.0; align with HOST_RUNTIME_VERSION / runtime. Empty = no limit.",
+      scenesLabel: "Scene IDs (comma-separated)",
+      personalityVectorTitle: "Personality vector (0–1)",
+      personalityVectorProfileHint:
+        "Current personality source is “profile”. In runtime, the vector is often a derived view summarized from texts. The numbers below are still written into the pack as defaults and references.",
+      userRelationTitle: "User relation (simple mode keeps one only)",
+      multiRelationWarning:
+        "This pack currently contains multiple relation keys. When saved in simple mode, they will be merged into the single set below. Use advanced creation to keep multiple relations.",
+      relationKeyLabel: "Relation key (e.g. friend)",
+      relationDisplayNameLabel: "Public label / naming",
+      relationPromptHintLabel: "Tone & relation hint",
+      relationInitialFavorabilityLabel: "Initial favorability (0–100)",
+      relationFavorMultiplierLabel: "Favorability multiplier",
+      worldviewLabel: "Worldview (Markdown; writes to knowledge/world.md)",
+      worldviewPlaceholder:
+        "Optional. If filled, world.md will be generated; if empty, a placeholder will be used.",
+      knowledgeTitle: "Knowledge retrieval (manifest / settings)",
+      knowledgeLead:
+        "Matches the runtime “knowledge” block. Export writes into manifest.json and settings.json (when merged, settings wins). glob must start with knowledge/.",
+      knowledgeEnabledLabel: "Enable Markdown knowledge retrieval",
+      knowledgeGlobLabel: "glob pattern",
+      faqTitle: "FAQ · Role info (manifest)",
     },
     slots: {
       chatToolbar: "Chat toolbar",

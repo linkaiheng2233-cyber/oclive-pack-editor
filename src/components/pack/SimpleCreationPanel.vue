@@ -367,7 +367,7 @@ const emit = defineEmits<{
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="f-scenes">场景 ID（英文逗号分隔）</label>
+              <label for="f-scenes">{{ t("simpleCreation.manifest.scenesLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_FIELD_SCENES" />
             </div>
             <input
@@ -378,11 +378,11 @@ const emit = defineEmits<{
             />
           </div>
           <div class="h3-hint-row">
-            <h3 class="h3">性格七维（0～1）</h3>
+            <h3 class="h3">{{ t("simpleCreation.manifest.personalityVectorTitle") }}</h3>
             <HelpHint :paragraphs="SIMPLE_TRAITS" />
           </div>
           <p v-if="simpleS.personalitySource === 'profile'" class="hint tiny">
-            当前为「档案」人格来源：七维在运行时多为从正文归纳的视图；下方数字仍会写入包内作默认与参考。
+            {{ t("simpleCreation.manifest.personalityVectorProfileHint") }}
           </p>
           <div class="traits">
             <div v-for="(k, i) in PERSONALITY_KEYS" :key="k" class="form-row trait">
@@ -398,27 +398,27 @@ const emit = defineEmits<{
             </div>
           </div>
           <div class="h3-hint-row">
-            <h3 class="h3">用户身份（简单模式仅保留一个）</h3>
+            <h3 class="h3">{{ t("simpleCreation.manifest.userRelationTitle") }}</h3>
             <HelpHint :paragraphs="SIMPLE_USER_RELATION" />
           </div>
           <p v-if="multiRelationWarning" class="warn-banner">
-            当前包内有多个身份键，简单创作保存时会合并为下方这一套；保留多身份请改用高级创作。
+            {{ t("simpleCreation.manifest.multiRelationWarning") }}
           </p>
           <div class="form-row">
-            <label for="f-rkey">身份键（如 friend）</label>
+            <label for="f-rkey">{{ t("simpleCreation.manifest.relationKeyLabel") }}</label>
             <input id="f-rkey" v-model="simpleM.relationKey" type="text" />
           </div>
           <div class="form-row">
-            <label for="f-rname">对外称呼说明</label>
+            <label for="f-rname">{{ t("simpleCreation.manifest.relationDisplayNameLabel") }}</label>
             <input id="f-rname" v-model="simpleM.relationDisplayName" type="text" />
           </div>
           <div class="form-row">
-            <label for="f-rhint">语气与关系提示</label>
+            <label for="f-rhint">{{ t("simpleCreation.manifest.relationPromptHintLabel") }}</label>
             <textarea id="f-rhint" v-model="simpleM.relationPromptHint" rows="2" class="txt" />
           </div>
           <div class="form-row two">
             <div>
-              <label for="f-fav">初始好感（0～100）</label>
+              <label for="f-fav">{{ t("simpleCreation.manifest.relationInitialFavorabilityLabel") }}</label>
               <input
                 id="f-fav"
                 v-model.number="simpleM.relationInitialFavorability"
@@ -429,7 +429,7 @@ const emit = defineEmits<{
               />
             </div>
             <div>
-              <label for="f-mult">好感倍率</label>
+              <label for="f-mult">{{ t("simpleCreation.manifest.relationFavorMultiplierLabel") }}</label>
               <input
                 id="f-mult"
                 v-model.number="simpleM.relationFavorMultiplier"
@@ -441,7 +441,7 @@ const emit = defineEmits<{
           </div>
           <div class="form-row">
             <div class="label-hint-row">
-              <label for="world-md">世界观（Markdown，写入 knowledge/world.md）</label>
+              <label for="world-md">{{ t("simpleCreation.manifest.worldviewLabel") }}</label>
               <HelpHint :paragraphs="SIMPLE_WORLDVIEW" />
             </div>
             <textarea
@@ -450,26 +450,24 @@ const emit = defineEmits<{
               rows="6"
               class="txt mono"
               spellcheck="false"
-              placeholder="可选。有内容时会生成 world.md；留空则使用占位说明。"
+              :placeholder="String(t('simpleCreation.manifest.worldviewPlaceholder'))"
             />
           </div>
           <div class="h3-hint-row">
-            <h3 class="h3">知识库检索（manifest / settings）</h3>
+            <h3 class="h3">{{ t("simpleCreation.manifest.knowledgeTitle") }}</h3>
             <HelpHint :paragraphs="SIMPLE_KNOWLEDGE" />
           </div>
           <p class="knowledge-lead">
-            与运行时 <code>knowledge</code> 块一致；导出时写入 <code>manifest.json</code> 与
-            <code>settings.json</code>（合并加载时 settings 优先）。<code>glob</code> 须以
-            <code>knowledge/</code> 开头。
+            {{ t("simpleCreation.manifest.knowledgeLead") }}
           </p>
           <div class="form-row chk-row">
             <label>
               <input v-model="simpleM.knowledgeEnabled" type="checkbox" />
-              启用知识库 Markdown 检索
+              {{ t("simpleCreation.manifest.knowledgeEnabledLabel") }}
             </label>
           </div>
           <div class="form-row">
-            <label for="f-kglob">glob 模式</label>
+            <label for="f-kglob">{{ t("simpleCreation.manifest.knowledgeGlobLabel") }}</label>
             <input
               id="f-kglob"
               v-model="simpleM.knowledgeGlob"
@@ -480,7 +478,7 @@ const emit = defineEmits<{
             />
           </div>
           <details class="simple-faq-details">
-            <summary class="simple-faq-sum">常见问题 · 角色信息（manifest）</summary>
+            <summary class="simple-faq-sum">{{ t("simpleCreation.manifest.faqTitle") }}</summary>
             <AdvFaqList :items="SIMPLE_MANIFEST_FAQ" />
           </details>
         </section>

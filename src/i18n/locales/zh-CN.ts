@@ -45,6 +45,26 @@ export default {
       descriptionLabel: "简介",
       minRuntimeLabel: "最低 oclive 版本（可选）",
       minRuntimePlaceholder: "semver，如 0.2.0；与编写器 HOST_RUNTIME_VERSION / 运行时对齐，留空则不限制",
+      scenesLabel: "场景 ID（英文逗号分隔）",
+      personalityVectorTitle: "性格七维（0～1）",
+      personalityVectorProfileHint:
+        "当前为「档案」人格来源：七维在运行时多为从正文归纳的视图；下方数字仍会写入包内作默认与参考。",
+      userRelationTitle: "用户身份（简单模式仅保留一个）",
+      multiRelationWarning:
+        "当前包内有多个身份键，简单创作保存时会合并为下方这一套；保留多身份请改用高级创作。",
+      relationKeyLabel: "身份键（如 friend）",
+      relationDisplayNameLabel: "对外称呼说明",
+      relationPromptHintLabel: "语气与关系提示",
+      relationInitialFavorabilityLabel: "初始好感（0～100）",
+      relationFavorMultiplierLabel: "好感倍率",
+      worldviewLabel: "世界观（Markdown，写入 knowledge/world.md）",
+      worldviewPlaceholder: "可选。有内容时会生成 world.md；留空则使用占位说明。",
+      knowledgeTitle: "知识库检索（manifest / settings）",
+      knowledgeLead:
+        "与运行时 knowledge 块一致；导出时写入 manifest.json 与 settings.json（合并加载时 settings 优先）。glob 须以 knowledge/ 开头。",
+      knowledgeEnabledLabel: "启用知识库 Markdown 检索",
+      knowledgeGlobLabel: "glob 模式",
+      faqTitle: "常见问题 · 角色信息（manifest）",
     },
     slots: {
       chatToolbar: "聊天工具栏",
