@@ -257,12 +257,12 @@ function resetAllPreviewWeightOverrides(): void {
     <section v-show="advancedTab === 'manifest'" class="panel adv-single">
       <div class="adv-section-head">
         <h2 class="adv-h2">
-          <span>角色契约（manifest）</span>
+          <span>{{ t("advancedCreation.sections.manifest.title") }}</span>
           <HelpHint :paragraphs="ADV_MANIFEST" />
         </h2>
-        <p class="adv-lead">管「是谁、叫什么、有哪些场景、和用户关系」等，相当于角色的门面信息。</p>
+        <p class="adv-lead">{{ t("advancedCreation.sections.manifest.lead") }}</p>
         <details class="adv-key-map">
-          <summary>下面这段 JSON，一般在改哪些名字？</summary>
+          <summary>{{ t("advancedCreation.sections.manifest.keyMapSummary") }}</summary>
           <ul class="adv-key-list">
             <li v-for="row in MANIFEST_KEY_GUIDE" :key="row.key">
               <code>{{ row.key }}</code>
@@ -275,24 +275,26 @@ function resetAllPreviewWeightOverrides(): void {
       <div class="adv-dock-stack">
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          aria-label="manifest 字段说明"
+          :aria-label="String(t('advancedCreation.sections.manifest.docks.keypointsAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge">重点</span>
-            <span class="adv-examples-dock-title">manifest · 字段说明与可改范围</span>
+            <span class="adv-examples-badge">{{ t("advancedCreation.docks.badges.keypoints") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.manifest.docks.keypointsTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
             <p class="adv-merge-note">{{ MANIFEST_MERGE_NOTE }}</p>
             <p class="adv-examples-dock-note">
-              对照上方 JSON 逐处修改；<strong>不要用下方代码块整段替换整个文件</strong>。
+              {{ t("advancedCreation.sections.manifest.docks.keypointsNotePrefix") }}<strong>{{ t("advancedCreation.sections.manifest.docks.keypointsNoteStrong") }}</strong>{{ t("advancedCreation.sections.manifest.docks.keypointsNoteSuffix") }}
             </p>
-            <h4 class="adv-ex-part">每一项：含义与创作者可改范围</h4>
+            <h4 class="adv-ex-part">{{ t("advancedCreation.docks.eachItemTitle") }}</h4>
             <div class="adv-scope-matrix">
               <ul class="adv-scope-list">
                 <li v-for="row in MANIFEST_FIELD_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
                   <code class="adv-scope-field">{{ row.field }}</code>
                   <p class="adv-scope-mean">{{ row.meaning }}</p>
-                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                  <p class="adv-scope-scope">
+                    <strong>{{ t("advancedCreation.docks.scopeStrong") }}</strong>{{ row.scope }}
+                  </p>
                 </li>
               </ul>
             </div>
@@ -300,11 +302,11 @@ function resetAllPreviewWeightOverrides(): void {
         </details>
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          aria-label="manifest 常见问题"
+          :aria-label="String(t('advancedCreation.sections.manifest.docks.faqAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
-            <span class="adv-examples-dock-title">常见问题 · manifest（改进前 / 改进后对照）</span>
+            <span class="adv-examples-badge adv-examples-badge--faq">{{ t("advancedCreation.docks.badges.faq") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.manifest.docks.faqTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
             <AdvFaqList :items="MANIFEST_FAQ" show-intro />
@@ -315,12 +317,12 @@ function resetAllPreviewWeightOverrides(): void {
     <section v-show="advancedTab === 'settings'" class="panel adv-single">
       <div class="adv-section-head">
         <h2 class="adv-h2">
-          <span>对话与插件（settings）</span>
+          <span>{{ t("advancedCreation.sections.settings.title") }}</span>
           <HelpHint :paragraphs="ADV_SETTINGS" />
         </h2>
-        <p class="adv-lead">管「用哪个模型、记忆/情绪走哪条插件」等，和 manifest 分工不同。</p>
+        <p class="adv-lead">{{ t("advancedCreation.sections.settings.lead") }}</p>
         <details class="adv-key-map">
-          <summary>下面这段 JSON，常见要动的键</summary>
+          <summary>{{ t("advancedCreation.sections.settings.keyMapSummary") }}</summary>
           <ul class="adv-key-list">
             <li v-for="row in SETTINGS_KEY_GUIDE" :key="row.key">
               <code>{{ row.key }}</code>
@@ -333,24 +335,26 @@ function resetAllPreviewWeightOverrides(): void {
       <div class="adv-dock-stack">
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          aria-label="settings 字段说明"
+          :aria-label="String(t('advancedCreation.sections.settings.docks.keypointsAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge">重点</span>
-            <span class="adv-examples-dock-title">settings · 字段说明与可改范围</span>
+            <span class="adv-examples-badge">{{ t("advancedCreation.docks.badges.keypoints") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.settings.docks.keypointsTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
             <p class="adv-merge-note">{{ SETTINGS_MERGE_NOTE }}</p>
             <p class="adv-examples-dock-note">
-              只改需要的字段；<strong>大括号、逗号要与 JSON 结构一致</strong>，不确定时先备份。
+              {{ t("advancedCreation.sections.settings.docks.keypointsNotePrefix") }}<strong>{{ t("advancedCreation.sections.settings.docks.keypointsNoteStrong") }}</strong>{{ t("advancedCreation.sections.settings.docks.keypointsNoteSuffix") }}
             </p>
-            <h4 class="adv-ex-part">每一项：含义与创作者可改范围</h4>
+            <h4 class="adv-ex-part">{{ t("advancedCreation.docks.eachItemTitle") }}</h4>
             <div class="adv-scope-matrix">
               <ul class="adv-scope-list">
                 <li v-for="row in SETTINGS_FIELD_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
                   <code class="adv-scope-field">{{ row.field }}</code>
                   <p class="adv-scope-mean">{{ row.meaning }}</p>
-                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                  <p class="adv-scope-scope">
+                    <strong>{{ t("advancedCreation.docks.scopeStrong") }}</strong>{{ row.scope }}
+                  </p>
                 </li>
               </ul>
             </div>
@@ -358,11 +362,11 @@ function resetAllPreviewWeightOverrides(): void {
         </details>
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          aria-label="settings 常见问题"
+          :aria-label="String(t('advancedCreation.sections.settings.docks.faqAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
-            <span class="adv-examples-dock-title">常见问题 · settings（改进前 / 改进后对照）</span>
+            <span class="adv-examples-badge adv-examples-badge--faq">{{ t("advancedCreation.docks.badges.faq") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.settings.docks.faqTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
             <AdvFaqList :items="SETTINGS_FAQ" />

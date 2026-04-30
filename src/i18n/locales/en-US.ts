@@ -216,6 +216,46 @@ export default {
       world: "World & knowledge",
       images: "Emotion assets",
     },
+    docks: {
+      badges: {
+        keypoints: "Key points",
+        faq: "FAQ",
+      },
+      eachItemTitle: "Each item: meaning & creator scope",
+      scopeStrong: "Scope: ",
+    },
+    sections: {
+      manifest: {
+        title: "Role contract (manifest)",
+        lead:
+          "Controls “who it is, what it’s called, which scenes it has, and the user relation”, i.e. the role’s public-facing info.",
+        keyMapSummary: "In this JSON, which names do you usually change?",
+        docks: {
+          keypointsAria: "manifest field notes",
+          keypointsTitle: "manifest · field notes & editable scope",
+          keypointsNotePrefix: "Edit the JSON above item by item; ",
+          keypointsNoteStrong: "do not replace the entire file with the code blocks below",
+          keypointsNoteSuffix: ".",
+          faqAria: "manifest FAQ",
+          faqTitle: "FAQ · manifest (before / after examples)",
+        },
+      },
+      settings: {
+        title: "Chat & plugins (settings)",
+        lead:
+          "Controls “which model to use, which plugins handle memory/emotion”, etc. It has a different responsibility from manifest.",
+        keyMapSummary: "In this JSON, which keys do you commonly change?",
+        docks: {
+          keypointsAria: "settings field notes",
+          keypointsTitle: "settings · field notes & editable scope",
+          keypointsNotePrefix: "Change only what you need; ",
+          keypointsNoteStrong: "keep braces and commas consistent with the JSON structure",
+          keypointsNoteSuffix: ". If unsure, back up first.",
+          faqAria: "settings FAQ",
+          faqTitle: "FAQ · settings (before / after examples)",
+        },
+      },
+    },
   },
   packEditor: {
     aria: {

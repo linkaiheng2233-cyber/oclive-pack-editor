@@ -211,6 +211,44 @@ export default {
       world: "世界观与知识",
       images: "情绪立绘",
     },
+    docks: {
+      badges: {
+        keypoints: "重点",
+        faq: "问答",
+      },
+      eachItemTitle: "每一项：含义与创作者可改范围",
+      scopeStrong: "可改范围：",
+    },
+    sections: {
+      manifest: {
+        title: "角色契约（manifest）",
+        lead: "管「是谁、叫什么、有哪些场景、和用户关系」等，相当于角色的门面信息。",
+        keyMapSummary: "下面这段 JSON，一般在改哪些名字？",
+        docks: {
+          keypointsAria: "manifest 字段说明",
+          keypointsTitle: "manifest · 字段说明与可改范围",
+          keypointsNotePrefix: "对照上方 JSON 逐处修改；",
+          keypointsNoteStrong: "不要用下方代码块整段替换整个文件",
+          keypointsNoteSuffix: "。",
+          faqAria: "manifest 常见问题",
+          faqTitle: "常见问题 · manifest（改进前 / 改进后对照）",
+        },
+      },
+      settings: {
+        title: "对话与插件（settings）",
+        lead: "管「用哪个模型、记忆/情绪走哪条插件」等，和 manifest 分工不同。",
+        keyMapSummary: "下面这段 JSON，常见要动的键",
+        docks: {
+          keypointsAria: "settings 字段说明",
+          keypointsTitle: "settings · 字段说明与可改范围",
+          keypointsNotePrefix: "只改需要的字段；",
+          keypointsNoteStrong: "大括号、逗号要与 JSON 结构一致",
+          keypointsNoteSuffix: "，不确定时先备份。",
+          faqAria: "settings 常见问题",
+          faqTitle: "常见问题 · settings（改进前 / 改进后对照）",
+        },
+      },
+    },
   },
   packEditor: {
     aria: {
