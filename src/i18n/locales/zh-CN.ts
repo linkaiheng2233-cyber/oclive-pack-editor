@@ -331,6 +331,20 @@ export default {
           faqTitle: "常见问题 · 知识文件（改进前 / 改进后对照）",
         },
       },
+      images: {
+        title: "情绪立绘图片",
+        lead: "与简单创作相同，导出时写入 assets/images/；点「情绪图片」旁的问号可看说明。",
+        docks: {
+          keypointsAria: "情绪立绘按钮说明",
+          keypointsTitle: "情绪立绘 · 按钮与可改范围",
+          eachButtonTitle: "每个按钮：含义与可改范围",
+          notePrefix: "手动拷文件到包内时需",
+          noteStrong: "文件名与引用一致",
+          noteSuffix: "。",
+          faqAria: "情绪立绘常见问题",
+          faqTitle: "常见问题 · 情绪立绘（改进前 / 改进后对照）",
+        },
+      },
     },
   },
   packEditor: {

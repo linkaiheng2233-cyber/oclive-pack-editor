@@ -780,8 +780,8 @@ function resetAllPreviewWeightOverrides(): void {
     </section>
     <section v-show="advancedTab === 'images'" class="panel adv-single">
       <div class="adv-section-head">
-        <h2 class="adv-h2"><span>情绪立绘图片</span></h2>
-        <p class="adv-lead">与简单创作相同，导出时写入 <code>assets/images/</code>；点「情绪图片」旁的问号可看说明。</p>
+        <h2 class="adv-h2"><span>{{ t("advancedCreation.sections.images.title") }}</span></h2>
+        <p class="adv-lead">{{ t("advancedCreation.sections.images.lead") }}</p>
       </div>
       <EmotionAssetsControl
         :summary="emotionSummary"
@@ -792,33 +792,37 @@ function resetAllPreviewWeightOverrides(): void {
       <div class="adv-dock-stack">
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          aria-label="情绪立绘按钮说明"
+          :aria-label="String(t('advancedCreation.sections.images.docks.keypointsAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge">重点</span>
-            <span class="adv-examples-dock-title">情绪立绘 · 按钮与可改范围</span>
+            <span class="adv-examples-badge">{{ t("advancedCreation.docks.badges.keypoints") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.images.docks.keypointsTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
-            <h4 class="adv-ex-part">每个按钮：含义与可改范围</h4>
+            <h4 class="adv-ex-part">{{ t("advancedCreation.sections.images.docks.eachButtonTitle") }}</h4>
             <div class="adv-scope-matrix">
               <ul class="adv-scope-list">
                 <li v-for="row in EMOTION_ASSET_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
                   <code class="adv-scope-field">{{ row.field }}</code>
                   <p class="adv-scope-mean">{{ row.meaning }}</p>
-                  <p class="adv-scope-scope"><strong>可改范围：</strong>{{ row.scope }}</p>
+                  <p class="adv-scope-scope">
+                    <strong>{{ t("advancedCreation.docks.scopeStrong") }}</strong>{{ row.scope }}
+                  </p>
                 </li>
               </ul>
             </div>
-            <p class="adv-examples-dock-note">手动拷文件到包内时需<strong>文件名与引用一致</strong>。</p>
+            <p class="adv-examples-dock-note">
+              {{ t("advancedCreation.sections.images.docks.notePrefix") }}<strong>{{ t("advancedCreation.sections.images.docks.noteStrong") }}</strong>{{ t("advancedCreation.sections.images.docks.noteSuffix") }}
+            </p>
           </div>
         </details>
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          aria-label="情绪立绘常见问题"
+          :aria-label="String(t('advancedCreation.sections.images.docks.faqAria'))"
         >
           <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge adv-examples-badge--faq">问答</span>
-            <span class="adv-examples-dock-title">常见问题 · 情绪立绘（改进前 / 改进后对照）</span>
+            <span class="adv-examples-badge adv-examples-badge--faq">{{ t("advancedCreation.docks.badges.faq") }}</span>
+            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.images.docks.faqTitle") }}</span>
           </summary>
           <div class="adv-examples-dock-body">
             <AdvFaqList :items="IMAGES_FAQ" />

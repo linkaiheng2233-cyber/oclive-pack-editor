@@ -343,6 +343,21 @@ export default {
           faqTitle: "FAQ · Knowledge files (before / after examples)",
         },
       },
+      images: {
+        title: "Emotion assets (images)",
+        lead:
+          "Same as simple creation. Export writes into assets/images/. Click the “Emotion assets” help icon for details.",
+        docks: {
+          keypointsAria: "Emotion assets button notes",
+          keypointsTitle: "Emotion assets · buttons & editable scope",
+          eachButtonTitle: "Each button: meaning & creator scope",
+          notePrefix: "If you copy files manually into the pack, make sure ",
+          noteStrong: "filenames match the references",
+          noteSuffix: ".",
+          faqAria: "Emotion assets FAQ",
+          faqTitle: "FAQ · Emotion assets (before / after examples)",
+        },
+      },
     },
   },
   packEditor: {
