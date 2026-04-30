@@ -57,7 +57,15 @@ export default {
     },
     chat: {
       errorLine: "（错误）{err}",
+      empty: "还没有消息。确认「检测连接」通过并填好角色文件夹后，在下方输入一句话试试。",
     },
+    composer: {
+      label: "输入消息",
+      placeholder: "想说的话写在这里…（Enter 发送，Shift+Enter 换行）",
+      sending: "发送中…",
+      send: "发送",
+    },
+    faqTitle: "常见问题 · 试聊连接与路径",
     meta: {
       scene: "场景 {id}",
       relation: "关系 {s}",
@@ -70,6 +78,7 @@ export default {
       knowledgeChunks: "知识块 {n}",
       offerDestinationPicker: "可选目的地",
       offerTogetherTravel: "可同行",
+      debugDetails: "调试详情",
       presence: {
         coPresent: "共景",
         remoteStub: "异地占位",

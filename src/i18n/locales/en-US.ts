@@ -60,7 +60,16 @@ export default {
     },
     chat: {
       errorLine: "(error) {err}",
+      empty:
+        "No messages yet. Make sure “Check connection” succeeds and role folder is set, then type a sentence below.",
     },
+    composer: {
+      label: "Message",
+      placeholder: "Type your message… (Enter to send, Shift+Enter for newline)",
+      sending: "Sending…",
+      send: "Send",
+    },
+    faqTitle: "FAQ · Try chat connection & paths",
     meta: {
       scene: "Scene {id}",
       relation: "Relation {s}",
@@ -73,6 +82,7 @@ export default {
       knowledgeChunks: "Knowledge chunks {n}",
       offerDestinationPicker: "Destination picker",
       offerTogetherTravel: "Travel together",
+      debugDetails: "Debug details",
       presence: {
         coPresent: "Co-present",
         remoteStub: "Remote stub",

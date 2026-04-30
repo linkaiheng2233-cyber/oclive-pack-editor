@@ -586,7 +586,7 @@ async function send(): Promise<void> {
             <span v-if="m.meta.offer_together_travel" class="chip accent">{{ t("chatPanel.meta.offerTogetherTravel") }}</span>
           </div>
           <details v-if="m.meta.events?.length || m.meta.emotion" class="meta-details">
-            <summary>调试详情</summary>
+            <summary>{{ t("chatPanel.meta.debugDetails") }}</summary>
             <pre v-if="m.meta.events?.length" class="meta-pre">{{
               m.meta.events
                 .map((ev) => `${ev.event_type} (${ev.confidence.toFixed(2)})`)
@@ -599,31 +599,31 @@ async function send(): Promise<void> {
         </div>
       </div>
       <p v-if="!messages.length" class="muted">
-        还没有消息。确认「检测连接」通过并填好角色文件夹后，在下方输入一句话试试。
+        {{ t("chatPanel.chat.empty") }}
       </p>
     </div>
 
     <div class="composer-block">
       <div class="field-label-row composer-label">
-        <span class="field-label-text">输入消息</span>
+        <span class="field-label-text">{{ t("chatPanel.composer.label") }}</span>
         <HelpHint :paragraphs="CHAT_HINT.composer" />
       </div>
       <div class="composer">
         <textarea
           v-model="input"
           rows="3"
-          placeholder="想说的话写在这里…（Enter 发送，Shift+Enter 换行）"
+          :placeholder="String(t('chatPanel.composer.placeholder'))"
           :disabled="chatLoading"
           @keydown="onComposerKeydown"
         />
         <button type="button" :disabled="chatLoading || !effectiveRolePath" @click="send">
-          {{ chatLoading ? '发送中…' : '发送' }}
+          {{ chatLoading ? t("chatPanel.composer.sending") : t("chatPanel.composer.send") }}
         </button>
       </div>
     </div>
 
     <details class="chat-faq-details">
-      <summary class="chat-faq-sum">常见问题 · 试聊连接与路径</summary>
+      <summary class="chat-faq-sum">{{ t("chatPanel.faqTitle") }}</summary>
       <AdvFaqList :items="CHAT_FAQ" />
     </details>
 
