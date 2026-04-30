@@ -1,13 +1,5 @@
 <script setup lang="ts">
-export interface RuntimeRoleFeedbackItem {
-  id: number
-  created_at: string
-  message: string
-  mood_tag?: string | null
-  scene_id?: string | null
-  status?: string | null
-  handled_note?: string | null
-}
+import type { RuntimeRoleFeedbackItem } from "../../lib/runtimeApi";
 
 const props = defineProps<{
   open: boolean

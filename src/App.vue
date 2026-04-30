@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, ref } from 'vue'
+import { useI18n } from "vue-i18n";
 import { type EditorViewId, useEditorViewState } from './composables/useEditorViewState'
 import { usePackEditor } from './composables/usePackEditor'
 import { usePackShellPreferences } from './composables/usePackShellPreferences'
+import { setAppLocale, type AppLocale } from "./i18n";
 
 const AdvancedCreationPanel = defineAsyncComponent(() => import('./components/pack/AdvancedCreationPanel.vue'))
 const ChatPanel = defineAsyncComponent(() => import('./components/pack/ChatPanel.vue'))
@@ -58,6 +60,15 @@ const {
 const marketComposePaste = ref('')
 
 const { themeCycleLabel, cycleTheme, bumpScale, scaleLabel } = usePackShellPreferences()
+
+const { t } = useI18n();
+const uiLocale = ref<AppLocale>("system");
+
+function onLocaleChange(v: string) {
+  const next = (v as AppLocale) || "system";
+  uiLocale.value = next;
+  setAppLocale(next);
+}
 
 function onApplyMarketCompose() {
   const r = applyMarketComposeJson(marketComposePaste.value)
@@ -134,10 +145,18 @@ const viewTitle = computed(() => {
       <header class="shell-header">
         <div class="shell-header-row">
           <div class="shell-header-copy">
-            <p class="kicker">oclive · 角色包编写器</p>
+            <p class="kicker">{{ t("packEditor.header.kicker") }}</p>
             <h1 class="shell-h1">{{ viewTitle }}</h1>
           </div>
-          <div class="shell-header-tools" role="toolbar" aria-label="外观与字号">
+          <div class="shell-header-tools" role="toolbar" :aria-label="String(t('packEditor.header.toolsAria'))">
+            <label class="shell-locale">
+              <span class="sr-only">{{ t("common.language") }}</span>
+              <select class="shell-locale-select" :value="uiLocale" @change="onLocaleChange(($event.target as HTMLSelectElement).value)">
+                <option value="system">{{ t("common.system") }}</option>
+                <option value="zh-CN">{{ t("common.zhCN") }}</option>
+                <option value="en-US">{{ t("common.enUS") }}</option>
+              </select>
+            </label>
             <div class="shell-scale" aria-label="界面大小">
               <button type="button" class="shell-tool-btn" title="缩小" aria-label="缩小界面" @click="bumpScale(-1)">
                 A−
@@ -336,6 +355,14 @@ const viewTitle = computed(() => {
 </template>
 
 <style scoped>
+.shell-locale-select {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
+  background: var(--surface-2, rgba(255, 255, 255, 0.06));
+  color: var(--text-1, #fff);
+  font-size: 12px;
+}
 .app {
   margin: 0;
   padding: 0;

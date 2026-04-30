@@ -239,15 +239,6 @@ function closeFeedback(): void {
   feedbackOpen.value = false
 }
 
-const filteredFeedbackItems = computed(() => {
-  const tab = feedbackFilter.value
-  if (tab === 'all') return feedbackItems.value
-  return feedbackItems.value.filter((x) => {
-    const st = (x.status || '').toLowerCase()
-    return tab === 'handled' ? st === 'handled' : st !== 'handled'
-  })
-})
-
 async function toggleHandled(it: RuntimeRoleFeedbackItem, handled: boolean): Promise<void> {
   try {
     await setRuntimeRoleFeedbackHandled(
