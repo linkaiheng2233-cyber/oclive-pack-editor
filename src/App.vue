@@ -84,14 +84,14 @@ const { editorView, shouldMountView } = useEditorViewState((v) => {
   }
 })
 
-const editorNav: { id: EditorViewId; label: string; icon: string }[] = [
-  { id: 'start', label: '开始', icon: '🏠' },
-  { id: 'simple', label: '简单', icon: '📝' },
-  { id: 'advanced', label: '高级', icon: '⚙️' },
-  { id: 'check', label: '检查', icon: '✓' },
-  { id: 'chat', label: '试聊', icon: '💬' },
-  { id: 'feedback', label: '反馈', icon: '📬' },
-]
+const editorNav = computed((): { id: EditorViewId; label: string; icon: string }[] => [
+  { id: 'start', label: String(t("packEditor.nav.start")), icon: '🏠' },
+  { id: 'simple', label: String(t("packEditor.nav.simple")), icon: '📝' },
+  { id: 'advanced', label: String(t("packEditor.nav.advanced")), icon: '⚙️' },
+  { id: 'check', label: String(t("packEditor.nav.check")), icon: '✓' },
+  { id: 'chat', label: String(t("packEditor.nav.chat")), icon: '💬' },
+  { id: 'feedback', label: String(t("packEditor.nav.feedback")), icon: '📬' },
+])
 
 function goEditorView(id: EditorViewId) {
   editorView.value = id
@@ -100,21 +100,20 @@ function goEditorView(id: EditorViewId) {
 }
 
 const viewTitle = computed(() => {
-  const m: Record<EditorViewId, string> = {
-    start: '开始',
-    simple: '简单创作',
-    advanced: '高级创作',
-    check: '检查与导出',
-    chat: '试聊',
-    feedback: '反馈工作台',
-  }
-  return m[editorView.value]
+  const id = editorView.value
+  if (id === 'start') return String(t("packEditor.titles.start"))
+  if (id === 'simple') return String(t("packEditor.titles.simple"))
+  if (id === 'advanced') return String(t("packEditor.titles.advanced"))
+  if (id === 'check') return String(t("packEditor.titles.check"))
+  if (id === 'chat') return String(t("packEditor.titles.chat"))
+  if (id === 'feedback') return String(t("packEditor.titles.feedback"))
+  return ""
 })
 </script>
 
 <template>
   <div class="app fluent-page editor-shell">
-    <aside class="editor-rail" aria-label="功能导航">
+    <aside class="editor-rail" :aria-label="String(t('packEditor.aria.nav'))">
       <button
         v-for="item in editorNav"
         :key="item.id"
@@ -129,7 +128,7 @@ const viewTitle = computed(() => {
     </aside>
 
     <div class="editor-main">
-      <nav class="mobile-nav" aria-label="功能导航">
+      <nav class="mobile-nav" :aria-label="String(t('packEditor.aria.nav'))">
         <button
           v-for="item in editorNav"
           :key="'m-' + item.id"
@@ -157,19 +156,19 @@ const viewTitle = computed(() => {
                 <option value="en-US">{{ t("common.enUS") }}</option>
               </select>
             </label>
-            <div class="shell-scale" aria-label="界面大小">
-              <button type="button" class="shell-tool-btn" title="缩小" aria-label="缩小界面" @click="bumpScale(-1)">
+            <div class="shell-scale" :aria-label="String(t('packEditor.header.scaleAria'))">
+              <button type="button" class="shell-tool-btn" :title="String(t('packEditor.header.shrink'))" :aria-label="String(t('packEditor.header.shrinkAria'))" @click="bumpScale(-1)">
                 A−
               </button>
-              <span class="shell-scale-value" :title="'相对默认字号：' + scaleLabel">{{ scaleLabel }}</span>
-              <button type="button" class="shell-tool-btn" title="放大" aria-label="放大界面" @click="bumpScale(1)">
+              <span class="shell-scale-value" :title="String(t('packEditor.header.relativeScaleTitle', { label: scaleLabel }))">{{ scaleLabel }}</span>
+              <button type="button" class="shell-tool-btn" :title="String(t('packEditor.header.enlarge'))" :aria-label="String(t('packEditor.header.enlargeAria'))" @click="bumpScale(1)">
                 A+
               </button>
             </div>
             <button
               type="button"
               class="shell-tool-btn shell-theme-btn"
-              :title="'主题：' + themeCycleLabel + '（点击切换）'"
+              :title="String(t('packEditor.header.themeTitle', { label: themeCycleLabel }))"
               @click="cycleTheme"
             >
               {{ themeCycleLabel === '跟随系统' ? '◐' : themeCycleLabel === '深色' ? '🌙' : '☀️' }}
