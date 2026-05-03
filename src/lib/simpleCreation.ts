@@ -51,6 +51,8 @@ export type SimpleManifestForm = {
   knowledgeEnabled: boolean
   /** 须以 `knowledge/` 开头；见 PACK_VERSIONING */
   knowledgeGlob: string
+  /** manifest `creator_message_to_downloader`：导入者在主程序可见的一句话 */
+  creatorMessageToDownloader: string
 }
 
 export type SimpleSettingsForm = {
@@ -297,6 +299,13 @@ export function applySimpleManifestToJson(currentJson: string, form: SimpleManif
   base.knowledge = {
     enabled: form.knowledgeEnabled,
     glob: normalizeKnowledgeGlob(form.knowledgeGlob),
+  }
+
+  const dl = String(form.creatorMessageToDownloader ?? '').trim()
+  if (dl) {
+    base.creator_message_to_downloader = dl
+  } else {
+    delete base.creator_message_to_downloader
   }
 
   return JSON.stringify(base, null, 2) + '\n'

@@ -61,6 +61,20 @@ describe('buildRolePackFiles', () => {
     expect(files.get('x/author.json')).toBe(body)
   })
 
+  it('manifest may include creator_message_to_downloader from parsed manifest', () => {
+    const manifest = {
+      id: 'x',
+      name: 'N',
+      scenes: ['home'],
+      user_relations: { f: { favor_multiplier: 1, initial_favorability: 40 } },
+      default_relation: 'f',
+      creator_message_to_downloader: '感谢游玩',
+    }
+    const files = buildRolePackFiles('x', manifest, { schema_version: 1 })
+    const mj = JSON.parse(files.get('x/manifest.json')!) as { creator_message_to_downloader?: string }
+    expect(mj.creator_message_to_downloader).toBe('感谢游玩')
+  })
+
   it('writes multiple lines in per_module mode', () => {
     const manifest = {
       id: 'x',

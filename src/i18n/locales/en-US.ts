@@ -154,6 +154,11 @@ export default {
         perModule:
           "Line 1: message from the scenes module author\nLine 2: core profile module…\n(blank lines will be ignored)",
       },
+      downloaderLabel: "Creator line in manifest (optional)",
+      downloaderDesc:
+        "Writes manifest.json field creator_message_to_downloader; the desktop app shows it to importers after a successful preview/import, together with creator_message.txt if present. You can keep this separate from the launcher-only notice above.",
+      downloaderPlaceholder:
+        "e.g. If replies feel cold, tighten the relationship hint in identity prompts.",
     },
     advanced: {
       foldTitle: "Advanced: scenes, user identity, worldview, impact strength, etc.",

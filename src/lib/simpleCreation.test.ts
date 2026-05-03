@@ -24,6 +24,19 @@ describe('simpleCreation', () => {
     expect(o.extra_future).toEqual({ plugin: true })
   })
 
+  it('applySimpleManifestToJson sets or clears creator_message_to_downloader', () => {
+    const base = JSON.stringify({ id: 'a', creator_message_to_downloader: 'old' })
+    const form = defaultSimpleManifestForm()
+    form.id = 'a'
+    form.name = 'N'
+    form.creatorMessageToDownloader = 'new line'
+    let out = applySimpleManifestToJson(base, form)
+    expect(JSON.parse(out).creator_message_to_downloader).toBe('new line')
+    form.creatorMessageToDownloader = '  '
+    out = applySimpleManifestToJson(out, form)
+    expect(JSON.parse(out).creator_message_to_downloader).toBeUndefined()
+  })
+
   it('applySimpleManifestToJson sets or clears min_runtime_version', () => {
     const base = JSON.stringify({ id: 'a', min_runtime_version: '0.9.0' })
     const form = defaultSimpleManifestForm()

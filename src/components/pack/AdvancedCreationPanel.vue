@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import {
+  patchManifestCreatorMessageToDownloader,
+  readManifestCreatorMessageToDownloader,
+} from '../../lib/manifestCreatorDownloader'
 import { useI18n } from "vue-i18n";
 import EmotionAssetsControl from './EmotionAssetsControl.vue'
 import type { KnowledgeMarkdownFile } from '../../lib/knowledgeFiles'
@@ -455,6 +459,18 @@ function resetAllPreviewWeightOverrides(): void {
         :rows="creatorMessageMode === 'unified' ? 3 : 6"
         spellcheck="true"
         aria-label="creator_message.txt"
+      />
+      <p class="adv-lead">{{ t("simpleCreation.creatorMessage.downloaderLabel") }}</p>
+      <p class="adv-examples-dock-note adv-lead" style="margin-top: 0">
+        {{ t("simpleCreation.creatorMessage.downloaderDesc") }}
+      </p>
+      <textarea
+        v-model="creatorMessageToDownloaderManifest"
+        class="ta ta--short"
+        rows="2"
+        spellcheck="true"
+        :aria-label="'creator_message_to_downloader'"
+        :placeholder="String(t('simpleCreation.creatorMessage.downloaderPlaceholder'))"
       />
       <div class="adv-dock-stack">
         <details

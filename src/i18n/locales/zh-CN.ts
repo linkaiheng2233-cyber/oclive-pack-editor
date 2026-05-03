@@ -143,6 +143,10 @@ export default {
         unified: "例如：别怕改设定，第三次导出就顺了。",
         perModule: "第一行：场景模块作者留话\n第二行：核心档案模块…\n（空行会被忽略）",
       },
+      downloaderLabel: "创作者寄语（manifest，可选）",
+      downloaderDesc:
+        "写入 manifest.json 的 creator_message_to_downloader；主程序在导入/预览成功后会与 creator_message.txt 一并提示下载者。可与上方启动器公告分开填写。",
+      downloaderPlaceholder: "例如：若对话太冷淡，把「身份提示」里关系写紧一点。",
     },
     advanced: {
       foldTitle: "进阶：场景、用户身份、世界观、角色受影响程度等",

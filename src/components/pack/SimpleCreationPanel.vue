@@ -298,6 +298,18 @@ const emit = defineEmits<{
               : String(t('simpleCreation.creatorMessage.placeholders.perModule'))
           "
         />
+        <div class="label-hint-row">
+          <label for="creator-msg-downloader">{{ t('simpleCreation.creatorMessage.downloaderLabel') }}</label>
+        </div>
+        <p class="hint tiny">{{ t('simpleCreation.creatorMessage.downloaderDesc') }}</p>
+        <textarea
+          id="creator-msg-downloader"
+          v-model="simpleM.creatorMessageToDownloader"
+          rows="2"
+          class="txt"
+          spellcheck="true"
+          :placeholder="String(t('simpleCreation.creatorMessage.downloaderPlaceholder'))"
+        />
       </div>
       <details class="simple-faq-details">
         <summary class="simple-faq-sum">{{ t("simpleCreation.base.faqTitle") }}</summary>

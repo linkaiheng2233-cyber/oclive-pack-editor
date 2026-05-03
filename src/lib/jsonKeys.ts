@@ -22,6 +22,7 @@ const MANIFEST_KEYS = new Set([
   'dev_only',
   'knowledge',
   'min_runtime_version',
+  'creator_message_to_downloader',
 ])
 
 const SETTINGS_KEYS = new Set([
