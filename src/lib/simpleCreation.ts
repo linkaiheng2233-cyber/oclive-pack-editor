@@ -99,6 +99,7 @@ export function defaultSimpleManifestForm(): SimpleManifestForm {
     relationFavorMultiplier: 1,
     knowledgeEnabled: true,
     knowledgeGlob: DEFAULT_KNOWLEDGE_GLOB,
+    creatorMessageToDownloader: '',
   }
 }
 
@@ -198,6 +199,10 @@ export function manifestRecordToSimpleForm(m: Record<string, unknown>): SimpleMa
       : 1,
     knowledgeEnabled: kOnly.enabled,
     knowledgeGlob: kOnly.glob,
+    creatorMessageToDownloader:
+      typeof m.creator_message_to_downloader === 'string'
+        ? String(m.creator_message_to_downloader)
+        : '',
   }
 }
 

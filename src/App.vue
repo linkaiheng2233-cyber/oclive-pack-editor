@@ -33,6 +33,7 @@ const {
   emotionImageSummary,
   creatorMessageToOthers,
   creatorMessageMode,
+  creatorMessageToDownloaderManifest,
   authorSummary,
   authorDetailMarkdown,
   authorRecommendedRows,
@@ -300,6 +301,7 @@ const viewTitle = computed(() => {
           v-model:core-personality="corePersonalityText"
           v-model:creator-message-to-others="creatorMessageToOthers"
           v-model:creator-message-mode="creatorMessageMode"
+          v-model:creator-message-to-downloader-manifest="creatorMessageToDownloaderManifest"
           v-model:knowledge-files="knowledgeMarkdownFiles"
           v-model:advanced-tab="advancedTab"
           :emotion-summary="emotionImageSummary"

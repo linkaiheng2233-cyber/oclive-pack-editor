@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import {
-  patchManifestCreatorMessageToDownloader,
-  readManifestCreatorMessageToDownloader,
-} from '../../lib/manifestCreatorDownloader'
 import { useI18n } from "vue-i18n";
 import EmotionAssetsControl from './EmotionAssetsControl.vue'
 import type { KnowledgeMarkdownFile } from '../../lib/knowledgeFiles'
@@ -55,6 +51,9 @@ const corePersonality = defineModel<string>('corePersonality', { required: true 
 const creatorMessageToOthers = defineModel<string>('creatorMessageToOthers', { default: '' })
 const creatorMessageMode = defineModel<CreatorMessageExportMode>('creatorMessageMode', {
   default: 'unified',
+})
+const creatorMessageToDownloaderManifest = defineModel<string>('creatorMessageToDownloaderManifest', {
+  default: '',
 })
 const knowledgeFiles = defineModel<KnowledgeMarkdownFile[]>('knowledgeFiles', { required: true })
 const advancedTab = defineModel<'manifest' | 'settings' | 'core' | 'world' | 'images'>('advancedTab', {

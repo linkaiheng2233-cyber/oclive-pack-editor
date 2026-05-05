@@ -22,6 +22,10 @@ import { parseJson, runAllPackChecks } from '../lib/packChecks'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from '../lib/knowledgeFiles'
 import { validateKnowledgeFiles } from '../lib/knowledgeFrontMatter'
 import { mergeMarketComposeIntoEditor, parseMarketComposeV1 } from '../lib/marketComposeImport'
+import {
+  patchManifestCreatorMessageToDownloader,
+  readManifestCreatorMessageToDownloader,
+} from '../lib/manifestCreatorDownloader'
 import type { CreatorMessageExportMode } from '../lib/rolePackCreatorMessage'
 import {
   buildAuthorJsonDisk,
@@ -62,6 +66,8 @@ export function usePackEditor() {
   const creatorMessageToOthers = ref('')
   /** unified：全文只导出首条非空行；per_module：每行一条（多模块各写一句时汇总） */
   const creatorMessageMode = ref<CreatorMessageExportMode>('unified')
+  /** manifest `creator_message_to_downloader`：高级创作独立编辑，与 manifest 文本双向同步 */
+  const creatorMessageToDownloaderManifest = ref('')
 
   const authorSummary = ref('')
   const authorDetailMarkdown = ref('')
@@ -151,6 +157,24 @@ export function usePackEditor() {
   }
 
   watch(worldviewMarkdown, syncKnowledgeFilesFromWorldview)
+
+  watch(
+    manifestText,
+    () => {
+      const next = readManifestCreatorMessageToDownloader(manifestText.value)
+      if (creatorMessageToDownloaderManifest.value !== next) {
+        creatorMessageToDownloaderManifest.value = next
+      }
+    },
+    { immediate: true },
+  )
+
+  watch(creatorMessageToDownloaderManifest, (v) => {
+    const next = patchManifestCreatorMessageToDownloader(manifestText.value, v)
+    if (next !== manifestText.value) {
+      manifestText.value = next
+    }
+  })
 
   let simpleJsonDebounceTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -562,6 +586,7 @@ export function usePackEditor() {
     emotionImageFiles,
     creatorMessageToOthers,
     creatorMessageMode,
+    creatorMessageToDownloaderManifest,
     authorSummary,
     authorDetailMarkdown,
     authorRecommendedRows,
