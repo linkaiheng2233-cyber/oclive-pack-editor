@@ -3,6 +3,7 @@
  */
 import JSZip from 'jszip'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
+import { normalizeOclexpertForDisk } from './oclexpertPack'
 
 export type ImportedRolePack = {
   roleId: string
@@ -19,6 +20,8 @@ export type ImportedRolePack = {
   uiJson: string
   /** roles/{id}/author.json（可选） */
   authorJson: string
+  /** roles/{id}/expert/default.oclexpert（可选，Module 9） */
+  expertOclexpertJson: string
 }
 
 function normalizeZipPath(p: string): string {
@@ -104,6 +107,11 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
   const uiJson = (await readText('ui.json')).trim()
   const authorJson = (await readText('author.json')).trim()
 
+  const expertRaw = (await readText('expert/default.oclexpert')).trim()
+  const expertOclexpertJson = expertRaw
+    ? normalizeOclexpertForDisk(expertRaw) ?? expertRaw
+    : ''
+
   const knowledgeMarkdownFiles: KnowledgeMarkdownFile[] = []
   for (const n of names) {
     const path = normalizeZipPath(n)
@@ -147,6 +155,7 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
     creatorMessage,
     uiJson,
     authorJson,
+    expertOclexpertJson,
   }
 }
 

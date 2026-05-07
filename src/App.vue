@@ -26,6 +26,7 @@ const {
   syncFormWarning,
   creationMode,
   advancedTab,
+  expertOclexpertText,
   simpleM,
   simpleS,
   uiConfig,
@@ -304,6 +305,8 @@ const viewTitle = computed(() => {
           v-model:creator-message-to-downloader-manifest="creatorMessageToDownloaderManifest"
           v-model:knowledge-files="knowledgeMarkdownFiles"
           v-model:advanced-tab="advancedTab"
+          v-model:expert-oclexpert-text="expertOclexpertText"
+          :manifest-role-id="manifestRoleId"
           :emotion-summary="emotionImageSummary"
           @add-knowledge-file="addKnowledgeFile"
           @update-knowledge-file="updateKnowledgeFile"

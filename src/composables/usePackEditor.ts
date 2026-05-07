@@ -20,6 +20,7 @@ import {
 } from '../lib/replyQualityAnchorPreset'
 import { parseJson, runAllPackChecks } from '../lib/packChecks'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from '../lib/knowledgeFiles'
+import { expertPackValidationError } from '../lib/oclexpertPack'
 import { validateKnowledgeFiles } from '../lib/knowledgeFrontMatter'
 import { mergeMarketComposeIntoEditor, parseMarketComposeV1 } from '../lib/marketComposeImport'
 import {
@@ -68,6 +69,8 @@ export function usePackEditor() {
   const creatorMessageMode = ref<CreatorMessageExportMode>('unified')
   /** manifest `creator_message_to_downloader`：高级创作独立编辑，与 manifest 文本双向同步 */
   const creatorMessageToDownloaderManifest = ref('')
+  /** `roles/{id}/expert/default.oclexpert` 草稿（与 oclivenewnew Module 9 格式一致） */
+  const expertOclexpertText = ref('')
 
   const authorSummary = ref('')
   const authorDetailMarkdown = ref('')
@@ -88,7 +91,9 @@ export function usePackEditor() {
   const lastExportedRolesRoot = ref('')
 
   const creationMode = ref<'simple' | 'advanced'>('simple')
-  const advancedTab = ref<'manifest' | 'settings' | 'core' | 'world' | 'images'>('manifest')
+  const advancedTab = ref<'manifest' | 'settings' | 'core' | 'world' | 'images' | 'expert'>(
+    'manifest',
+  )
 
   const simpleM = reactive<SimpleManifestForm>(defaultSimpleManifestForm())
   const simpleS = reactive<SimpleSettingsForm>(defaultSimpleSettingsForm())
@@ -129,6 +134,7 @@ export function usePackEditor() {
       emotionImages: emotionImageFiles.value,
       creatorMessage: creatorMessageToOthers.value,
       creatorMessageMode: creatorMessageMode.value,
+      expertOclexpertJson: expertOclexpertText.value,
       ...(authorJson ? { authorJson } : {}),
     }
   }
@@ -324,10 +330,12 @@ export function usePackEditor() {
     flushSimpleToJson()
     const r = await runAllPackChecks(manifestText.value, settingsText.value)
     const kErrs = validateKnowledgeFiles(knowledgeMarkdownFiles.value)
+    const exErr = expertPackValidationError(expertOclexpertText.value)
+    const expertErrs = exErr ? [`专家模型配置（expert/default.oclexpert）：${exErr}`] : []
     return {
-      errors: [...r.errors, ...kErrs],
+      errors: [...r.errors, ...kErrs, ...expertErrs],
       wasmUsed: r.wasmUsed,
-      ok: r.ok && kErrs.length === 0,
+      ok: r.ok && kErrs.length === 0 && expertErrs.length === 0,
     }
   }
 
@@ -361,6 +369,7 @@ export function usePackEditor() {
       emotionImageFiles.value = imp.emotionImageFiles
       creatorMessageToOthers.value = imp.creatorMessage
       Object.assign(uiConfig, parseUiConfigJson(imp.uiJson || '{}'))
+      expertOclexpertText.value = imp.expertOclexpertJson ?? ''
       if (imp.authorJson.trim()) {
         const pa = parseAuthorImport(imp.authorJson)
         if (pa) {
@@ -587,6 +596,7 @@ export function usePackEditor() {
     creatorMessageToOthers,
     creatorMessageMode,
     creatorMessageToDownloaderManifest,
+    expertOclexpertText,
     authorSummary,
     authorDetailMarkdown,
     authorRecommendedRows,

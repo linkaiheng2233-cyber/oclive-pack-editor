@@ -340,6 +340,7 @@ export default {
       coreFile: "core / message",
       world: "World & knowledge",
       images: "Emotion assets",
+      expert: "Expert model",
     },
     docks: {
       badges: {
@@ -482,6 +483,29 @@ export default {
           faqAria: "Emotion portraits FAQ",
           faqTitle: "FAQ · Emotion portraits (before/after comparison)",
         },
+      },
+      expert: {
+        title: "Expert model pack (Module 9)",
+        lead:
+          "Attach a default expert graph to the role pack. Uses the same `.oclexpert` JSON format as the OClive desktop “expert models” facility.",
+        desc:
+          "When exporting .ocpak / writing a folder, if the JSON below is non-empty and valid, it is written to roles/{id}/expert/default.oclexpert. Recipients can keep editing in this pack editor, or import the file into the main app’s expert workflow library.",
+        btnNew: "New empty graph",
+        btnClear: "Clear config",
+        btnDownload: "Download default.oclexpert only",
+        btnImportFile: "Import from file…",
+        workbenchHint:
+          "For full editing (canvas, cloud model, event triggers, etc.), open the OClive desktop app → top bar “More” → “Plugin & backend manager” (experimental V2) → Expert models under backend modules. Copy JSON from here, download a .oclexpert, or import it in the main app.",
+        confirmClear:
+          "Clear the expert model JSON? Exports will no longer include expert/default.oclexpert.",
+        downloadInvalid: "Current JSON is empty or invalid; cannot export a .oclexpert file.",
+        labelName: "Name:",
+        labelNodes: "Nodes:",
+        labelCloud: "Cloud:",
+        summaryEmptyGraph: "empty graph (no nodes)",
+        summaryEdges: "edges×{n}",
+        jsonLabel: "expert/default.oclexpert (JSON)",
+        jsonAria: "Expert model pack file JSON",
       },
     },
   },

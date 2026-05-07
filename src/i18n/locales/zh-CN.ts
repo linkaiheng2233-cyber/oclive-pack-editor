@@ -325,6 +325,7 @@ export default {
       coreFile: "core / 公告",
       world: "世界观与知识",
       images: "情绪立绘",
+      expert: "专家模型",
     },
     docks: {
       badges: {
@@ -459,6 +460,27 @@ export default {
           faqAria: "情绪立绘常见问题",
           faqTitle: "常见问题 · 情绪立绘（改进前 / 改进后对照）",
         },
+      },
+      expert: {
+        title: "专家模型配置（Module 9）",
+        lead: "为角色包附带一份默认专家图，与 oclive 主程序「专家模型设施」使用相同的 `.oclexpert` JSON 格式。",
+        desc:
+          "导出 .ocpak / 写入文件夹时，若下方 JSON 有效且非空，会写入 roles/{id}/expert/default.oclexpert；其他用户导入该包后可在编写器继续编辑，或在主程序中导入该文件到专家工作流库。",
+        btnNew: "新建空专家图",
+        btnClear: "清除配置",
+        btnDownload: "仅下载 default.oclexpert",
+        btnImportFile: "从文件导入…",
+        workbenchHint:
+          "深度编辑（画布、云端模型、事件触发等）：请打开 OClive 桌面版 → 顶栏「更多」→「插件与后端管理」（实验性 V2）→ 后端模块中的「专家模型」面板；可将此处 JSON 复制过去，或使用「仅下载」后在主程序内导入 .oclexpert。",
+        confirmClear: "确定清除当前专家模型 JSON？导出时将不再附带 expert/default.oclexpert。",
+        downloadInvalid: "当前 JSON 无效或未填写，无法导出为 .oclexpert 文件。",
+        labelName: "名称：",
+        labelNodes: "节点：",
+        labelCloud: "云端：",
+        summaryEmptyGraph: "空图（无节点）",
+        summaryEdges: "边×{n}",
+        jsonLabel: "expert/default.oclexpert（JSON）",
+        jsonAria: "专家模型配置文件 JSON",
       },
     },
   },
