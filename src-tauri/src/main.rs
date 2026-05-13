@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod plugin_rpc;
+
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -417,6 +419,20 @@ fn write_text_file(path: String, content: String) -> Result<(), String> {
     fs::write(p, content.as_bytes()).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn directory_plugin_jsonrpc_invoke(
+    plugin_id: String,
+    method: String,
+    params: serde_json::Value,
+    search_roots: Vec<String>,
+) -> Result<serde_json::Value, String> {
+    tokio::task::spawn_blocking(move || {
+        plugin_rpc::invoke_directory_plugin_jsonrpc(plugin_id, method, params, search_roots)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -430,6 +446,7 @@ fn main() {
             read_role_manifest_scenes,
             spawn_oclive_api,
             list_directory_plugins_for_roles_root,
+            directory_plugin_jsonrpc_invoke,
         ])
         .run(tauri::generate_context!())
         .expect("error while running oclive-pack-editor");

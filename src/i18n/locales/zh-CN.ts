@@ -602,6 +602,7 @@ export default {
       check: "检查",
       chat: "试聊",
       feedback: "反馈",
+      frontendTests: "测试",
     },
     titles: {
       start: "开始",
@@ -610,6 +611,7 @@ export default {
       check: "检查与导出",
       chat: "试聊",
       feedback: "反馈工作台",
+      frontendTests: "前端测试",
     },
     shell: {
       startSubPrefix: "独立工具，仅产出与运行时兼容的目录树；契约见 oclivenewnew 仓库 ",
@@ -659,6 +661,25 @@ export default {
           },
         },
       },
+    },
+    frontendTests: {
+      aria: "Vue 前端测试",
+      lead: "通过官方目录插件（com.oclive.official_vue_test_runner）在本机调用 Vitest。",
+      hintPluginsPath:
+        "将「工作区根目录」填为 oclivenewnew 仓库根路径（需同时包含 plugins/official-vue-test-runner 与 package.json）。",
+      workspaceLabel: "工作区根目录（oclivenewnew 仓库）",
+      workspacePlaceholder: "例如 D:\\oclivenewnew",
+      btnHealth: "检测 Vitest",
+      btnList: "列出测试文件",
+      btnRunAll: "运行全部测试",
+      btnRunOne: "运行选中文件",
+      scanRoot: "扫描目录：{path}",
+      filesLabel: "测试文件（src 下 *.spec.ts / *.test.ts）",
+      pickFile: "请选择文件…",
+      healthTitle: "环境（health）",
+      resultTitle: "最近一次运行结果",
+      errNoWorkspace: "请先填写 oclivenewnew 仓库根目录。",
+      errNoSelection: "请先在列表中选择要运行的测试文件。",
     },
     check: {
       exportOcpak: "导出 .ocpak（zip）",

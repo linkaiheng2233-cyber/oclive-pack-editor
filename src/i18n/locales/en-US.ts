@@ -631,6 +631,7 @@ export default {
       check: "Checks",
       chat: "Chat",
       feedback: "Feedback",
+      frontendTests: "Tests",
     },
     titles: {
       start: "Start",
@@ -639,6 +640,7 @@ export default {
       check: "Checks & export",
       chat: "Try chat",
       feedback: "Feedback workspace",
+      frontendTests: "Vue frontend tests",
     },
     shell: {
       startSubPrefix: "A standalone tool that outputs a runtime-compatible directory tree. See the contract in oclivenewnew: ",
@@ -689,6 +691,25 @@ export default {
           },
         },
       },
+    },
+    frontendTests: {
+      aria: "Vue frontend tests",
+      lead: "Run Vitest via the official directory plugin (com.oclive.official_vue_test_runner).",
+      hintPluginsPath:
+        "Point “Workspace root” at your oclivenewnew checkout (the folder that contains plugins/official-vue-test-runner and package.json).",
+      workspaceLabel: "Workspace root (oclivenewnew repo)",
+      workspacePlaceholder: "e.g. D:\\oclivenewnew",
+      btnHealth: "Check Vitest",
+      btnList: "List test files",
+      btnRunAll: "Run all tests",
+      btnRunOne: "Run selected file",
+      scanRoot: "Scan directory: {path}",
+      filesLabel: "Test files (*.spec.ts / *.test.ts under src/)",
+      pickFile: "Select a file…",
+      healthTitle: "Environment (health)",
+      resultTitle: "Last run result",
+      errNoWorkspace: "Please set workspace root to your oclivenewnew directory.",
+      errNoSelection: "Pick a test file from the list first.",
     },
     check: {
       exportOcpak: "Export .ocpak (zip)",
