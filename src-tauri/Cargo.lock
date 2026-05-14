@@ -1928,12 +1928,22 @@ name = "oclive-pack-editor-tauri"
 version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
+ "oclive_validation",
  "reqwest",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "tokio",
+]
+
+[[package]]
+name = "oclive_validation"
+version = "0.1.0"
+dependencies = [
+ "semver",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

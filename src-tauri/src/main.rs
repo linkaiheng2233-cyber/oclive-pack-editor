@@ -8,6 +8,9 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 use std::time::Duration;
 
+use oclive_validation::manifest::DiskRoleManifest;
+use oclive_validation::merge_role_pack_scene_ids;
+
 fn validate_http_base_url(base: &str) -> Result<String, String> {
     let b = base.trim();
     if b.is_empty() {
@@ -433,6 +436,69 @@ async fn directory_plugin_jsonrpc_invoke(
     .map_err(|e| e.to_string())?
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RolePackEditorLoad {
+    manifest_text: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    settings_text: Option<String>,
+    merged_scene_ids: Vec<String>,
+}
+
+/// 读取角色包根目录下的 `manifest.json`、可选 `settings.json`，并合并 `manifest.scenes` 与 `scenes/` 子目录。
+#[tauri::command]
+fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, String> {
+    use std::fs;
+    use std::path::PathBuf;
+
+    let root = PathBuf::from(role_dir.trim());
+    if !root.is_dir() {
+        return Err("所选路径不是目录".into());
+    }
+    let manifest_path = root.join("manifest.json");
+    if !manifest_path.is_file() {
+        return Err(format!("未找到 manifest.json：{}", manifest_path.display()));
+    }
+    let manifest_text = fs::read_to_string(&manifest_path).map_err(|e| e.to_string())?;
+    let settings_path = root.join("settings.json");
+    let settings_text = if settings_path.is_file() {
+        Some(fs::read_to_string(&settings_path).map_err(|e| e.to_string())?)
+    } else {
+        None
+    };
+    let scenes_for_merge: Vec<String> = match serde_json::from_str::<DiskRoleManifest>(&manifest_text) {
+        Ok(m) => m.scenes,
+        Err(_) => Vec::new(),
+    };
+    let merged_scene_ids =
+        merge_role_pack_scene_ids(&root, &scenes_for_merge).map_err(|e| e.to_string())?;
+    Ok(RolePackEditorLoad {
+        manifest_text,
+        settings_text,
+        merged_scene_ids,
+    })
+}
+
+/// 写回 `manifest.json` 与 `settings.json`（后者不存在目录时也会创建）。
+#[tauri::command]
+fn save_role_pack_editor(role_dir: String, manifest_text: String, settings_text: String) -> Result<(), String> {
+    use std::fs;
+    use std::path::PathBuf;
+
+    let root = PathBuf::from(role_dir.trim());
+    if !root.is_dir() {
+        return Err("所选路径不是目录".into());
+    }
+    let mp = root.join("manifest.json");
+    fs::write(&mp, manifest_text.as_bytes()).map_err(|e| e.to_string())?;
+    let sp = root.join("settings.json");
+    if let Some(parent) = sp.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    fs::write(&sp, settings_text.as_bytes()).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -447,6 +513,8 @@ fn main() {
             spawn_oclive_api,
             list_directory_plugins_for_roles_root,
             directory_plugin_jsonrpc_invoke,
+            load_role_pack_for_editor,
+            save_role_pack_editor,
         ])
         .run(tauri::generate_context!())
         .expect("error while running oclive-pack-editor");

@@ -3,7 +3,7 @@
  * 占位 stub 未覆盖时自动回退到纯 TS 校验。
  */
 
-import init, { validateManifestWasm } from '../wasm/pkg/oclive_validation.js'
+import init, { validateManifestWasm, validateRolePackWasm } from '../wasm/pkg/oclive_validation.js'
 import { HOST_RUNTIME_VERSION } from './hostRuntimeVersion'
 import { mergeManifestWithSettings } from './mergeManifest'
 
@@ -44,6 +44,51 @@ export async function validateWithWasmIfAvailable(
       return { usedWasm: false, error: null }
     }
     return { usedWasm: true, error: msg }
+  }
+}
+
+export type WasmRolePackValidationResult = { usedWasm: boolean; errors: string[] }
+
+/**
+ * 若 wasm 可用，调用 `validateRolePackWasm`（与 `validate_role_pack_loaded` 同源）；否则 `usedWasm: false`。
+ */
+export async function validateRolePackWithWasmIfAvailable(
+  manifestJson: string,
+  settingsJson: string | null,
+  mergedSceneIds: string[],
+  hostRuntimeVersion: string,
+  settingsSchemaSupported: number,
+): Promise<WasmRolePackValidationResult> {
+  if (import.meta.env.VITEST) {
+    return { usedWasm: false, errors: [] }
+  }
+  if (wasmLoadSkipped) {
+    return { usedWasm: false, errors: [] }
+  }
+  try {
+    if (!wasmInitDone) {
+      try {
+        await init()
+        wasmInitDone = true
+      } catch {
+        wasmLoadSkipped = true
+        return { usedWasm: false, errors: [] }
+      }
+    }
+    validateRolePackWasm(
+      manifestJson,
+      settingsJson ?? '',
+      JSON.stringify(mergedSceneIds),
+      hostRuntimeVersion,
+      settingsSchemaSupported,
+    )
+    return { usedWasm: true, errors: [] }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg === '__OCWASM_NOT_BUILT__') {
+      return { usedWasm: false, errors: [] }
+    }
+    return { usedWasm: true, errors: msg.split('\n').filter(Boolean) }
   }
 }
 

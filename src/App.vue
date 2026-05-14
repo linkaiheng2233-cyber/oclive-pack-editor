@@ -12,6 +12,7 @@ const FeedbackWorkspace = defineAsyncComponent(() => import('./components/pack/F
 const PackChecksSection = defineAsyncComponent(() => import('./components/pack/PackChecksSection.vue'))
 const SimpleCreationPanel = defineAsyncComponent(() => import('./components/pack/SimpleCreationPanel.vue'))
 const FrontendTestRunnerPanel = defineAsyncComponent(() => import('./components/pack/FrontendTestRunnerPanel.vue'))
+const RolePackEditorPanel = defineAsyncComponent(() => import('./components/pack/RolePackEditorPanel.vue'))
 
 const {
   manifestText,
@@ -106,6 +107,7 @@ const editorNav = computed((): { id: EditorViewId; label: string; icon: string }
   { id: 'check', label: String(t("packEditor.nav.check")), icon: '✓' },
   { id: 'chat', label: String(t("packEditor.nav.chat")), icon: '💬' },
   { id: 'frontendTests', label: String(t("packEditor.nav.frontendTests")), icon: '🧪' },
+  { id: 'rolePackEditor', label: String(t("packEditor.nav.rolePackEditor")), icon: '📦' },
   { id: 'feedback', label: String(t("packEditor.nav.feedback")), icon: '📬' },
 ])
 
@@ -123,6 +125,7 @@ const viewTitle = computed(() => {
   if (id === 'check') return String(t("packEditor.titles.check"))
   if (id === 'chat') return String(t("packEditor.titles.chat"))
   if (id === 'frontendTests') return String(t("packEditor.titles.frontendTests"))
+  if (id === 'rolePackEditor') return String(t("packEditor.titles.rolePackEditor"))
   if (id === 'feedback') return String(t("packEditor.titles.feedback"))
   return ""
 })
@@ -272,6 +275,10 @@ const viewTitle = computed(() => {
 
       <div v-if="shouldMountView('frontendTests')" v-show="editorView === 'frontendTests'" class="view-stack">
         <FrontendTestRunnerPanel />
+      </div>
+
+      <div v-if="shouldMountView('rolePackEditor')" v-show="editorView === 'rolePackEditor'" class="view-stack">
+        <RolePackEditorPanel />
       </div>
 
       <!-- 简单创作 -->
