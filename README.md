@@ -26,6 +26,8 @@
 
 **版本对齐**：`src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 应与 **oclivenewnew** `src-tauri/Cargo.toml` 的 **`version`** 一致；导出前校验（含可选 wasm）会检查 **`manifest.min_runtime_version`** 与 **`manifest.json` / `settings.json` 顶层键**（见 [PACK_VERSIONING.md](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/role-pack/PACK_VERSIONING.md)）。
 
+**角色包编辑器**（桌面壳）：侧栏「角色包」可直接打开磁盘上的包目录，表单/JSON 双模式编辑、`validateRolePackWasm` 校验、锚点预设；说明见 [creator-docs/ROLE_PACK_EDITOR.md](./creator-docs/ROLE_PACK_EDITOR.md)。
+
 ## 角色包反馈（半私密收件箱）
 
 用户在 **oclivenewnew** 主程序里可以对正在使用的角色包提交 **「半私密反馈」**（本机保存，不公开）。  

@@ -7,7 +7,7 @@
 - 环境：**Node.js**（建议 LTS）、**Rust**（桌面壳与 `wasm-pack` 构建）、Windows 上 **WebView2**。
 - 安装依赖：`npm ci` 或 `npm install`。
 - 开发：`npm run tauri:dev`（桌面）或 `npm run dev:browser`（浏览器）；详见 [README.md](README.md)。
-- 自检：`npm test`、`npm run build`；若改动桌面壳：`npm run cargo:build` 或 `npm run tauri:build`（与 CI 一致）。
+- 自检：`npm test`、`npm run build`；若改动桌面壳：`npm run cargo:build` 或 `npm run tauri:build`（与 CI 一致）。**`src-tauri` 依赖 `oclive_validation` 路径 `../../oclivenewnew/crates/oclive_validation`**，请在本编写器**上一级目录**克隆 **oclivenewnew**（与 CI `cd .. && git clone …` 布局一致），否则 `cargo build` 会报找不到 crate。
 
 合并前请保证前端构建与单测通过；若改动导出或 Tauri 命令，建议在目标平台上实际跑一遍「导入 / 导出 / 写入文件夹」。**CI** 在 **Ubuntu 与 Windows** 上会各跑一遍 **Playwright 冒烟**（`npm run test:e2e`，需先同 job 内 `npm run build`）。
 
