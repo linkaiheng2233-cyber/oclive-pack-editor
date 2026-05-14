@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   EDITOR_PACK_REPLY_QUALITY_ANCHOR,
+  getReplyAnchorPresetById,
+  matchReplyAnchorPresetId,
   mergeEditorReplyQualityAnchor,
   shouldPromptReplyQualityAnchor,
 } from './replyQualityAnchorPreset'
@@ -25,5 +27,14 @@ describe('replyQualityAnchorPreset', () => {
   it('merge copies when false', () => {
     const s = mergeEditorReplyQualityAnchor({ schema_version: 1, foo: 2 }, false)
     expect(s).toEqual({ schema_version: 1, foo: 2 })
+  })
+
+  it('match preset id for default body', () => {
+    expect(matchReplyAnchorPresetId(EDITOR_PACK_REPLY_QUALITY_ANCHOR)).toBe('editor_default')
+    expect(matchReplyAnchorPresetId('totally custom')).toBe('custom')
+  })
+
+  it('getReplyAnchorPresetById', () => {
+    expect(getReplyAnchorPresetById('concise')?.id).toBe('concise')
   })
 })
