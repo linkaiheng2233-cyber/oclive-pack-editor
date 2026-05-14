@@ -21,7 +21,7 @@
     "contract:json-keys": "node scripts/diff-json-keys.mjs"
   },
   "dependencies": {
-    "@tauri-apps/api": "1.5.6",
+    "@tauri-apps/api": "2.11.0",
     "jszip": "^3.10.1",
     "vue": "^3.5.32",
     "vue-i18n": "^11.4.0"
