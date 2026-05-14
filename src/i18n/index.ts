@@ -1,30 +1,58 @@
 import { createI18n } from "vue-i18n";
-
-import enUS from "./locales/en-US";
 import zhCN from "./locales/zh-CN";
+import enUS from "./locales/en-US";
 
-function getSystemLocale(): "zh-CN" | "en-US" {
-  const langs =
-    typeof navigator !== "undefined" ? (navigator.languages ?? []) : [];
-  const raw = (langs[0] ?? navigator.language ?? "en-US").toLowerCase();
-  if (raw.startsWith("zh")) return "zh-CN";
-  return "en-US";
+export const LOCALE_PREF_KEY = "oclive.appLocale";
+
+/** Stored preference; `"system"` resolves to browser language when applied. */
+export type LocalePreference = "system" | "zh-CN" | "en-US";
+
+export function getBrowserLocaleTag(): "zh-CN" | "en-US" {
+  if (typeof navigator === "undefined") return "zh-CN";
+  const raw = (navigator.languages?.[0] ?? navigator.language ?? "zh-CN").toLowerCase();
+  return raw.startsWith("zh") ? "zh-CN" : "en-US";
 }
 
-export type AppLocale = "system" | "zh-CN" | "en-US";
+export function resolveLocaleTag(pref: LocalePreference): "zh-CN" | "en-US" {
+  if (pref === "system") return getBrowserLocaleTag();
+  return pref;
+}
+
+export function getLocalePreference(): LocalePreference {
+  try {
+    const v = localStorage.getItem(LOCALE_PREF_KEY);
+    if (v === "system" || v === "zh-CN" || v === "en-US") return v;
+  } catch {
+    /* ignore */
+  }
+  return "system";
+}
+
+const initialPref = getLocalePreference();
 
 export const i18n = createI18n({
   legacy: false,
-  locale: getSystemLocale(),
-  fallbackLocale: "en-US",
+  locale: resolveLocaleTag(initialPref),
+  fallbackLocale: "zh-CN",
   messages: {
-    "en-US": enUS,
     "zh-CN": zhCN,
+    "en-US": enUS,
   },
 });
 
-export function setAppLocale(locale: AppLocale): void {
-  const next = locale === "system" ? getSystemLocale() : locale;
-  i18n.global.locale.value = next;
+export function setLocalePreference(pref: LocalePreference): void {
+  try {
+    localStorage.setItem(LOCALE_PREF_KEY, pref);
+  } catch {
+    /* ignore */
+  }
+  i18n.global.locale.value = resolveLocaleTag(pref);
 }
 
+/** @deprecated use LocalePreference */
+export type AppLocale = LocalePreference;
+
+/** @deprecated use setLocalePreference */
+export function setAppLocale(locale: AppLocale): void {
+  setLocalePreference(locale);
+}

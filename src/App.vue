@@ -4,7 +4,7 @@ import { useI18n } from "vue-i18n";
 import { type EditorViewId, useEditorViewState } from './composables/useEditorViewState'
 import { usePackEditor } from './composables/usePackEditor'
 import { usePackShellPreferences } from './composables/usePackShellPreferences'
-import { setAppLocale, type AppLocale } from "./i18n";
+import { setAppLocale, getLocalePreference, type AppLocale } from "./i18n";
 
 const AdvancedCreationPanel = defineAsyncComponent(() => import('./components/pack/AdvancedCreationPanel.vue'))
 const ChatPanel = defineAsyncComponent(() => import('./components/pack/ChatPanel.vue'))
@@ -66,7 +66,7 @@ const marketComposePaste = ref('')
 const { themePreference, cycleTheme, bumpScale, scaleLabel } = usePackShellPreferences()
 
 const { t } = useI18n();
-const uiLocale = ref<AppLocale>("system");
+const uiLocale = ref<AppLocale>(getLocalePreference());
 
 const themeCycleLabel = computed(() => {
   if (themePreference.value === 'system') return String(t("packEditor.header.themeLabels.system"))
