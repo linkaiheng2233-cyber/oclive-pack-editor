@@ -11,6 +11,8 @@ Command: `rg -l "\\p{Han}" --glob "*.vue" --glob "*.ts" src`
 
 Typical matches include `App.vue`, `components/pack/*.vue`, `components/AdvFaqList.vue`, `lib/*.ts` (hints/FAQ copy), and both locale files. Prefer moving **user-visible** copy into `src/i18n/locales/*.ts` under an `editor.*` tree.
 
+**2026-05-15**：`rg` 命中汉字多为 **注释** 或 `lib` 内中文 FAQ/提示（`HelpHint` 已按语言选段）；主导航与壳层已走 `packEditor.*`。`npm run build` 通过。
+
 ## Build
 
 - `npm run build` after string migration batches.
