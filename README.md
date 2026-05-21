@@ -1,5 +1,7 @@
 # oclive-pack-editor
 
+> **Deprecated — 请改用 [oclive-studio](https://github.com/oclive-app/oclive-studio)**（oclive 工作室）：角色包编辑、校验、试聊与导出已内置为工作室「创作模式」。新功能与修复仅在工作室维护；本仓保留只读归档与历史 Release 对照。
+
 [![CI](https://github.com/oclive-app/oclive-pack-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/oclive-app/oclive-pack-editor/actions/workflows/ci.yml)
 
 独立 **角色包编写器**（Vite + Vue 3 + TypeScript + 可选 **Tauri 1.x** 桌面壳）：编辑并导出与 **oclivenewnew** 运行时兼容的 **`roles/{角色id}/`** 目录树或 zip（`.zip` / `.ocpak`，均为 zip 格式）。**不包含**对话引擎或运行时源码；两应用的唯一纽带是磁盘上的角色包。
