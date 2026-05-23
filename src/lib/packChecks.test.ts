@@ -5,13 +5,13 @@ describe('parsePackDocuments', () => {
   it('returns errors when manifest JSON invalid', () => {
     const r = parsePackDocuments('{', '{}')
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.errors[0]).toContain('manifest')
+    if (!r.ok) expect(r.errors[0]).toContain('角色门面')
   })
 
   it('returns errors when settings JSON invalid', () => {
     const r = parsePackDocuments('{}', '{')
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.errors[0]).toContain('settings')
+    if (!r.ok) expect(r.errors[0]).toContain('运行时')
   })
 
   it('returns objects when both parse', () => {
@@ -28,7 +28,7 @@ describe('runAllPackChecks', () => {
   it('reports JSON errors', async () => {
     const r = await runAllPackChecks('{', '{}')
     expect(r.ok).toBe(false)
-    expect(r.errors.some((e) => e.includes('manifest'))).toBe(true)
+    expect(r.errors.some((e) => e.includes('角色门面'))).toBe(true)
   })
 
   it('rejects unknown top-level manifest key', async () => {

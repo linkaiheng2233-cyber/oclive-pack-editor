@@ -1,8 +1,8 @@
 import { mergedSceneIds } from './packLayout'
 import { validateManifestTopLevelKeys, validateSettingsTopLevelKeys } from './jsonKeys'
-import type { ManifestInput, SettingsInput } from './validation'
-import { validateEditorPack, validateMinRuntimeVersion } from './validation'
-import { buildMergedManifestJson, validateWithWasmIfAvailable } from './wasmValidation'
+import type { ManifestInput } from './validation'
+import { HOST_RUNTIME_VERSION } from './hostRuntimeVersion'
+import { validateRolePackEditorState } from './rolePackEditorValidate'
 
 export function parseJson<T>(
   raw: string,
@@ -16,16 +16,16 @@ export function parseJson<T>(
   }
 }
 
-/** 解析 manifest / settings 文本，供导出等路径统一报错（避免无效 JSON 时静默失败）。 */
+/** 解析编辑器「角色门面 / 运行时」JSON 文本，供导出等路径统一报错。 */
 export function parsePackDocuments(
   manifestText: string,
   settingsText: string,
 ):
   | { ok: true; manifest: Record<string, unknown>; settings: Record<string, unknown> }
   | { ok: false; errors: string[] } {
-  const m = parseJson<Record<string, unknown>>(manifestText, 'manifest.json')
+  const m = parseJson<Record<string, unknown>>(manifestText, '角色门面 JSON')
   if (!m.ok) return { ok: false, errors: [m.error] }
-  const s = parseJson<Record<string, unknown>>(settingsText, 'settings.json')
+  const s = parseJson<Record<string, unknown>>(settingsText, '运行时 JSON')
   if (!s.ok) return { ok: false, errors: [s.error] }
   return { ok: true, manifest: m.value, settings: s.value }
 }
@@ -33,12 +33,12 @@ export function parsePackDocuments(
 export type PackCheckResult = {
   ok: boolean
   errors: string[]
-  /** 是否使用了 Rust wasm 校验（与运行时一致） */
+  /** 桌面版走 Tauri v2 蓝图校验时为 true */
   wasmUsed: boolean
 }
 
 /**
- * JSON 可解析、（可选）wasm `validate_disk_manifest`、否则 TypeScript `validateEditorPack`。
+ * JSON 可解析、顶层键检查，再经 v2 蓝图校验链（与 RolePackEditor / pack validate 默认 profile 同源）。
  */
 export async function runAllPackChecks(
   manifestText: string,
@@ -49,7 +49,6 @@ export async function runAllPackChecks(
     return { ok: false, errors: p.errors, wasmUsed: false }
   }
   const m = p.manifest as ManifestInput
-  const s = p.settings as SettingsInput
   const scenes = mergedSceneIds(m.scenes, [])
   const keyErrors = [
     ...validateManifestTopLevelKeys(p.manifest),
@@ -59,24 +58,11 @@ export async function runAllPackChecks(
     return { ok: false, errors: keyErrors, wasmUsed: false }
   }
 
-  const mergedJson = buildMergedManifestJson(p.manifest, p.settings)
-  const wasmRes = await validateWithWasmIfAvailable(mergedJson, JSON.stringify(scenes))
-
-  if (wasmRes.usedWasm && wasmRes.error === null) {
-    return { ok: true, errors: [], wasmUsed: true }
-  }
-  if (wasmRes.usedWasm && wasmRes.error !== null) {
-    return { ok: false, errors: [wasmRes.error], wasmUsed: true }
-  }
-
-  const errors = [
-    ...validateEditorPack(m, s, scenes),
-    ...(() => {
-      const line = validateMinRuntimeVersion(
-        (p.manifest as { min_runtime_version?: unknown }).min_runtime_version,
-      )
-      return line ? [line] : []
-    })(),
-  ]
-  return { ok: errors.length === 0, errors, wasmUsed: false }
+  const r = await validateRolePackEditorState(
+    manifestText,
+    settingsText,
+    scenes,
+    HOST_RUNTIME_VERSION,
+  )
+  return { ok: r.ok, errors: r.errors, wasmUsed: r.usedWasm }
 }

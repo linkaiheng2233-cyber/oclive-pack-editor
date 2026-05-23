@@ -37,7 +37,7 @@ export function validateRolePackTypescript(
   try {
     manifest = JSON.parse(manifestJson)
   } catch (e) {
-    return [`manifest.json JSON 语法错误: ${e}`]
+    return [`角色门面 JSON 语法错误: ${e}`]
   }
 
   let settings: SettingsInput | null = null
@@ -47,7 +47,7 @@ export function validateRolePackTypescript(
       settings = JSON.parse(settingsJson) as SettingsInput
       settingsRecord = settings as Record<string, unknown>
     } catch (e) {
-      return [`settings.json JSON 语法错误: ${e}`]
+      return [`运行时 JSON 语法错误: ${e}`]
     }
   }
 
