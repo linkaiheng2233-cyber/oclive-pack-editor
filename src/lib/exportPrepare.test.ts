@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { prepareExportPayload } from './exportPrepare'
 
 describe('prepareExportPayload', () => {
-  it('returns error when manifest JSON invalid', () => {
+  it('returns error when role meta JSON invalid', () => {
     const r = prepareExportPayload('{', '{}')
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.message).toContain('manifest')
+    if (!r.ok) expect(r.message).toContain('角色门面')
   })
 
   it('returns error when id empty', () => {

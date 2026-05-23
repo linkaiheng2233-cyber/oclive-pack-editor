@@ -35,7 +35,7 @@ export const SIMPLE_ADV_FOLD = [
 
 /** manifest 分区标题 */
 export const SIMPLE_MANIFEST_INTRO = [
-  '这一列会写进 manifest.json：相当于角色的「名片 + 规则摘要」。启动器、列表页、以及运行时都会先读它来决定叫什么、有哪些场景、默认性格、和你的关系等。',
+  '这一列会写入 pipeline.ocblueprint 的 meta：相当于角色的「名片 + 规则摘要」。启动器、列表页、以及运行时都会先读它来决定叫什么、有哪些场景、默认性格、和你的关系等。',
 ] as const
 
 export const SIMPLE_FIELD_ROLE_ID = [
@@ -87,7 +87,7 @@ export const SIMPLE_KNOWLEDGE = [
 
 /** settings 分区标题 */
 export const SIMPLE_SETTINGS_INTRO = [
-  '这一列会写进 settings.json（并与 manifest 按引擎规则合并）。主要管：对话用哪个模型、事件影响多强、身份跟场景怎么绑定、以及记忆/情绪等插件走内置还是远程。',
+  '这一列会写入 blueprint 的运行时视图（并与 meta 按引擎规则合并）。主要管：对话用哪个模型、事件影响多强、身份跟场景怎么绑定、以及记忆/情绪等插件走内置还是远程。',
 ] as const
 
 export const SIMPLE_BRAIN_LLM = [

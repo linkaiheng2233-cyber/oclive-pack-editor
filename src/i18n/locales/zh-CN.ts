@@ -39,12 +39,12 @@ export default {
       exe1: "只有桌面版编写器的「一键启动」才需要填这一项。",
       exe2:
         "请填 oclivenewnew.exe（或你的 oclive 程序）的完整路径。第一次会弹窗让你确认，避免误运行陌生程序。若你习惯自己在终端里已经运行了带 --api 的 oclive，可以不填，只要「检测连接」通过即可。",
-      rolePath1: "要试聊的角色包所在的文件夹，这一层里必须有 manifest.json。",
+      rolePath1: "要试聊的角色包所在的文件夹，这一层里必须有 pipeline.ocblueprint（v2 角色包蓝图）。",
       rolePath2:
         "通常是你在编写器里点「写入文件夹」后生成的「roles 根目录 / 角色 id」那一层。上面若已自动填好路径，一般不用改；也可以粘贴别的绝对路径来试别的包。",
       scene1: "和主应用里「场景」的意思一样：你想从哪个场景开始聊。",
       scene2:
-        "选「让引擎自己决定」时，不强行指定场景。桌面版可以从 manifest 刷新列表；在浏览器里开发时，需要手填场景 id 或留空。",
+        "选「让引擎自己决定」时，不强行指定场景。桌面版可以从 blueprint meta 刷新列表；在浏览器里开发时，需要手填场景 id 或留空。",
       ping1: "不会真的发聊天内容，只是问一句「试聊服务在不在」。",
       ping2: "若显示失败，请检查 oclive 是否已用试聊模式启动、端口是否和「连接地址」一致。",
       spawn1: "用你填的 oclive 程序路径，尝试自动打开一个新窗口并带上试聊参数。",
@@ -66,15 +66,15 @@ export default {
         placeholder: "例如 D:\\...\\oclivenewnew.exe",
       },
       rolePath: {
-        label: "角色文件夹（里面要有 manifest.json）",
+        label: "角色文件夹（须含 pipeline.ocblueprint）",
         placeholderNoDefault: "先导出到文件夹，或粘贴完整路径",
       },
       scene: {
         label: "从哪个场景聊（可选）",
         auto: "让引擎自己决定",
-        placeholder: "可留空；或填写 manifest 里 scenes 中的场景 id",
+        placeholder: "可留空；或填写 blueprint meta.scenes 中的场景 id",
         loading: "读取中…",
-        refresh: "从 manifest 读取场景列表",
+        refresh: "从 blueprint 读取场景列表",
       },
     },
     actions: {
@@ -145,7 +145,7 @@ export default {
       },
       downloaderLabel: "创作者寄语（manifest，可选）",
       downloaderDesc:
-        "写入 manifest.json 的 creator_message_to_downloader；主程序在导入/预览成功后会与 creator_message.txt 一并提示下载者。可与上方启动器公告分开填写。",
+        "写入 blueprint meta 的 creator_message_to_downloader；主程序在导入/预览成功后会与 creator_message.txt 一并提示下载者。可与上方启动器公告分开填写。",
       downloaderPlaceholder: "例如：若对话太冷淡，把「身份提示」里关系写紧一点。",
     },
     advanced: {
@@ -176,7 +176,7 @@ export default {
       worldviewPlaceholder: "可选。有内容时会生成 world.md；留空则使用占位说明。",
       knowledgeTitle: "知识库检索（manifest / settings）",
       knowledgeLead:
-        "与运行时 knowledge 块一致；导出时写入 manifest.json 与 settings.json（合并加载时 settings 优先）。glob 须以 knowledge/ 开头。",
+        "与运行时 knowledge 块一致；导出时写入 blueprint meta（合并加载时运行时视图优先）。glob 须以 knowledge/ 开头。",
       knowledgeEnabledLabel: "启用知识库 Markdown 检索",
       knowledgeGlobLabel: "glob 模式",
       faqTitle: "常见问题 · 角色信息（manifest）",
@@ -244,7 +244,7 @@ export default {
     author: {
       title: "作者与建议（author.json）",
       desc:
-        "可选：面向市场的简介、推荐插件列表；若勾选「导出时附带 suggested_ui」，将把下方「前端设计」当前表单一并写入 author.json（运行时优先于 ui.json 作为插件布局种子）。suggested_plugin_backends 为 JSON 片段，供用户一键应用为会话后端（不写 settings.json）。",
+        "可选：面向市场的简介、推荐插件列表；若勾选「导出时附带 suggested_ui」，将把下方「前端设计」当前表单一并写入 author.json（运行时优先于 ui.json 作为插件布局种子）。suggested_plugin_backends 为 JSON 片段，供用户一键应用为会话后端（不写入 pipeline.ocblueprint）。",
       oneLineSummaryLabel: "一句话简介",
       oneLineSummaryPlaceholder: "例：慢热型同桌，适合日常陪伴",
       detailMarkdownLabel: "详情（Markdown）",
@@ -513,11 +513,11 @@ export default {
   packChecks: {
     title: "角色包检查",
     desc:
-      "校验 manifest / settings JSON 与契约一致性。若已用 wasm-pack 生成校验模块，则优先使用与 oclivenewnew 共享的 Rust 逻辑；否则回退到 TypeScript 检查。导出时可选校验，通过后即可把包放入 roles 测试。",
+      "校验角色门面 / 运行时 JSON，并构建 v2 pipeline.ocblueprint 做契约检查。桌面版走与 pack validate 同源的 Tauri 校验；浏览器开发时回退 TypeScript。导出时可选校验，通过后即可把包放入 roles 测试。",
     status: {
-      neverRan: "尚未运行检查；运行后将显示使用的校验方式（Rust wasm 或 TypeScript）。",
-      lastRustWasm: "最近一次检查：Rust wasm",
-      lastTypeScript: "最近一次检查：TypeScript（wasm 未启用或未构建）",
+      neverRan: "尚未运行检查；运行后将显示使用的校验方式（Tauri v2 蓝图校验或 TypeScript）。",
+      lastRustWasm: "最近一次检查：Tauri v2 蓝图校验",
+      lastTypeScript: "最近一次检查：TypeScript（Tauri 校验不可用）",
     },
     runAll: "运行全部检查",
     requireBeforeExport: "导出前校验包内容",
@@ -702,25 +702,25 @@ export default {
       errNoSelection: "请先在列表中选择要运行的测试文件。",
     },
     rolePack: {
-      lead: "打开磁盘上的角色包目录，编辑 manifest.json / settings.json，校验与 oclivenewnew 运行时一致。需桌面版 Tauri。",
+      lead: "打开磁盘上的 v2 角色包目录，编辑 pipeline.ocblueprint（表单拆分为角色门面 + 运行时视图），校验与 oclivenewnew 运行时一致。需桌面版 Tauri。",
       openDir: "打开角色包目录…",
       save: "保存到磁盘",
       modeAria: "编辑模式",
       modeForm: "表单",
       modeJson: "JSON",
-      pickHint: "请先点击「打开角色包目录」选择含 manifest.json 的包路径。",
+      pickHint: "请先点击「打开角色包目录」选择含 pipeline.ocblueprint 的包路径。",
       opened: "已加载角色包。",
-      saved: "已写入 manifest.json 与 settings.json。",
-      manifestCard: "manifest.json",
-      settingsCard: "settings.json",
+      saved: "已写入 pipeline.ocblueprint（及 prompts/reply_quality_anchor.md 等附属文件）。",
+      manifestCard: "角色门面（meta 视图）",
+      settingsCard: "运行时（settings 视图）",
       validationAria: "校验结果",
       validationOk: "当前内容校验通过。",
       err: {
         needTauri: "角色包目录加载与保存仅支持桌面版（Tauri）。",
         noPack: "请先打开一个角色包目录。",
         validationBlocks: "存在校验错误，未写入磁盘。",
-        manifestJson: "manifest.json 无法解析：{msg}",
-        settingsJson: "settings.json 无法解析：{msg}",
+        manifestJson: "角色门面 JSON 无法解析：{msg}",
+        settingsJson: "运行时 JSON 无法解析：{msg}",
       },
       fields: {
         name: "显示名称",
@@ -747,7 +747,7 @@ export default {
       anchor: {
         aria: "回复质量锚点",
         title: "回复质量锚点",
-        lead: "写入 settings.json 的 reply_quality_anchor，与主程序导出逻辑一致。",
+        lead: "导出时写入 prompts/reply_quality_anchor.md（v2 推荐路径），与主程序运行时一致。",
         preview: "预览（前 200 字）",
         emptyPreview: "（空）",
         presetSelect: "预设",
@@ -774,7 +774,7 @@ export default {
       exportZip: "导出 .zip",
       exportFolder: "写入文件夹（自选 roles 根目录）",
       exportAnchorHint:
-        "若 settings.json 尚未填写 reply_quality_anchor，导出时会询问是否加入推荐的「回复质量锚点」（含状态延续、按用户句长与情绪调节篇幅、禁止复述用户原句等完整约束）。",
+        "若尚未配置回复质量锚点，导出时会询问是否加入推荐的「回复质量锚点」（写入 prompts/reply_quality_anchor.md；含状态延续、按用户句长与情绪调节篇幅、禁止复述用户原句等完整约束）。",
       resultsTitle: "检查结果",
       noErrorsHint: "点击「运行全部检查」查看错误列表；无错误时此处为空。",
     },

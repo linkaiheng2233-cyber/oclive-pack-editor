@@ -270,7 +270,7 @@ function resetAllPreviewWeightOverrides(): void {
       >
         <span class="tab-stack">
           <span class="tab-title">{{ t("advancedCreation.tabs.manifest") }}</span>
-          <span class="tab-file">manifest.json</span>
+          <span class="tab-file">{{ t('packEditor.rolePack.manifestCard') }}</span>
         </span>
       </button>
       <button
@@ -282,7 +282,7 @@ function resetAllPreviewWeightOverrides(): void {
       >
         <span class="tab-stack">
           <span class="tab-title">{{ t("advancedCreation.tabs.settings") }}</span>
-          <span class="tab-file">settings.json</span>
+          <span class="tab-file">{{ t('packEditor.rolePack.settingsCard') }}</span>
         </span>
       </button>
       <button
@@ -352,7 +352,7 @@ function resetAllPreviewWeightOverrides(): void {
           </ul>
         </details>
       </div>
-      <textarea v-model="manifestText" spellcheck="false" class="ta" aria-label="manifest.json" />
+      <textarea v-model="manifestText" spellcheck="false" class="ta" :aria-label="t('packEditor.rolePack.manifestCard')" />
       <div class="adv-dock-stack">
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
@@ -412,7 +412,7 @@ function resetAllPreviewWeightOverrides(): void {
           </ul>
         </details>
       </div>
-      <textarea v-model="settingsText" spellcheck="false" class="ta" aria-label="settings.json" />
+      <textarea v-model="settingsText" spellcheck="false" class="ta" :aria-label="t('packEditor.rolePack.settingsCard')" />
       <div class="adv-dock-stack">
         <details
           class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"

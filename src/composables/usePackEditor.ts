@@ -479,8 +479,8 @@ export function usePackEditor() {
       return { ...settings }
     }
     const include = window.confirm(
-      '是否在导出的 settings.json 中加入推荐的「回复质量锚点」？\n\n' +
-        '将写入字段 reply_quality_anchor，含：禁止复述用户原句、简短确认时延续话题勿重复开场、按用户信息量调节篇幅（非固定字数）、不替用户拟定台词等（与 oclive 主程序默认一致）。\n\n' +
+      '是否在导出时写入推荐的「回复质量锚点」到 prompts/reply_quality_anchor.md？\n\n' +
+        '将写入 v2 推荐路径，含：禁止复述用户原句、简短确认时延续话题勿重复开场、按用户信息量调节篇幅（非固定字数）、不替用户拟定台词等（与 oclive 主程序默认一致）。\n\n' +
         '确定 = 加入推荐内容\n取消 = 不加入，按当前 JSON 原样导出',
     )
     return mergeEditorReplyQualityAnchor(settings, include)

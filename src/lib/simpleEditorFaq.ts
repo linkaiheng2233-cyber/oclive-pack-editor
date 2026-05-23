@@ -141,7 +141,7 @@ export const CHAT_FAQ: readonly AdvFaqItem[] = [
   {
     id: 'ch-path',
     question: '角色文件夹要指到哪一层？',
-    plainExplain: '这一层里直接能看到 manifest.json；通常是 roles 根下面的「角色 id」文件夹。',
+    plainExplain: '这一层里直接能看到 pipeline.ocblueprint；通常是 roles 根下面的「角色 id」文件夹。',
     beforeCode: `C:\\…\\roles\\`,
     afterCode: `C:\\…\\roles\\my_role_id\\`,
     highlightAfter: ['my_role_id'],

@@ -43,12 +43,12 @@ export default {
       exe1: "Only needed for the desktop editor’s “One-click start”.",
       exe2:
         "Fill the full path to oclivenewnew.exe (or your oclive program). The first time will ask for confirmation to avoid running unknown executables. If you already started oclive with --api in a terminal, you can leave it empty as long as “Check connection” works.",
-      rolePath1: "The folder of the role pack to try-chat. This folder must contain manifest.json.",
+      rolePath1: "The folder of the role pack to try-chat. It must contain pipeline.ocblueprint (v2 role pack blueprint).",
       rolePath2:
         "Usually it’s the “roles root / role id” folder generated after clicking “Write to folder”. If it’s already auto-filled, you typically don’t need to change it. You can also paste another absolute path to test another pack.",
       scene1: "Same meaning as in the main app: which scene you want to start chatting from.",
       scene2:
-        "If you choose “Let engine decide”, we won’t force a scene. Desktop mode can refresh the list from manifest; in browser dev you can type a scene id or leave it empty.",
+        "If you choose “Let engine decide”, we won’t force a scene. Desktop mode can refresh the list from blueprint meta; in browser dev you can type a scene id or leave it empty.",
       ping1: "Does not send chat content. It only asks “is the API service up?”.",
       ping2:
         "If it fails, check whether oclive is started in try-chat mode and whether the port matches “API base”.",
@@ -74,15 +74,15 @@ export default {
         placeholder: "e.g. D:\\...\\oclivenewnew.exe",
       },
       rolePath: {
-        label: "Role folder (must contain manifest.json)",
+        label: "Role folder (must contain pipeline.ocblueprint)",
         placeholderNoDefault: "Export to folder first, or paste an absolute path",
       },
       scene: {
         label: "Start from which scene (optional)",
         auto: "Let the engine decide",
-        placeholder: "Optional; or enter a scene id from manifest scenes",
+        placeholder: "Optional; or enter a scene id from blueprint meta.scenes",
         loading: "Loading…",
-        refresh: "Load scenes from manifest",
+        refresh: "Load scenes from blueprint",
       },
     },
     actions: {
@@ -156,7 +156,7 @@ export default {
       },
       downloaderLabel: "Creator line in manifest (optional)",
       downloaderDesc:
-        "Writes manifest.json field creator_message_to_downloader; the desktop app shows it to importers after a successful preview/import, together with creator_message.txt if present. You can keep this separate from the launcher-only notice above.",
+        "Writes blueprint meta field creator_message_to_downloader; the desktop app shows it to importers after a successful preview/import, together with creator_message.txt if present. You can keep this separate from the launcher-only notice above.",
       downloaderPlaceholder:
         "e.g. If replies feel cold, tighten the relationship hint in identity prompts.",
     },
@@ -190,7 +190,7 @@ export default {
         "Optional. If filled, world.md will be generated; if empty, a placeholder will be used.",
       knowledgeTitle: "Knowledge retrieval (manifest / settings)",
       knowledgeLead:
-        "Matches the runtime “knowledge” block. Export writes into manifest.json and settings.json (when merged, settings wins). glob must start with knowledge/.",
+        "Matches the runtime “knowledge” block. Export writes into blueprint meta (runtime view wins on merge). glob must start with knowledge/.",
       knowledgeEnabledLabel: "Enable Markdown knowledge retrieval",
       knowledgeGlobLabel: "glob pattern",
       faqTitle: "FAQ · Role info (manifest)",
@@ -259,7 +259,7 @@ export default {
     author: {
       title: "Author & suggestions (author.json)",
       desc:
-        "Optional: marketplace-facing summary and recommended plugins. If “Include suggested_ui on export” is checked, the “UI design” form below will also be written into author.json as suggested_ui (runtime prefers it over ui.json as a layout seed). suggested_plugin_backends is a JSON fragment for one-click session backend apply (not written into settings.json).",
+        "Optional: marketplace-facing summary and recommended plugins. If “Include suggested_ui on export” is checked, the “UI design” form below will also be written into author.json as suggested_ui (runtime prefers it over ui.json as a layout seed). suggested_plugin_backends is a JSON fragment for one-click session backend apply (not written into pipeline.ocblueprint).",
       oneLineSummaryLabel: "One-line summary",
       oneLineSummaryPlaceholder: "e.g. A slow-to-warm desk mate, great for daily companionship",
       detailMarkdownLabel: "Details (Markdown)",
@@ -539,11 +539,11 @@ export default {
   packChecks: {
     title: "Role pack checks",
     desc:
-      "Validate manifest/settings JSON against the contract. If the wasm-pack validator is built, we use the shared Rust logic with oclivenewnew; otherwise we fall back to TypeScript checks. You can require checks before export; once passed, you can put the pack into roles for testing.",
+      "Validate role-facing / runtime JSON and build v2 pipeline.ocblueprint for contract checks. Desktop uses Tauri validation aligned with pack validate; browser dev falls back to TypeScript. You can require checks before export; once passed, you can put the pack into roles for testing.",
     status: {
-      neverRan: "Checks have not been run yet. After running, we’ll show whether Rust wasm or TypeScript was used.",
-      lastRustWasm: "Last check: Rust wasm",
-      lastTypeScript: "Last check: TypeScript (wasm not enabled or not built)",
+      neverRan: "Checks have not been run yet. After running, we’ll show whether Tauri v2 blueprint validation or TypeScript was used.",
+      lastRustWasm: "Last check: Tauri v2 blueprint validation",
+      lastTypeScript: "Last check: TypeScript (Tauri validation unavailable)",
     },
     runAll: "Run all checks",
     requireBeforeExport: "Require checks before export",
@@ -732,25 +732,25 @@ export default {
       errNoSelection: "Pick a test file from the list first.",
     },
     rolePack: {
-      lead: "Open a role pack directory on disk, edit manifest.json / settings.json, and validate against oclivenewnew. Requires the desktop (Tauri) build.",
+      lead: "Open a v2 role pack directory on disk, edit pipeline.ocblueprint (form split into role meta + runtime views), and validate against oclivenewnew. Requires the desktop (Tauri) build.",
       openDir: "Open role pack folder…",
       save: "Save to disk",
       modeAria: "Edit mode",
       modeForm: "Form",
       modeJson: "JSON",
-      pickHint: "Click “Open role pack folder” and choose a directory that contains manifest.json.",
+      pickHint: "Click “Open role pack folder” and choose a directory that contains pipeline.ocblueprint.",
       opened: "Role pack loaded.",
-      saved: "Wrote manifest.json and settings.json.",
-      manifestCard: "manifest.json",
-      settingsCard: "settings.json",
+      saved: "Wrote pipeline.ocblueprint (and companion files such as prompts/reply_quality_anchor.md).",
+      manifestCard: "Role meta (meta view)",
+      settingsCard: "Runtime (settings view)",
       validationAria: "Validation",
       validationOk: "Current content passes validation.",
       err: {
         needTauri: "Opening and saving a role pack folder requires the desktop (Tauri) app.",
         noPack: "Open a role pack folder first.",
         validationBlocks: "Validation failed; nothing was written.",
-        manifestJson: "manifest.json is invalid JSON: {msg}",
-        settingsJson: "settings.json is invalid JSON: {msg}",
+        manifestJson: "Role meta JSON is invalid: {msg}",
+        settingsJson: "Runtime JSON is invalid: {msg}",
       },
       fields: {
         name: "Display name",
@@ -777,7 +777,7 @@ export default {
       anchor: {
         aria: "Reply quality anchor",
         title: "Reply quality anchor",
-        lead: "Maps to settings.json → reply_quality_anchor (same field as the main app export merge).",
+        lead: "On export, writes prompts/reply_quality_anchor.md (v2 path), aligned with the main app runtime.",
         preview: "Preview (first 200 chars)",
         emptyPreview: "(empty)",
         presetSelect: "Preset",
@@ -804,7 +804,7 @@ export default {
       exportZip: "Export .zip",
       exportFolder: "Write to folder (pick roles root)",
       exportAnchorHint:
-        "If settings.json doesn’t have reply_quality_anchor, export will ask whether to add the recommended “reply quality anchor” (state continuity, length modulation by user sentence length and emotion, no parroting, etc.).",
+        "If no reply quality anchor is configured yet, export will ask whether to add the recommended anchor (written to prompts/reply_quality_anchor.md; state continuity, length modulation by user sentence length and emotion, no parroting, etc.).",
       resultsTitle: "Check results",
       noErrorsHint:
         "Click “Run all checks” to view the error list. If there are no errors, this area stays empty.",

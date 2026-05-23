@@ -433,11 +433,11 @@ function dimLabel(key: string): string {
     </div>
     <div v-else-if="roleDir && editMode === 'json'" class="json-split">
       <div class="json-pane">
-        <h4 class="h4">manifest.json</h4>
+        <h4 class="h4">{{ t('packEditor.rolePack.manifestCard') }}</h4>
         <textarea v-model="manifestJsonText" class="json-ta" spellcheck="false" />
       </div>
       <div class="json-pane">
-        <h4 class="h4">settings.json</h4>
+        <h4 class="h4">{{ t('packEditor.rolePack.settingsCard') }}</h4>
         <textarea v-model="settingsJsonText" class="json-ta" spellcheck="false" />
       </div>
     </div>
