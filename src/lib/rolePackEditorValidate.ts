@@ -1,9 +1,12 @@
 /**
- * 角色包编辑器侧校验：优先 wasm（与 oclive_validation 同源），否则 TypeScript 子集兜底。
+ * 角色包编辑器侧校验：构建 v2 蓝图并与 oclive_validation BlueprintV2 profile 对齐。
  */
 
+import {
+  buildBlueprintV2FromLegacy,
+  validateBlueprintV2Typescript,
+} from './blueprintV2'
 import { validateEditorPack, validateMinRuntimeVersion, type ManifestInput, type SettingsInput } from './validation'
-import { validateRolePackWithWasmIfAvailable } from './wasmValidation'
 
 /** 与 `oclive_validation::disk_role_settings::CURRENT_SETTINGS_SCHEMA_VERSION` 一致 */
 export const ROLE_PACK_SETTINGS_SCHEMA_VERSION = 1
@@ -38,9 +41,11 @@ export function validateRolePackTypescript(
   }
 
   let settings: SettingsInput | null = null
+  let settingsRecord: Record<string, unknown> = {}
   if (settingsJson != null && settingsJson.trim() !== '') {
     try {
       settings = JSON.parse(settingsJson) as SettingsInput
+      settingsRecord = settings as Record<string, unknown>
     } catch (e) {
       return [`settings.json JSON 语法错误: ${e}`]
     }
@@ -56,6 +61,10 @@ export function validateRolePackTypescript(
   const minErr = validateMinRuntimeVersion(mr.min_runtime_version, hostVersion)
   if (minErr) errors.push(minErr)
 
+  const bp = buildBlueprintV2FromLegacy(mr, settingsRecord)
+  const roleId = String(mr.id ?? bp.meta.id ?? '').trim()
+  errors.push(...validateBlueprintV2Typescript(bp, roleId || undefined))
+
   return errors
 }
 
@@ -65,22 +74,35 @@ export type RolePackEditorValidateResult = {
   usedWasm: boolean
 }
 
+/** 桌面版优先走 Tauri `validate_blueprint_v2_json`（与 pack validate 默认 profile 同源）。 */
 export async function validateRolePackEditorState(
   manifestJson: string,
   settingsJson: string | null,
   mergedSceneIds: string[],
   hostVersion: string,
 ): Promise<RolePackEditorValidateResult> {
-  const wasm = await validateRolePackWithWasmIfAvailable(
-    manifestJson,
-    settingsJson,
-    mergedSceneIds,
-    hostVersion,
-    ROLE_PACK_SETTINGS_SCHEMA_VERSION,
-  )
-  if (wasm.usedWasm) {
-    return { ok: wasm.errors.length === 0, errors: wasm.errors, usedWasm: true }
-  }
   const tsErrors = validateRolePackTypescript(manifestJson, settingsJson, mergedSceneIds, hostVersion)
-  return { ok: tsErrors.length === 0, errors: tsErrors, usedWasm: false }
+  if (tsErrors.length > 0) {
+    return { ok: false, errors: tsErrors, usedWasm: false }
+  }
+
+  if (typeof window !== 'undefined' && '__TAURI__' in window) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/tauri')
+      const manifest = JSON.parse(manifestJson) as Record<string, unknown>
+      await invoke('validate_blueprint_v2_json', {
+        manifestText: manifestJson,
+        settingsText: settingsJson ?? '{}',
+        mergedSceneIds,
+        hostRuntimeVersion: hostVersion,
+        roleId: String(manifest.id ?? '').trim(),
+      })
+      return { ok: true, errors: [], usedWasm: true }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      return { ok: false, errors: msg.split('\n').filter(Boolean), usedWasm: true }
+    }
+  }
+
+  return { ok: true, errors: [], usedWasm: false }
 }
