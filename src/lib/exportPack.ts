@@ -7,6 +7,13 @@ import {
 import { mergedSceneIds, rolePackRelativePaths } from './packLayout'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
 import { normalizeOclexpertForDisk } from './oclexpertPack'
+import {
+  buildBlueprintV2FromLegacy,
+  PIPELINE_BLUEPRINT_FILENAME,
+  REPLY_QUALITY_ANCHOR_REL_PATH,
+  serializeBlueprintV2,
+} from './blueprintV2'
+import { mergeEditorReplyQualityAnchor } from './replyQualityAnchorPreset'
 
 export type ExportableManifest = Record<string, unknown>
 export type ExportableSettings = Record<string, unknown>
@@ -43,6 +50,10 @@ export type PackExtraFiles = {
    * 导出前会校验并规范化为 `format: oclexpert` 的 v1 文件；无效内容不会写入包内。
    */
   expertOclexpertJson?: string
+  /** 写入 prompts/reply_quality_anchor.md（v2 推荐路径） */
+  replyQualityAnchorMarkdown?: string
+  /** 为 true 时若 settings 无锚点则写入编辑器默认锚点 */
+  includeDefaultReplyQualityAnchor?: boolean
 }
 
 function worldMdBody(body: string): string {
@@ -62,11 +73,33 @@ export function buildRolePackFiles(
   const id = roleId.trim()
   const m: ExportableManifest = { ...manifest, id }
 
-  const scenes = mergedSceneIds(m['scenes'] as string[] | undefined, [])
+  const settingsForBlueprint = extra?.includeDefaultReplyQualityAnchor
+    ? mergeEditorReplyQualityAnchor(settings, true)
+    : { ...settings }
+
+  const anchorFromSettings =
+    typeof settingsForBlueprint.reply_quality_anchor === 'string'
+      ? String(settingsForBlueprint.reply_quality_anchor)
+      : ''
+  const anchorBody =
+    extra?.replyQualityAnchorMarkdown?.trim() ||
+    anchorFromSettings.trim() ||
+    ''
+  if (anchorBody) {
+    delete settingsForBlueprint.reply_quality_anchor
+  }
+
+  const blueprint = buildBlueprintV2FromLegacy(m, settingsForBlueprint)
+  blueprint.meta.id = id
   const files = new Map<string, string>()
 
-  files.set(`${id}/manifest.json`, JSON.stringify(m, null, 2) + '\n')
-  files.set(`${id}/settings.json`, JSON.stringify(settings, null, 2) + '\n')
+  files.set(`${id}/${PIPELINE_BLUEPRINT_FILENAME}`, serializeBlueprintV2(blueprint))
+
+  const scenes = mergedSceneIds(m['scenes'] as string[] | undefined, [])
+
+  if (anchorBody) {
+    files.set(`${id}/${REPLY_QUALITY_ANCHOR_REL_PATH}`, `${anchorBody.trim()}\n`)
+  }
 
   const uiRaw = extra?.uiConfigJson?.trim()
   if (uiRaw) {

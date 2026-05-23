@@ -1,8 +1,9 @@
 /**
  * On disk, `OCLIVE_ROLES_DIR` points at the **roles root** (the folder whose children are `role_id/`).
- * Exported layout: `{roleId}/manifest.json`, `{roleId}/settings.json`, …
- * (Same tree whether zipped or written with the File System Access API.)
+ * v2 layout: `{roleId}/pipeline.ocblueprint`, …
  */
+
+import { PIPELINE_BLUEPRINT_FILENAME } from './blueprintV2'
 
 export function mergedSceneIds(manifestScenes: string[] | undefined, extraFromDirs: string[]): string[] {
   const set = new Set<string>()
@@ -19,8 +20,7 @@ export function mergedSceneIds(manifestScenes: string[] | undefined, extraFromDi
 export function rolePackRelativePaths(roleId: string, sceneIds: string[]): string[] {
   const base = roleId.trim()
   const paths: string[] = [
-    `${base}/manifest.json`,
-    `${base}/settings.json`,
+    `${base}/${PIPELINE_BLUEPRINT_FILENAME}`,
     `${base}/knowledge/.oclive_placeholder.txt`,
   ]
   for (const sid of sceneIds) {
