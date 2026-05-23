@@ -1,6 +1,6 @@
 /**
- * 编写器导出时可选并入 `settings.json` → `reply_quality_anchor`（与 oclivenew 运行时字段一致）。
- * 与主程序 `DEFAULT_REPLY_QUALITY_ANCHOR` 语义对齐，便于未读文档的用户仍带上完整约束。
+ * 编写器导出时可选并入 `prompts/reply_quality_anchor.md`（v2 推荐路径）。
+ * settings.json 内的 `reply_quality_anchor` 仅作 legacy 过渡，导出时会写入 prompts 文件。
  */
 export const EDITOR_PACK_REPLY_QUALITY_ANCHOR = `【回复质量锚点】（每轮须遵守）
 - **禁止复述用户**：不得以复述、照搬、仅替换少量词的方式重复用户刚说的话（包括把用户整句改述后当作你的开场）；用**全新措辞**接内容或情绪。
