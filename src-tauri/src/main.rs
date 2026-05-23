@@ -8,6 +8,12 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 use std::time::Duration;
 
+use oclive_validation::blueprint_migrate::build_blueprint_v2_from_legacy_dir;
+use oclive_validation::blueprint_v2::{
+    slot_registry_to_plugin_backends, validate_blueprint_v2_json_with_context,
+    BlueprintV2ValidateContext, SlotRegistryEntry, PIPELINE_BLUEPRINT_FILENAME,
+};
+use oclive_validation::disk_role_settings::DiskRoleSettings;
 use oclive_validation::manifest::DiskRoleManifest;
 use oclive_validation::merge_role_pack_scene_ids;
 
@@ -186,7 +192,9 @@ async fn runtime_api_chat(
     Ok(text)
 }
 
-/// 读取角色目录下 `manifest.json` 的 `scenes` 数组（试聊场景下拉）。
+const REPLY_QUALITY_ANCHOR_REL: &str = "prompts/reply_quality_anchor.md";
+
+/// 读取角色目录下 `pipeline.ocblueprint` 的 `meta.scenes`（试聊场景下拉）。
 #[tauri::command]
 fn read_role_manifest_scenes(role_dir: String) -> Result<Vec<String>, String> {
     use std::fs;
@@ -196,16 +204,21 @@ fn read_role_manifest_scenes(role_dir: String) -> Result<Vec<String>, String> {
     if dir.is_empty() {
         return Err("角色目录不能为空".to_string());
     }
-    let p = PathBuf::from(dir).join("manifest.json");
+    let p = PathBuf::from(dir).join(PIPELINE_BLUEPRINT_FILENAME);
     if !p.is_file() {
-        return Err(format!("未找到 manifest：{}", p.display()));
+        return Err(format!(
+            "未找到 v2 蓝图 {}：{}",
+            PIPELINE_BLUEPRINT_FILENAME,
+            p.display()
+        ));
     }
     let raw = fs::read_to_string(&p).map_err(|e| e.to_string())?;
     let v: serde_json::Value = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
     let scenes = v
-        .get("scenes")
+        .get("meta")
+        .and_then(|m| m.get("scenes"))
         .and_then(|s| s.as_array())
-        .ok_or_else(|| "manifest 缺少 scenes 数组".to_string())?;
+        .ok_or_else(|| "pipeline.ocblueprint 缺少 meta.scenes 数组".to_string())?;
     Ok(scenes
         .iter()
         .filter_map(|x| x.as_str().map(str::to_string))
@@ -445,7 +458,110 @@ struct RolePackEditorLoad {
     merged_scene_ids: Vec<String>,
 }
 
-/// 读取角色包根目录下的 `manifest.json`、可选 `settings.json`，并合并 `manifest.scenes` 与 `scenes/` 子目录。
+fn blueprint_to_legacy_parts(bp: &serde_json::Value) -> Result<(String, String), String> {
+    let meta = bp
+        .get("meta")
+        .ok_or_else(|| "pipeline.ocblueprint 缺少 meta".to_string())?;
+    let mut manifest = serde_json::json!({
+        "id": meta.get("id"),
+        "name": meta.get("name"),
+        "version": meta.get("version"),
+        "author": meta.get("author"),
+        "description": meta.get("description"),
+        "default_personality": meta.get("personality"),
+        "user_relations": meta.get("relations"),
+        "default_relation": meta.get("default_relation"),
+        "scenes": meta.get("scenes"),
+        "evolution": meta.get("evolution"),
+        "memory_config": meta.get("memory_config"),
+        "identity_binding": meta.get("identity_binding"),
+        "dev_only": meta.get("dev_only"),
+        "knowledge": meta.get("knowledge"),
+        "life_trajectory": meta.get("life_trajectory"),
+        "life_schedule": meta.get("life_schedule"),
+        "min_runtime_version": meta.get("min_runtime_version"),
+        "creator_message_to_downloader": meta.get("creator_message_to_downloader"),
+    });
+    if let Some(m) = meta.get("ollama_model") {
+        manifest["ollama_model"] = m.clone();
+    }
+
+    let slot_registry = bp
+        .get("slot_registry")
+        .ok_or_else(|| "pipeline.ocblueprint 缺少 slot_registry".to_string())?;
+    let slot_registry: std::collections::BTreeMap<String, SlotRegistryEntry> =
+        serde_json::from_value(slot_registry.clone())
+            .map_err(|e| format!("slot_registry 解析失败: {}", e))?;
+    let pb = serde_json::to_value(slot_registry_to_plugin_backends(&slot_registry))
+        .map_err(|e| e.to_string())?;
+    let mut settings = serde_json::json!({
+        "schema_version": 1,
+        "model": meta.get("ollama_model").unwrap_or(&serde_json::json!("qwen2.5:7b")),
+        "identity_binding": meta.get("identity_binding").unwrap_or(&serde_json::json!("per_scene")),
+        "interaction_mode": meta.get("interaction_mode").unwrap_or(&serde_json::json!("immersive")),
+        "evolution": meta.get("evolution"),
+        "memory_config": meta.get("memory_config"),
+        "remote_presence": meta.get("remote_presence"),
+        "autonomous_scene": meta.get("autonomous_scene"),
+        "plugin_backends": pb,
+    });
+    if let Some(rc) = bp.get("runtime_config") {
+        if let Some(obj) = rc.as_object() {
+            for (k, v) in obj {
+                settings[k] = v.clone();
+            }
+        }
+    }
+    if let Some(anchor) = meta.get("reply_quality_anchor").and_then(|x| x.as_str()) {
+        if !anchor.trim().is_empty() {
+            settings["reply_quality_anchor"] = serde_json::json!(anchor);
+        }
+    }
+
+    let manifest_text = serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+    let settings_text = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
+    Ok((format!("{}\n", manifest_text), format!("{}\n", settings_text)))
+}
+
+fn write_blueprint_from_legacy_parts(
+    root: &std::path::Path,
+    manifest_text: &str,
+    settings_text: &str,
+) -> Result<(), String> {
+    use std::fs;
+
+    let manifest_path = root.join("manifest.json");
+    let settings_path = root.join("settings.json");
+    fs::write(&manifest_path, manifest_text.as_bytes()).map_err(|e| e.to_string())?;
+    fs::write(&settings_path, settings_text.as_bytes()).map_err(|e| e.to_string())?;
+
+    let bp = build_blueprint_v2_from_legacy_dir(root).map_err(|e| e.join("\n"))?;
+    let blueprint_text = serde_json::to_string_pretty(&bp).map_err(|e| e.to_string())?;
+    fs::write(
+        root.join(PIPELINE_BLUEPRINT_FILENAME),
+        format!("{}\n", blueprint_text).as_bytes(),
+    )
+    .map_err(|e| e.to_string())?;
+
+    if let Ok(mut settings) = serde_json::from_str::<DiskRoleSettings>(settings_text) {
+        if let Some(anchor) = settings.reply_quality_anchor.take() {
+            if !anchor.trim().is_empty() {
+                let anchor_path = root.join(REPLY_QUALITY_ANCHOR_REL);
+                if let Some(parent) = anchor_path.parent() {
+                    fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+                }
+                fs::write(&anchor_path, format!("{}\n", anchor.trim())).map_err(|e| e.to_string())?;
+            }
+        }
+    }
+
+    let _ = fs::remove_file(&manifest_path);
+    let _ = fs::remove_file(&settings_path);
+    let _ = fs::remove_file(root.join("personality.json"));
+    Ok(())
+}
+
+/// 读取角色包根目录下的 v2 `pipeline.ocblueprint`，拆为编辑器 manifest/settings 视图。
 #[tauri::command]
 fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, String> {
     use std::fs;
@@ -455,48 +571,114 @@ fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, Str
     if !root.is_dir() {
         return Err("所选路径不是目录".into());
     }
-    let manifest_path = root.join("manifest.json");
-    if !manifest_path.is_file() {
-        return Err(format!("未找到 manifest.json：{}", manifest_path.display()));
+    let blueprint_path = root.join(PIPELINE_BLUEPRINT_FILENAME);
+    if blueprint_path.is_file() {
+        let blueprint_text = fs::read_to_string(&blueprint_path).map_err(|e| e.to_string())?;
+        let bp: serde_json::Value =
+            serde_json::from_str(&blueprint_text).map_err(|e| e.to_string())?;
+        let (manifest_text, settings_text) = blueprint_to_legacy_parts(&bp)?;
+        let anchor_path = root.join(REPLY_QUALITY_ANCHOR_REL);
+        let mut settings_text = settings_text;
+        if anchor_path.is_file() {
+            let anchor = fs::read_to_string(&anchor_path).map_err(|e| e.to_string())?;
+            if !anchor.trim().is_empty() {
+                let mut s: serde_json::Value =
+                    serde_json::from_str(settings_text.trim()).map_err(|e| e.to_string())?;
+                s["reply_quality_anchor"] = serde_json::json!(anchor.trim());
+                settings_text = format!(
+                    "{}\n",
+                    serde_json::to_string_pretty(&s).map_err(|e| e.to_string())?
+                );
+            }
+        }
+        let scenes_for_merge: Vec<String> = bp
+            .get("meta")
+            .and_then(|m| m.get("scenes"))
+            .and_then(|s| s.as_array())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_str().map(str::to_string))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let merged_scene_ids =
+            merge_role_pack_scene_ids(&root, &scenes_for_merge).map_err(|e| e.to_string())?;
+        return Ok(RolePackEditorLoad {
+            manifest_text,
+            settings_text: Some(settings_text),
+            merged_scene_ids,
+        });
     }
-    let manifest_text = fs::read_to_string(&manifest_path).map_err(|e| e.to_string())?;
-    let settings_path = root.join("settings.json");
-    let settings_text = if settings_path.is_file() {
-        Some(fs::read_to_string(&settings_path).map_err(|e| e.to_string())?)
-    } else {
-        None
-    };
-    let scenes_for_merge: Vec<String> = match serde_json::from_str::<DiskRoleManifest>(&manifest_text) {
-        Ok(m) => m.scenes,
-        Err(_) => Vec::new(),
-    };
-    let merged_scene_ids =
-        merge_role_pack_scene_ids(&root, &scenes_for_merge).map_err(|e| e.to_string())?;
-    Ok(RolePackEditorLoad {
-        manifest_text,
-        settings_text,
-        merged_scene_ids,
-    })
+
+    let manifest_path = root.join("manifest.json");
+    if manifest_path.is_file() {
+        return Err(
+            "检测到 legacy manifest.json 格式。请先用 `oclive pack migrate-to-blueprint` 迁移后再编辑。"
+                .into(),
+        );
+    }
+    Err(format!(
+        "未找到 {}：{}",
+        PIPELINE_BLUEPRINT_FILENAME,
+        blueprint_path.display()
+    ))
 }
 
-/// 写回 `manifest.json` 与 `settings.json`（后者不存在目录时也会创建）。
+/// 写回 v2 `pipeline.ocblueprint`（及 `prompts/reply_quality_anchor.md`）；不保留 legacy 三件套。
 #[tauri::command]
 fn save_role_pack_editor(role_dir: String, manifest_text: String, settings_text: String) -> Result<(), String> {
-    use std::fs;
-    use std::path::PathBuf;
-
-    let root = PathBuf::from(role_dir.trim());
+    let root = std::path::PathBuf::from(role_dir.trim());
     if !root.is_dir() {
         return Err("所选路径不是目录".into());
     }
-    let mp = root.join("manifest.json");
-    fs::write(&mp, manifest_text.as_bytes()).map_err(|e| e.to_string())?;
-    let sp = root.join("settings.json");
-    if let Some(parent) = sp.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-    fs::write(&sp, settings_text.as_bytes()).map_err(|e| e.to_string())?;
-    Ok(())
+    write_blueprint_from_legacy_parts(&root, &manifest_text, &settings_text)
+}
+
+#[tauri::command]
+fn validate_blueprint_v2_json(
+    manifest_text: String,
+    settings_text: String,
+    merged_scene_ids: Vec<String>,
+    host_runtime_version: String,
+    role_id: String,
+) -> Result<(), String> {
+    let mut disk: DiskRoleManifest =
+        serde_json::from_str(&manifest_text).map_err(|e| format!("manifest 解析失败: {}", e))?;
+    let settings: DiskRoleSettings = serde_json::from_str(&settings_text)
+        .map_err(|e| format!("settings 解析失败: {}", e))?;
+    settings.apply_to_manifest(&mut disk);
+    let _ = merged_scene_ids;
+
+    let dir = std::env::temp_dir().join(format!(
+        "oclive-pack-editor-validate-{}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    std::fs::write(dir.join("manifest.json"), manifest_text.as_bytes()).map_err(|e| e.to_string())?;
+    std::fs::write(dir.join("settings.json"), settings_text.as_bytes()).map_err(|e| e.to_string())?;
+    let bp = build_blueprint_v2_from_legacy_dir(&dir).map_err(|e| e.join("\n"))?;
+    let _ = std::fs::remove_dir_all(&dir);
+
+    let blueprint_text = serde_json::to_string_pretty(&bp).map_err(|e| e.to_string())?;
+    let folder = role_id.trim();
+    let folder_opt = if folder.is_empty() {
+        None
+    } else {
+        Some(folder)
+    };
+    validate_blueprint_v2_json_with_context(
+        &blueprint_text,
+        BlueprintV2ValidateContext {
+            folder_name: folder_opt,
+            host_version: if host_runtime_version.trim().is_empty() {
+                None
+            } else {
+                Some(host_runtime_version.trim())
+            },
+            ..Default::default()
+        },
+    )
+    .map_err(|e| e.join("\n"))
 }
 
 fn main() {
@@ -515,6 +697,7 @@ fn main() {
             directory_plugin_jsonrpc_invoke,
             load_role_pack_for_editor,
             save_role_pack_editor,
+            validate_blueprint_v2_json,
         ])
         .run(tauri::generate_context!())
         .expect("error while running oclive-pack-editor");

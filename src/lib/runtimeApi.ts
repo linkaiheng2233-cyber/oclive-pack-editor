@@ -293,7 +293,7 @@ export async function setRuntimeRoleFeedbackHandled(
   }
 }
 
-/** 桌面版：读取角色目录 `manifest.json` 的 `scenes`；浏览器始终解析失败（可静默用空列表）。 */
+/** 桌面版：读取角色目录 `pipeline.ocblueprint` 的 `meta.scenes`；浏览器始终解析失败（可静默用空列表）。 */
 export async function readRoleManifestScenes(roleDir: string): Promise<string[]> {
   if (!isTauriRuntime()) return []
   const dir = roleDir.trim()
