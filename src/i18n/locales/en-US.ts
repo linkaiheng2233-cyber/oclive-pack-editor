@@ -1,9 +1,12 @@
+import sharedCommon from "./shared/common.en";
+
 export default {
   common: {
     language: "Language",
     system: "System",
     zhCN: "中文",
     enUS: "English",
+    ...sharedCommon,
   },
   helpHint: {
     ariaLabel: "View help",
