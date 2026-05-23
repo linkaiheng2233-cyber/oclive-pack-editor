@@ -4,7 +4,15 @@
 
 import { invoke } from '@tauri-apps/api/tauri'
 import { isTauriRuntime } from './exportFolder'
-import { normalizeHttpBaseUrl } from './runtimeApiHelpers'
+import {
+  normalizeHttpBaseUrl,
+  parseRuntimeChatJson,
+  type RuntimeChatMeta,
+  type RuntimeChatResult,
+  type RuntimePersonalitySource,
+} from './runtimeApiHelpers'
+
+export type { RuntimeChatMeta, RuntimeChatResult, RuntimePersonalitySource }
 
 /** 桌面版：探测 host:port 是否有 TCP 监听（短超时）。浏览器始终返回 `false`。 */
 export async function runtimeTcpListening(host: string, port: number): Promise<boolean> {
@@ -18,94 +26,6 @@ export async function runtimeTcpListening(host: string, port: number): Promise<b
 const HEALTH_FETCH_MS = 12_000
 const CHAT_FETCH_MS = 300_000
 const FEEDBACK_FETCH_MS = 20_000
-
-/** 与 oclive `SendMessageResponse` 对齐的子集（HTTP 试聊 JSON），并含 `--api` 回包顶层的 `personality_source`。字段均可能缺失以兼容旧运行时。 */
-export type RuntimePersonalitySource = 'vector' | 'profile'
-
-export interface RuntimeChatMeta {
-  api_version?: number
-  schema?: number
-  presence_mode?: string
-  relation_state?: string
-  emotion?: Record<string, number>
-  bot_emotion?: string
-  portrait_emotion?: string
-  favorability_delta?: number
-  favorability_current?: number
-  events?: { event_type: string; confidence: number }[]
-  scene_id?: string
-  offer_destination_picker?: boolean
-  offer_together_travel?: boolean
-  reply_is_fallback?: boolean
-  knowledge_chunks_in_prompt?: number
-  timestamp?: number
-  /** `evolution.personality_source`；较新 oclive `--api` 在每条 `/chat` 响应中附带 */
-  personality_source?: RuntimePersonalitySource
-}
-
-export interface RuntimeChatResult {
-  reply: string
-  sessionId?: string | null
-  meta?: RuntimeChatMeta
-}
-
-const CHAT_META_KEYS: (keyof RuntimeChatMeta)[] = [
-  'api_version',
-  'schema',
-  'presence_mode',
-  'relation_state',
-  'emotion',
-  'bot_emotion',
-  'portrait_emotion',
-  'favorability_delta',
-  'favorability_current',
-  'events',
-  'scene_id',
-  'offer_destination_picker',
-  'offer_together_travel',
-  'reply_is_fallback',
-  'knowledge_chunks_in_prompt',
-  'timestamp',
-  'personality_source',
-]
-
-function parseRuntimeChatJson(text: string): RuntimeChatResult {
-  let j: unknown
-  try {
-    j = JSON.parse(text) as unknown
-  } catch {
-    throw new Error(`响应不是合法 JSON：${text.slice(0, 200)}`)
-  }
-  if (typeof j !== 'object' || j === null || !('reply' in j)) {
-    throw new Error('响应缺少 reply 字段')
-  }
-  const reply = (j as { reply: unknown }).reply
-  if (typeof reply !== 'string') {
-    throw new Error('reply 须为字符串')
-  }
-  const o = j as Record<string, unknown>
-  const sid = o.session_id
-  const sessionId =
-    sid === null || sid === undefined
-      ? undefined
-      : typeof sid === 'string'
-        ? sid
-        : undefined
-
-  const meta: RuntimeChatMeta = {}
-  let hasMeta = false
-  for (const k of CHAT_META_KEYS) {
-    if (k in o && o[k as string] !== undefined) {
-      ;(meta as Record<string, unknown>)[k as string] = o[k as string]
-      hasMeta = true
-    }
-  }
-  return {
-    reply,
-    sessionId,
-    meta: hasMeta ? meta : undefined,
-  }
-}
 
 function formatRuntimeApiError(raw: string): string {
   const text = raw.trim()
