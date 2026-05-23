@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-cd /d "%~dp0"
+cd /d "%~dp0\.."
 
 if not exist "node_modules\" (
   echo [oclive-pack-editor] Installing npm dependencies...
@@ -57,7 +57,7 @@ exit /b %errorlevel%
 
 :usage
 echo Usage:
-echo   start.bat              - interactive menu: Tauri or browser
-echo   start.bat tauri        - Tauri dev window
-echo   start.bat web          - browser + Vite ^(opens tab^)
+echo   scripts\start.bat              - interactive menu: Tauri or browser
+echo   scripts\start.bat tauri        - Tauri dev window
+echo   scripts\start.bat web          - browser + Vite ^(opens tab^)
 exit /b 0
