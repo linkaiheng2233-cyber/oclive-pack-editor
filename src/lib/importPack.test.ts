@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import JSZip from 'jszip'
+import { minimalBlueprintJsonForRole } from './blueprintV2'
+import { PIPELINE_BLUEPRINT_FILENAME } from './blueprintV2'
 import { importedPackBrainHint, importRolePackFromZip, isSafePathUnderRole } from './importPack'
 
 async function zipToFile(zip: JSZip, name: string): Promise<File> {
@@ -9,7 +11,7 @@ async function zipToFile(zip: JSZip, name: string): Promise<File> {
 
 describe('isSafePathUnderRole', () => {
   it('accepts normal files under role', () => {
-    expect(isSafePathUnderRole('myrole/manifest.json', 'myrole')).toBe(true)
+    expect(isSafePathUnderRole(`myrole/${PIPELINE_BLUEPRINT_FILENAME}`, 'myrole')).toBe(true)
     expect(isSafePathUnderRole('myrole/assets/images/a.png', 'myrole')).toBe(true)
   })
 
@@ -36,10 +38,9 @@ describe('importedPackBrainHint', () => {
 })
 
 describe('importRolePackFromZip', () => {
-  it('imports minimal valid pack', async () => {
+  it('imports minimal valid v2 pack', async () => {
     const z = new JSZip()
-    z.file('hero/manifest.json', '{"id":"hero","name":"H"}\n')
-    z.file('hero/settings.json', '{"schema_version":1}\n')
+    z.file(`hero/${PIPELINE_BLUEPRINT_FILENAME}`, minimalBlueprintJsonForRole('hero'))
     z.file('hero/core_personality.txt', 'hello')
     const f = await zipToFile(z, 'p.zip')
     const r = await importRolePackFromZip(f)
@@ -50,10 +51,17 @@ describe('importRolePackFromZip', () => {
     expect(r.creatorMessage).toBe('')
   })
 
-  it('reads creator_message.txt preserving content', async () => {
+  it('rejects legacy manifest-only zip', async () => {
     const z = new JSZip()
     z.file('hero/manifest.json', '{"id":"hero","name":"H"}\n')
-    z.file('hero/settings.json', '{}')
+    z.file('hero/settings.json', '{"schema_version":1}\n')
+    const f = await zipToFile(z, 'p.zip')
+    await expect(importRolePackFromZip(f)).rejects.toThrow(/legacy/)
+  })
+
+  it('reads creator_message.txt preserving content', async () => {
+    const z = new JSZip()
+    z.file(`hero/${PIPELINE_BLUEPRINT_FILENAME}`, minimalBlueprintJsonForRole('hero'))
     z.file('hero/core_personality.txt', 'x')
     z.file('hero/creator_message.txt', 'stay brave\n')
     const f = await zipToFile(z, 'p.zip')
@@ -63,8 +71,7 @@ describe('importRolePackFromZip', () => {
 
   it('reads creator_message.txt multiple lines', async () => {
     const z = new JSZip()
-    z.file('hero/manifest.json', '{"id":"hero","name":"H"}\n')
-    z.file('hero/settings.json', '{}')
+    z.file(`hero/${PIPELINE_BLUEPRINT_FILENAME}`, minimalBlueprintJsonForRole('hero'))
     z.file('hero/core_personality.txt', 'x')
     z.file('hero/creator_message.txt', 'a\nb\n')
     const f = await zipToFile(z, 'p.zip')
@@ -74,8 +81,7 @@ describe('importRolePackFromZip', () => {
 
   it('loads emotion images under assets/images', async () => {
     const z = new JSZip()
-    z.file('hero/manifest.json', '{"id":"hero","name":"H"}\n')
-    z.file('hero/settings.json', '{}')
+    z.file(`hero/${PIPELINE_BLUEPRINT_FILENAME}`, minimalBlueprintJsonForRole('hero'))
     z.file('hero/core_personality.txt', 'x')
     const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     z.file('hero/assets/images/smile.png', png)
@@ -87,8 +93,7 @@ describe('importRolePackFromZip', () => {
 
   it('reads knowledge/world.md when present', async () => {
     const z = new JSZip()
-    z.file('r/manifest.json', '{"id":"r","name":"R"}\n')
-    z.file('r/settings.json', '{}')
+    z.file(`r/${PIPELINE_BLUEPRINT_FILENAME}`, minimalBlueprintJsonForRole('r', 'R'))
     z.file('r/core_personality.txt', 'c')
     z.file('r/knowledge/world.md', '---\nid: w\n---\n\nbody')
     const f = await zipToFile(z, 'p.zip')
@@ -96,17 +101,16 @@ describe('importRolePackFromZip', () => {
     expect(r.worldviewMarkdown).toContain('body')
   })
 
-  it('throws when manifest missing', async () => {
+  it('throws when blueprint missing', async () => {
     const z = new JSZip()
     z.file('a/readme.txt', 'x')
     const f = await zipToFile(z, 'p.zip')
     await expect(importRolePackFromZip(f)).rejects.toThrow(/未找到/)
   })
 
-  it('throws when manifest is empty', async () => {
+  it('throws when blueprint is empty', async () => {
     const z = new JSZip()
-    z.file('hero/manifest.json', '   \n')
-    z.file('hero/settings.json', '{}')
+    z.file(`hero/${PIPELINE_BLUEPRINT_FILENAME}`, '   \n')
     z.file('hero/core_personality.txt', 'x')
     const f = await zipToFile(z, 'p.zip')
     await expect(importRolePackFromZip(f)).rejects.toThrow(/为空/)
@@ -114,8 +118,7 @@ describe('importRolePackFromZip', () => {
 
   it('skips zip-slip entries under assets/images', async () => {
     const z = new JSZip()
-    z.file('hero/manifest.json', '{"id":"hero","name":"H"}\n')
-    z.file('hero/settings.json', '{}')
+    z.file(`hero/${PIPELINE_BLUEPRINT_FILENAME}`, minimalBlueprintJsonForRole('hero'))
     z.file('hero/core_personality.txt', 'x')
     z.file('hero/assets/images/../../../evil.png', 'bad')
     const f = await zipToFile(z, 'p.zip')
@@ -125,8 +128,7 @@ describe('importRolePackFromZip', () => {
 
   it('skips nested paths masquerading as filename', async () => {
     const z = new JSZip()
-    z.file('hero/manifest.json', '{"id":"hero","name":"H"}\n')
-    z.file('hero/settings.json', '{}')
+    z.file(`hero/${PIPELINE_BLUEPRINT_FILENAME}`, minimalBlueprintJsonForRole('hero'))
     z.file('hero/core_personality.txt', 'x')
     z.file('hero/assets/images/sub/hack.png', 'bad')
     const f = await zipToFile(z, 'p.zip')

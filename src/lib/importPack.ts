@@ -3,7 +3,14 @@
  */
 import JSZip from 'jszip'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
-import { normalizeOclexpertForDisk } from './oclexpertPack'
+import {
+  blueprintToLegacyParts,
+  isLegacyRolePackLayout,
+  isV2RolePackLayout,
+  parseBlueprintV2Json,
+  PIPELINE_BLUEPRINT_FILENAME,
+  REPLY_QUALITY_ANCHOR_REL_PATH,
+} from './blueprintV2'
 
 export type ImportedRolePack = {
   roleId: string
@@ -56,30 +63,35 @@ function isSafeAssetImageEntry(path: string, roleId: string, prefix: string): bo
   return true
 }
 
-/** 解析 zip：取第一个「角色目录/manifest.json」路径确定角色根目录。 */
+/** 解析 zip：优先 v2 `pipeline.ocblueprint`；legacy manifest 需迁移。 */
 export async function importRolePackFromZip(file: File): Promise<ImportedRolePack> {
   const zip = await JSZip.loadAsync(file)
   const names = Object.keys(zip.files).filter((n) => !zip.files[n].dir)
+  const normNames = names.map(normalizeZipPath)
 
-  const manifestPath = names.find((n) => /(^|\/)[^/]+\/manifest\.json$/.test(normalizeZipPath(n)))
-  if (!manifestPath) {
-    throw new Error('压缩包内未找到「角色文件夹/manifest.json」结构。')
+  if (isLegacyRolePackLayout(normNames) && !isV2RolePackLayout(normNames)) {
+    throw new Error(
+      '压缩包为 legacy manifest.json 格式。请先用 oclive pack migrate-to-blueprint 迁移，或在编写器重新导出 v2 蓝图包。',
+    )
   }
 
-  const norm = normalizeZipPath(manifestPath)
-  const manifestSegments = norm.split('/').filter(Boolean)
-  if (manifestSegments.some((s) => s === '.' || s === '..')) {
-    throw new Error('压缩包内 manifest 路径非法（含 . 或 .. 段）。')
+  const blueprintPath = normNames.find((n) =>
+    /(^|\/)[^/]+\/pipeline\.ocblueprint$/.test(n),
+  )
+  if (!blueprintPath) {
+    throw new Error('压缩包内未找到「角色文件夹/pipeline.ocblueprint」结构。')
   }
-  if (manifestSegments.length < 2) {
-    throw new Error('无法解析角色目录名。')
+
+  const blueprintSegments = blueprintPath.split('/').filter(Boolean)
+  if (blueprintSegments.some((s) => s === '.' || s === '..')) {
+    throw new Error('压缩包内 blueprint 路径非法（含 . 或 .. 段）。')
   }
-  const roleId = manifestSegments[0]!
+  const roleId = blueprintSegments[0]!
   if (!isValidRoleId(roleId)) {
     throw new Error('角色目录名非法。')
   }
-  if (!isSafePathUnderRole(norm, roleId)) {
-    throw new Error('压缩包内 manifest 路径非法。')
+  if (!isSafePathUnderRole(blueprintPath, roleId)) {
+    throw new Error('压缩包内 blueprint 路径非法。')
   }
 
   const readText = async (rel: string): Promise<string> => {
@@ -90,13 +102,18 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
     return (await entry.async('string')) as string
   }
 
-  const manifestJson = await readText('manifest.json')
-  if (!manifestJson.trim()) throw new Error('manifest.json 为空')
+  const blueprintRaw = await readText(PIPELINE_BLUEPRINT_FILENAME)
+  if (!blueprintRaw.trim()) throw new Error('pipeline.ocblueprint 为空')
 
-  let settingsJson = await readText('settings.json')
-  if (!settingsJson.trim()) {
-    settingsJson = '{}\n'
+  const bp = parseBlueprintV2Json(blueprintRaw)
+  const { manifest, settings } = blueprintToLegacyParts(bp)
+  const anchorMd = await readText(REPLY_QUALITY_ANCHOR_REL_PATH)
+  if (anchorMd.trim()) {
+    settings.reply_quality_anchor = anchorMd.trim()
   }
+
+  const manifestJson = `${JSON.stringify(manifest, null, 2)}\n`
+  let settingsJson = `${JSON.stringify(settings, null, 2)}\n`
 
   const corePersonality = await readText('core_personality.txt')
 
