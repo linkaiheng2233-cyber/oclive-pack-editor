@@ -277,7 +277,8 @@ export default {
       },
       includeSuggestedUi: "Include current “UI design” as suggested_ui in author.json on export",
       suggestedPluginBackendsLabel: "suggested_plugin_backends (JSON, optional)",
-      suggestedPluginBackendsPlaceholder: 'e.g. { "memory": "builtin", "llm": "ollama", ... }',
+      suggestedPluginBackendsPlaceholder:
+        'e.g. a plugin_backends object (memory: builtin, llm: ollama — see contract docs for JSON keys)',
     },
     ui: {
       title: "UI design (ui.json)",
@@ -695,7 +696,8 @@ export default {
         title: "Import “module composition” from Market",
         lead:
           "In OCLive Market, pick a fragment under “Role pack → Module composition”, click “Copy composition JSON”, paste it here, then click “Apply to simple creation”. Content will be appended to core personality, world (Markdown), and “tone & relation hints” without overwriting your existing text.",
-        placeholder: 'Paste the full JSON like {"version":1,"source":"oclive-plugin-market",...}',
+        placeholder:
+          'Paste the full market compose JSON (with version, source: oclive-plugin-market, etc.)',
         apply: "Apply to simple creation",
       },
       quickNav: {

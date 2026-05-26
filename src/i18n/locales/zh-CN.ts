@@ -262,7 +262,8 @@ export default {
       },
       includeSuggestedUi: "导出时在 author.json 附带当前「前端设计」为 suggested_ui",
       suggestedPluginBackendsLabel: "suggested_plugin_backends（JSON，可选）",
-      suggestedPluginBackendsPlaceholder: '例：{ "memory": "builtin", "llm": "ollama", ... }',
+      suggestedPluginBackendsPlaceholder:
+        '例：plugin_backends 对象（memory: builtin、llm: ollama 等，JSON 键名见契约文档）',
     },
     ui: {
       title: "前端设计（ui.json）",
@@ -666,7 +667,8 @@ export default {
         title: "从市场「模块组合」导入",
         lead:
           "在 OCLive 市场的「角色包 → 模块组合」中选好片段后，点「复制组合 JSON」，回到此处粘贴到下方文本框，再点「应用到简单创作」。内容会追加到人设长文、世界观（Markdown）与「语气与关系提示」，不覆盖你已有正文。",
-        placeholder: '粘贴形如 {"version":1,"source":"oclive-plugin-market",...} 的整段 JSON',
+        placeholder:
+          "粘贴市场编排 compose 的整段 JSON（含 version、source: oclive-plugin-market 等字段）",
         apply: "应用到简单创作",
       },
       quickNav: {
