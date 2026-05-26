@@ -11,6 +11,7 @@ import {
   PIPELINE_BLUEPRINT_FILENAME,
   REPLY_QUALITY_ANCHOR_REL_PATH,
 } from './blueprintV2'
+import { normalizeOclexpertForDisk } from './oclexpertPack'
 
 export type ImportedRolePack = {
   roleId: string

@@ -5,11 +5,32 @@
 export const PIPELINE_BLUEPRINT_FILENAME = 'pipeline.ocblueprint'
 export const REPLY_QUALITY_ANCHOR_REL_PATH = 'prompts/reply_quality_anchor.md'
 
+export type BlueprintIncludeEntry = {
+  id?: string
+  path: string
+  target: string
+  mode: 'merge' | 'replace' | string
+}
+
+export type BlueprintSlotGroupEntry = {
+  label: string
+  description?: string
+  type: string
+  members: string[]
+}
+
+export type BlueprintExpertOverlay = {
+  routing_path?: string
+  [key: string]: unknown
+}
+
 export type BlueprintV2 = {
   schema_version: 2
   meta: Record<string, unknown>
   slot_registry: Record<string, BlueprintSlotEntry>
-  groups?: Record<string, unknown>
+  includes?: BlueprintIncludeEntry[]
+  expert_overlay?: BlueprintExpertOverlay
+  groups?: Record<string, BlueprintSlotGroupEntry>
   runtime_config?: Record<string, unknown>
 }
 

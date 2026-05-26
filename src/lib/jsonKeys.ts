@@ -37,6 +37,7 @@ const SETTINGS_KEYS = new Set([
   'interaction_mode',
   'plugin_backends',
   'knowledge',
+  'reply_quality_anchor',
 ])
 
 function msg(label: string, key: string): string {
