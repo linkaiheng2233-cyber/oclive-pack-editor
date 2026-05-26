@@ -20,7 +20,7 @@
 
 **保存注意事项**：侧栏「角色包」保存时会用表单/JSON 视图**重建** `meta` 与 `slot_registry`，并**保留**旧蓝图中已有的 `includes`、`groups`、`expert_overlay`、`runtime_config`（避免冲掉主应用写入的扩展字段）。仍建议对含高级蓝图编辑的包做版本管理或备份。
 
-**专家路由配置**：运行时以主应用的 **`expert_routing.json`** 为准；本编写器高级创作中的 **`.oclexpert` 实验页已废弃**（见界面提示），勿与专家路由混淆。详见 [creator-docs/ROLE_PACK_EDITOR.md](./creator-docs/ROLE_PACK_EDITOR.md) 与主仓 [OCLIVE_ARCHITECTURE_OVERVIEW](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/getting-started/OCLIVE_ARCHITECTURE_OVERVIEW.md)。
+**专家路由配置**：请在 **A.I.Live** 主应用配置（`blueprint/includes/expert_routing.json`）；本编写器不编辑该文件。详见 [creator-docs/ROLE_PACK_EDITOR.md](./creator-docs/ROLE_PACK_EDITOR.md)。
 
 ## 与运行时的关系
 

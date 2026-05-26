@@ -1,11 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import {
-  expertPackValidationError,
-  normalizeOclexpertForDisk,
-  summarizeOclexpertEditorJson,
-} from '../../lib/oclexpertPack'
-import { triggerDownload } from '../../lib/exportPack'
 import { useI18n } from "vue-i18n";
 import EmotionAssetsControl from './EmotionAssetsControl.vue'
 import type { KnowledgeMarkdownFile } from '../../lib/knowledgeFiles'
@@ -62,13 +56,12 @@ const creatorMessageToDownloaderManifest = defineModel<string>('creatorMessageTo
   default: '',
 })
 const knowledgeFiles = defineModel<KnowledgeMarkdownFile[]>('knowledgeFiles', { required: true })
-const advancedTab = defineModel<'manifest' | 'settings' | 'core' | 'world' | 'images' | 'expert'>(
+const advancedTab = defineModel<'manifest' | 'settings' | 'core' | 'world' | 'images'>(
   'advancedTab',
   {
     required: true,
   },
 )
-const expertOclexpertText = defineModel<string>('expertOclexpertText', { default: '' })
 
 const emit = defineEmits<{
   emotionPick: [e: Event]
@@ -79,74 +72,13 @@ const emit = defineEmits<{
   removeKnowledgeFile: [index: number]
 }>()
 
-const TAB_ORDER = ['manifest', 'settings', 'core', 'world', 'images', 'expert'] as const
+const TAB_ORDER = ['manifest', 'settings', 'core', 'world', 'images'] as const
 
 const props = defineProps<{
   emotionSummary: string
   manifestRoleId: string
 }>()
 
-const expertSummary = computed(() => summarizeOclexpertEditorJson(expertOclexpertText.value))
-const expertJsonError = computed(() => expertPackValidationError(expertOclexpertText.value))
-
-const oclexpertFileInputRef = ref<HTMLInputElement | null>(null)
-
-const EXPERT_ROUTING_DOC_URL =
-  'https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/getting-started/OCLIVE_ARCHITECTURE_OVERVIEW.md'
-
-function onNewExpertPack(): void {
-  window.alert(String(t('advancedCreation.sections.expert.btnNewDisabledHint')))
-}
-
-function onClearExpertPack(): void {
-  const ok = window.confirm(String(t('advancedCreation.sections.expert.confirmClear')))
-  if (!ok) return
-  expertOclexpertText.value = ''
-}
-
-function onDownloadStandaloneOclexpert(): void {
-  const norm = normalizeOclexpertForDisk(expertOclexpertText.value)
-  if (!norm) {
-    window.alert(String(t('advancedCreation.sections.expert.downloadInvalid')))
-    return
-  }
-  const blob = new Blob([norm], { type: 'application/json;charset=utf-8' })
-  triggerDownload(blob, 'default.oclexpert')
-}
-
-function onPickOclexpertFile(e: Event): void {
-  const inp = e.target as HTMLInputElement
-  const f = inp.files?.[0]
-  if (!f) return
-  if (!expertOclexpertText.value.trim()) {
-    window.alert(String(t('advancedCreation.sections.expert.btnImportDisabledHint')))
-    inp.value = ''
-    return
-  }
-  const reader = new FileReader()
-  reader.onload = () => {
-    const text = typeof reader.result === 'string' ? reader.result : ''
-    expertOclexpertText.value = text.replace(/\r\n/g, '\n')
-  }
-  reader.readAsText(f, 'UTF-8')
-  inp.value = ''
-}
-
-function expertCountLine(summary: ReturnType<typeof summarizeOclexpertEditorJson>): string {
-  if (!summary.ok) return ''
-  const parts: string[] = []
-  const nc = summary.nodeCounts
-  const keys = Object.keys(nc).sort()
-  for (const k of keys) {
-    const n = nc[k]
-    if (n) parts.push(`${k}×${n}`)
-  }
-  const inner = parts.length ? parts.join('，') : String(t('advancedCreation.sections.expert.summaryEmptyGraph'))
-  const edges = summary.edgeCount
-    ? String(t('advancedCreation.sections.expert.summaryEdges', { n: summary.edgeCount }))
-    : ''
-  return [inner, edges].filter(Boolean).join(' · ')
-}
 const knowledgeQuery = ref('')
 const previewSceneId = ref('')
 const previewStrictScene = ref(false)
@@ -326,18 +258,6 @@ function resetAllPreviewWeightOverrides(): void {
         <span class="tab-stack">
           <span class="tab-title">{{ t("advancedCreation.tabs.images") }}</span>
           <span class="tab-file">assets/images</span>
-        </span>
-      </button>
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="advancedTab === 'expert'"
-        :class="{ on: advancedTab === 'expert' }"
-        @click="advancedTab = 'expert'"
-      >
-        <span class="tab-stack">
-          <span class="tab-title">{{ t("advancedCreation.tabs.expert") }}</span>
-          <span class="tab-file">expert/default.oclexpert</span>
         </span>
       </button>
     </div>
@@ -929,77 +849,6 @@ function resetAllPreviewWeightOverrides(): void {
           </div>
         </details>
       </div>
-    </section>
-    <section v-show="advancedTab === 'expert'" class="panel adv-single">
-      <div class="adv-section-head">
-        <h2 class="adv-h2"><span>{{ t("advancedCreation.sections.expert.title") }}</span></h2>
-        <p class="adv-lead">{{ t("advancedCreation.sections.expert.lead") }}</p>
-      </div>
-      <div class="expert-deprecation-banner" role="status">
-        <p class="expert-deprecation-title">{{ t("advancedCreation.sections.expert.deprecationTitle") }}</p>
-        <p class="expert-deprecation-body">{{ t("advancedCreation.sections.expert.deprecationBody") }}</p>
-        <p class="expert-deprecation-link">
-          <a
-            :href="EXPERT_ROUTING_DOC_URL"
-            target="_blank"
-            rel="noopener noreferrer"
-          >{{ t("advancedCreation.sections.expert.deprecationDocLink") }}</a>
-        </p>
-      </div>
-      <p class="base-desc">{{ t("advancedCreation.sections.expert.desc") }}</p>
-      <div class="expert-actions-row">
-        <button
-          type="button"
-          disabled
-          :title="String(t('advancedCreation.sections.expert.btnNewDisabledHint'))"
-          @click="onNewExpertPack"
-        >
-          {{ t("advancedCreation.sections.expert.btnNew") }}
-        </button>
-        <button type="button" class="secondary" @click="onClearExpertPack">
-          {{ t("advancedCreation.sections.expert.btnClear") }}
-        </button>
-        <button type="button" class="secondary" @click="onDownloadStandaloneOclexpert">
-          {{ t("advancedCreation.sections.expert.btnDownload") }}
-        </button>
-        <input ref="oclexpertFileInputRef" type="file" accept=".oclexpert,.json,application/json" class="sr-only" @change="onPickOclexpertFile" />
-        <button
-          type="button"
-          class="secondary"
-          :disabled="!expertOclexpertText.trim()"
-          :title="String(t('advancedCreation.sections.expert.btnImportDisabledHint'))"
-          @click="oclexpertFileInputRef?.click()"
-        >
-          {{ t("advancedCreation.sections.expert.btnImportFile") }}
-        </button>
-      </div>
-      <p class="adv-merge-note">{{ t("advancedCreation.sections.expert.workbenchHint") }}</p>
-      <div v-if="expertOclexpertText.trim()" class="expert-summary-block">
-        <p v-if="!expertSummary.ok" class="expert-summary expert-summary--err" role="alert">
-          {{ expertSummary.error }}
-        </p>
-        <template v-else>
-          <p v-if="expertSummary.fileName" class="expert-summary">
-            <strong>{{ t("advancedCreation.sections.expert.labelName") }}</strong> {{ expertSummary.fileName }}
-          </p>
-          <p class="expert-summary">
-            <strong>{{ t("advancedCreation.sections.expert.labelNodes") }}</strong>
-            {{ expertCountLine(expertSummary) }}
-            <template v-if="expertSummary.cloudHint">
-              · <strong>{{ t("advancedCreation.sections.expert.labelCloud") }}</strong> {{ expertSummary.cloudHint }}
-            </template>
-          </p>
-        </template>
-      </div>
-      <p v-if="expertJsonError" class="expert-json-error" role="alert">{{ expertJsonError }}</p>
-      <label class="expert-json-label" for="expert-oclexpert-ta">{{ t("advancedCreation.sections.expert.jsonLabel") }}</label>
-      <textarea
-        id="expert-oclexpert-ta"
-        v-model="expertOclexpertText"
-        spellcheck="false"
-        class="ta expert-json-ta"
-        :aria-label="String(t('advancedCreation.sections.expert.jsonAria'))"
-      />
     </section>
   </div>
 </template>
@@ -1614,67 +1463,5 @@ code {
 .radio-line input {
   margin-top: 0.2rem;
   flex-shrink: 0;
-}
-
-.expert-actions-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  align-items: center;
-  margin: 0.5rem 0 0.65rem;
-}
-.expert-actions-row button.secondary {
-  border: 1px solid var(--fluent-border-control);
-  background: transparent;
-}
-.expert-deprecation-banner {
-  margin: 0.75rem 0 1rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #c45c26;
-  border-radius: var(--fluent-radius-md);
-  background: rgba(196, 92, 38, 0.08);
-}
-
-.expert-deprecation-title {
-  margin: 0 0 0.35rem;
-  font-weight: 600;
-  color: #a3471a;
-}
-
-.expert-deprecation-body,
-.expert-deprecation-link {
-  margin: 0.25rem 0 0;
-  font-size: 0.92rem;
-  line-height: 1.45;
-}
-
-.expert-summary-block {
-  margin: 0.5rem 0 0.35rem;
-  font-size: 0.8125rem;
-  line-height: 1.5;
-}
-.expert-summary {
-  margin: 0.25rem 0;
-  color: var(--fluent-text-primary);
-}
-.expert-summary--err {
-  color: var(--fluent-danger-text, #b00020);
-}
-.expert-json-error {
-  margin: 0.35rem 0;
-  font-size: 0.8125rem;
-  color: var(--fluent-danger-text, #b00020);
-}
-.expert-json-label {
-  display: block;
-  margin: 0.5rem 0 0.25rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--fluent-text-secondary);
-}
-.expert-json-ta {
-  min-height: 14rem;
-  font-family: var(--fluent-mono);
-  font-size: 0.78rem;
 }
 </style>

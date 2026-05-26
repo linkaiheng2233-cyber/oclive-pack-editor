@@ -344,7 +344,6 @@ export default {
       coreFile: "core / message",
       world: "World & knowledge",
       images: "Emotion assets",
-      expert: "Expert model",
     },
     docks: {
       badges: {
@@ -487,37 +486,6 @@ export default {
           faqAria: "Emotion portraits FAQ",
           faqTitle: "FAQ · Emotion portraits (before/after comparison)",
         },
-      },
-      expert: {
-        title: "Expert model pack (deprecated · experimental)",
-        deprecationTitle: "This tab is superseded by expert_routing.json",
-        deprecationBody:
-          "Configure runtime expert routing in the A.I.Live desktop app: More → Plugin & backend manager → architecture graph → Expert facility (gear). Output is blueprint/includes/expert_routing.json, not expert/default.oclexpert.",
-        deprecationDocLink: "Architecture overview: expert facility submodule",
-        lead:
-          "Legacy `.oclexpert` JSON below is only for editing files already shipped in a pack. Do not create new expert routing here.",
-        desc:
-          "Non-empty JSON may still be exported as expert/default.oclexpert for backward compatibility. New work belongs in expert_routing.json via the main app.",
-        btnNew: "New empty graph (disabled)",
-        btnNewDisabledHint:
-          "Creating new .oclexpert files is disabled. Use the A.I.Live architecture graph to author expert_routing.json.",
-        btnImportDisabledHint:
-          "Import to create a new .oclexpert from an empty state is disabled. Open an existing pack that already contains expert/default.oclexpert, then edit the JSON below.",
-        btnClear: "Clear config",
-        btnDownload: "Download default.oclexpert only",
-        btnImportFile: "Import from file…",
-        workbenchHint:
-          "Expert routes and triggers: A.I.Live → Plugin & backend manager → architecture graph → Expert facility. This tab only edits legacy default.oclexpert in old packs.",
-        confirmClear:
-          "Clear the expert model JSON? Exports will no longer include expert/default.oclexpert.",
-        downloadInvalid: "Current JSON is empty or invalid; cannot export a .oclexpert file.",
-        labelName: "Name:",
-        labelNodes: "Nodes:",
-        labelCloud: "Cloud:",
-        summaryEmptyGraph: "empty graph (no nodes)",
-        summaryEdges: "edges×{n}",
-        jsonLabel: "expert/default.oclexpert (JSON)",
-        jsonAria: "Expert model pack file JSON",
       },
     },
   },

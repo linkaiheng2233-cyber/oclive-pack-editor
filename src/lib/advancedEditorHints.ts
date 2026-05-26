@@ -16,6 +16,7 @@ export const ADV_MANIFEST = [
 export const ADV_SETTINGS = [
   '这一份主要管「对话怎么算出来」：用哪个模型、记忆/情绪等插件走哪条路。和 manifest 分工不同，改错可能导致无法加载或对话异常。',
   '若你只用本机 Ollama，最常改的是 model（模型名）。云端或远程推理需要按文档配置环境变量与 plugin_backends。',
+  '专家模型路由（expert_routing.json）请在 A.I.Live 主应用「插件与后端管理 → 架构图」中配置，不在本编写器编辑。',
   '简单创作里有一部分同款选项；这里可以改全量 JSON。不确定时先备份再改。',
 ] as const
 

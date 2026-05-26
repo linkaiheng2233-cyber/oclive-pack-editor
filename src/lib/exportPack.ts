@@ -6,7 +6,6 @@ import {
 } from './rolePackCreatorMessage'
 import { mergedSceneIds, rolePackRelativePaths } from './packLayout'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
-import { normalizeOclexpertForDisk } from './oclexpertPack'
 import {
   buildBlueprintV2FromLegacy,
   PIPELINE_BLUEPRINT_FILENAME,
@@ -45,11 +44,6 @@ export type PackExtraFiles = {
   creatorMessage?: string
   /** unified：全文只取首条非空行；per_module：每行一条（多模块拼接时汇总展示） */
   creatorMessageMode?: CreatorMessageExportMode
-  /**
-   * 可选：`roles/{id}/expert/default.oclexpert`（Module 9 专家图分享格式）。
-   * 导出前会校验并规范化为 `format: oclexpert` 的 v1 文件；无效内容不会写入包内。
-   */
-  expertOclexpertJson?: string
   /** 写入 prompts/reply_quality_anchor.md（v2 推荐路径） */
   replyQualityAnchorMarkdown?: string
   /** 为 true 时若 settings 无锚点则写入编辑器默认锚点 */
@@ -147,13 +141,6 @@ export function buildRolePackFiles(
   for (const sid of scenes) {
     files.set(`${id}/scenes/${sid}/scene.json`, minimalSceneJson(sid))
     files.set(`${id}/scenes/${sid}/description.txt`, SCENE_DESC_PLACEHOLDER)
-  }
-
-  const expertNorm = extra?.expertOclexpertJson?.trim()
-    ? normalizeOclexpertForDisk(extra.expertOclexpertJson)
-    : null
-  if (expertNorm) {
-    files.set(`${id}/expert/default.oclexpert`, expertNorm)
   }
 
   return files
