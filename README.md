@@ -10,11 +10,23 @@
 
 **贡献与发版**（本地命令、`HOST_RUNTIME_VERSION`、`wasm:build`、顶层键对比脚本）：见 [CONTRIBUTING.md](./CONTRIBUTING.md)。**变更记录**：[CHANGELOG.md](./CHANGELOG.md)。
 
+## 与 A.I.Live 主应用的关系
+
+| 能力 | 在哪做 |
+|------|--------|
+| 角色人设、`meta` / `slot_registry`（六槽 + agent）、场景与知识 Markdown、情绪图、导出 zip / 写入 `roles/` | **本编写器** |
+| **专家模型路由**（`blueprint/includes/expert_routing.json`）、架构图 **`groups`**、蓝图 **`includes[]`** 合并 | **A.I.Live（oclivenewnew）** → 插件与后端管理 → 架构图 |
+| 对话、记忆持久化、`load_role` 最终校验 | **A.I.Live** |
+
+**保存注意事项**：侧栏「角色包」保存时会用表单/JSON 视图**重建** `meta` 与 `slot_registry`，并**保留**旧蓝图中已有的 `includes`、`groups`、`expert_overlay`、`runtime_config`（避免冲掉主应用写入的扩展字段）。仍建议对含高级蓝图编辑的包做版本管理或备份。
+
+**专家路由配置**：运行时以主应用的 **`expert_routing.json`** 为准；本编写器高级创作中的 **`.oclexpert` 实验页已废弃**（见界面提示），勿与专家路由混淆。详见 [creator-docs/ROLE_PACK_EDITOR.md](./creator-docs/ROLE_PACK_EDITOR.md) 与主仓 [OCLIVE_ARCHITECTURE_OVERVIEW](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/getting-started/OCLIVE_ARCHITECTURE_OVERVIEW.md)。
+
 ## 与运行时的关系
 
 | 项目 | 说明 |
 |------|------|
-| **本仓库** | 产出 **`pipeline.ocblueprint`**（v2 SSOT）、`core_personality.txt`、可选 **`knowledge/**/*.md`**（多文件世界观）、占位场景、`assets/images/` 情绪图等；可选 **`prompts/reply_quality_anchor.md`**、**`creator_message.txt`**（创作者公告：可「整包一句」或「按行多条」；**oclivenewnew 不参与读取**，由 **oclive-launcher** 只读展示；约定见 [启动器 README](https://github.com/oclive-app/oclive-launcher/blob/main/README.md#随包寄语与职责边界创作者公告)） |
+| **本仓库** | 产出 **`pipeline.ocblueprint`**（v2 SSOT）、`core_personality.txt`、可选 **`knowledge/**/*.md`**（多文件世界观）、占位场景、`assets/images/` 情绪图等；可选 **`prompts/reply_quality_anchor.md`**、**`creator_message.txt`**（创作者公告；**oclivenewnew 运行时一般不读取**，仅部分归档工具展示） |
 | **oclivenewnew** | 加载、校验与对话；契约原文在其仓库 **`creator-docs/`** 与 **`roles/README_MANIFEST.md`** |
 
 ## 与「插件市场 / 模块条目 / Profile（特征码）」的边界
@@ -40,16 +52,17 @@
 
 路径约定（Windows 示例）：与 `oclivenewnew` **同级**放置本仓库，例如 `D:\oclive-pack-editor` 与 `D:\oclivenewnew`。
 
-## 新用户：从下载到第一次对话（与另两仓库的关系）
+## 新用户：编写器 + 运行时（推荐）
 
 | 步骤 | 说明 |
 |------|------|
 | 1 | 安装 **Node.js**，按需安装 **Ollama**（试聊 / 完整运行时需要）。 |
-| 2 | 克隆 **[oclivenewnew](https://github.com/oclive-app/oclivenewnew)**（运行时）与本 **编写器**；可选 **[oclive-launcher](https://github.com/oclive-app/oclive-launcher)** 统一管理路径与 **`OCLIVE_ROLES_DIR`**。 |
-| 3 | 在本编写器中编辑或导入角色包，**导出 .zip / .ocpak** 或使用桌面版 **「写入文件夹」**，使 **`{角色id}/pipeline.ocblueprint`** 出现在某一 **roles 根** 下（该根路径即运行时的 **`OCLIVE_ROLES_DIR`**）。也可使用 **oclive-launcher** 的 **「从 zip 安装角色包」** 解压到该根并选择本机 **Ollama 模型**（见 [启动器 README](https://github.com/oclive-app/oclive-launcher/blob/main/README.md)）。 |
-| 4 | 启动 **oclivenewnew**，在应用内从该 roles 根加载角色并开始对话；试聊页见下文「试聊」。 |
+| 2 | 同级克隆 **[oclivenewnew](https://github.com/oclive-app/oclivenewnew)**（A.I.Live 运行时）与本 **编写器**。 |
+| 3 | 在本编写器中编辑或导入角色包，**导出 .zip / .ocpak** 或 **「写入文件夹」**，使 **`{角色id}/pipeline.ocblueprint`** 位于 **roles 根** 下；或将包目录放入 oclivenewnew 的 `roles/`，或设置环境变量 **`OCLIVE_ROLES_DIR`** 指向该根。 |
+| 4 | 启动 **oclivenewnew**（`npm run tauri:dev` 或 Release），加载角色并对话；编写器内试聊见下文。 |
+| 5 | （可选）在 **A.I.Live** 中配置专家路由与架构图分组，保存后回到编写器编辑人设时，扩展蓝图字段会被保留。 |
 
-权威说明：`oclivenewnew` 仓库 **[creator-docs/getting-started/CREATOR_WORKFLOW.md](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/getting-started/CREATOR_WORKFLOW.md)**；启动器上手路径见 **[oclive-launcher README](https://github.com/oclive-app/oclive-launcher#新用户从下载到第一次对话推荐路径)**。
+权威说明：**[CREATOR_WORKFLOW.md](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/getting-started/CREATOR_WORKFLOW.md)**。旧版 **oclive-launcher** 已退役，见 [启动器 README](https://github.com/oclive-app/oclive-launcher/blob/main/README.md)（归档只读）。
 
 界面风格参考 **Fluent Design**（与常见 Fluent 桌面工具如 **qfluentwidgets** 一脉：浅色页背景、卡片层次、主色强调按钮），在 `src/style.css` 中通过 CSS 变量统一，并支持系统深色偏好；日间为 **象牙/卡其暖色**，与 **oclive-launcher** 对齐以便跨应用习惯一致。
 
