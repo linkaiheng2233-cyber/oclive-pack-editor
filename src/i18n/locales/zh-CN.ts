@@ -1,4 +1,4 @@
-import sharedCommon from "./shared/common.zh";
+import sharedCommon from "../shared/common.zh";
 
 export default {
   common: {
@@ -465,16 +465,24 @@ export default {
         },
       },
       expert: {
-        title: "专家模型配置（Module 9）",
-        lead: "为角色包附带一份默认专家图，与 oclive 主程序「专家模型设施」使用相同的 `.oclexpert` JSON 格式。",
+        title: "专家模型配置（已废弃 · 实验）",
+        deprecationTitle: "此实验页已被 expert_routing.json 替代",
+        deprecationBody:
+          "运行时专家模型路由请在 A.I.Live 主应用配置：顶栏「更多」→「插件与后端管理」→ 架构图 → 专家模型设施（齿轮）。产物为 blueprint/includes/expert_routing.json，不是包内 expert/default.oclexpert。",
+        deprecationDocLink: "阅读架构总览：专家模型设施子模块",
+        lead: "下方为旧版 `.oclexpert` 实验格式，仅用于编辑已随包附带的遗留文件；请勿在此新建专家路由。",
         desc:
-          "导出 .ocpak / 写入文件夹时，若下方 JSON 有效且非空，会写入 roles/{id}/expert/default.oclexpert；其他用户导入该包后可在编写器继续编辑，或在主程序中导入该文件到专家工作流库。",
-        btnNew: "新建空专家图",
+          "导出时若下方 JSON 非空，仍可能写入 expert/default.oclexpert（遗留兼容）；新创作者请改在主应用保存 expert_routing.json。",
+        btnNew: "新建空专家图（已禁用）",
+        btnNewDisabledHint:
+          "已禁止新建 .oclexpert。请在 A.I.Live 主应用架构图中配置专家路由（expert_routing.json）。",
+        btnImportDisabledHint:
+          "已禁止从空状态导入以创建新 .oclexpert。若包内已有遗留文件，请用「打开角色包」加载后再编辑下方 JSON。",
         btnClear: "清除配置",
         btnDownload: "仅下载 default.oclexpert",
         btnImportFile: "从文件导入…",
         workbenchHint:
-          "深度编辑（画布、云端模型、事件触发等）：请打开 OClive 桌面版 → 顶栏「更多」→「插件与后端管理」（实验性 V2）→ 后端模块中的「专家模型」面板；可将此处 JSON 复制过去，或使用「仅下载」后在主程序内导入 .oclexpert。",
+          "专家路由与触发条件：A.I.Live → 插件与后端管理 → 架构图 → 专家模型设施。本页仅保留对旧包内 default.oclexpert 的只读式编辑能力。",
         confirmClear: "确定清除当前专家模型 JSON？导出时将不再附带 expert/default.oclexpert。",
         downloadInvalid: "当前 JSON 无效或未填写，无法导出为 .oclexpert 文件。",
         labelName: "名称：",

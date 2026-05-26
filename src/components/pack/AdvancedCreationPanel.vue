@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import {
-  defaultOclexpertJsonForPack,
   expertPackValidationError,
   normalizeOclexpertForDisk,
   summarizeOclexpertEditorJson,
@@ -92,8 +91,11 @@ const expertJsonError = computed(() => expertPackValidationError(expertOclexpert
 
 const oclexpertFileInputRef = ref<HTMLInputElement | null>(null)
 
+const EXPERT_ROUTING_DOC_URL =
+  'https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/getting-started/OCLIVE_ARCHITECTURE_OVERVIEW.md'
+
 function onNewExpertPack(): void {
-  expertOclexpertText.value = defaultOclexpertJsonForPack(props.manifestRoleId || 'role')
+  window.alert(String(t('advancedCreation.sections.expert.btnNewDisabledHint')))
 }
 
 function onClearExpertPack(): void {
@@ -116,6 +118,11 @@ function onPickOclexpertFile(e: Event): void {
   const inp = e.target as HTMLInputElement
   const f = inp.files?.[0]
   if (!f) return
+  if (!expertOclexpertText.value.trim()) {
+    window.alert(String(t('advancedCreation.sections.expert.btnImportDisabledHint')))
+    inp.value = ''
+    return
+  }
   const reader = new FileReader()
   reader.onload = () => {
     const text = typeof reader.result === 'string' ? reader.result : ''
@@ -928,9 +935,25 @@ function resetAllPreviewWeightOverrides(): void {
         <h2 class="adv-h2"><span>{{ t("advancedCreation.sections.expert.title") }}</span></h2>
         <p class="adv-lead">{{ t("advancedCreation.sections.expert.lead") }}</p>
       </div>
+      <div class="expert-deprecation-banner" role="status">
+        <p class="expert-deprecation-title">{{ t("advancedCreation.sections.expert.deprecationTitle") }}</p>
+        <p class="expert-deprecation-body">{{ t("advancedCreation.sections.expert.deprecationBody") }}</p>
+        <p class="expert-deprecation-link">
+          <a
+            :href="EXPERT_ROUTING_DOC_URL"
+            target="_blank"
+            rel="noopener noreferrer"
+          >{{ t("advancedCreation.sections.expert.deprecationDocLink") }}</a>
+        </p>
+      </div>
       <p class="base-desc">{{ t("advancedCreation.sections.expert.desc") }}</p>
       <div class="expert-actions-row">
-        <button type="button" @click="onNewExpertPack">
+        <button
+          type="button"
+          disabled
+          :title="String(t('advancedCreation.sections.expert.btnNewDisabledHint'))"
+          @click="onNewExpertPack"
+        >
           {{ t("advancedCreation.sections.expert.btnNew") }}
         </button>
         <button type="button" class="secondary" @click="onClearExpertPack">
@@ -940,7 +963,13 @@ function resetAllPreviewWeightOverrides(): void {
           {{ t("advancedCreation.sections.expert.btnDownload") }}
         </button>
         <input ref="oclexpertFileInputRef" type="file" accept=".oclexpert,.json,application/json" class="sr-only" @change="onPickOclexpertFile" />
-        <button type="button" class="secondary" @click="oclexpertFileInputRef?.click()">
+        <button
+          type="button"
+          class="secondary"
+          :disabled="!expertOclexpertText.trim()"
+          :title="String(t('advancedCreation.sections.expert.btnImportDisabledHint'))"
+          @click="oclexpertFileInputRef?.click()"
+        >
           {{ t("advancedCreation.sections.expert.btnImportFile") }}
         </button>
       </div>
@@ -1598,6 +1627,27 @@ code {
   border: 1px solid var(--fluent-border-control);
   background: transparent;
 }
+.expert-deprecation-banner {
+  margin: 0.75rem 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #c45c26;
+  border-radius: var(--fluent-radius-md);
+  background: rgba(196, 92, 38, 0.08);
+}
+
+.expert-deprecation-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  color: #a3471a;
+}
+
+.expert-deprecation-body,
+.expert-deprecation-link {
+  margin: 0.25rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
 .expert-summary-block {
   margin: 0.5rem 0 0.35rem;
   font-size: 0.8125rem;

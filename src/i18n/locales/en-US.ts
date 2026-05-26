@@ -1,4 +1,4 @@
-import sharedCommon from "./shared/common.en";
+import sharedCommon from "../shared/common.en";
 
 export default {
   common: {
@@ -488,17 +488,25 @@ export default {
         },
       },
       expert: {
-        title: "Expert model pack (Module 9)",
+        title: "Expert model pack (deprecated · experimental)",
+        deprecationTitle: "This tab is superseded by expert_routing.json",
+        deprecationBody:
+          "Configure runtime expert routing in the A.I.Live desktop app: More → Plugin & backend manager → architecture graph → Expert facility (gear). Output is blueprint/includes/expert_routing.json, not expert/default.oclexpert.",
+        deprecationDocLink: "Architecture overview: expert facility submodule",
         lead:
-          "Attach a default expert graph to the role pack. Uses the same `.oclexpert` JSON format as the OClive desktop “expert models” facility.",
+          "Legacy `.oclexpert` JSON below is only for editing files already shipped in a pack. Do not create new expert routing here.",
         desc:
-          "When exporting .ocpak / writing a folder, if the JSON below is non-empty and valid, it is written to roles/{id}/expert/default.oclexpert. Recipients can keep editing in this pack editor, or import the file into the main app’s expert workflow library.",
-        btnNew: "New empty graph",
+          "Non-empty JSON may still be exported as expert/default.oclexpert for backward compatibility. New work belongs in expert_routing.json via the main app.",
+        btnNew: "New empty graph (disabled)",
+        btnNewDisabledHint:
+          "Creating new .oclexpert files is disabled. Use the A.I.Live architecture graph to author expert_routing.json.",
+        btnImportDisabledHint:
+          "Import to create a new .oclexpert from an empty state is disabled. Open an existing pack that already contains expert/default.oclexpert, then edit the JSON below.",
         btnClear: "Clear config",
         btnDownload: "Download default.oclexpert only",
         btnImportFile: "Import from file…",
         workbenchHint:
-          "For full editing (canvas, cloud model, event triggers, etc.), open the OClive desktop app → top bar “More” → “Plugin & backend manager” (experimental V2) → Expert models under backend modules. Copy JSON from here, download a .oclexpert, or import it in the main app.",
+          "Expert routes and triggers: A.I.Live → Plugin & backend manager → architecture graph → Expert facility. This tab only edits legacy default.oclexpert in old packs.",
         confirmClear:
           "Clear the expert model JSON? Exports will no longer include expert/default.oclexpert.",
         downloadInvalid: "Current JSON is empty or invalid; cannot export a .oclexpert file.",
