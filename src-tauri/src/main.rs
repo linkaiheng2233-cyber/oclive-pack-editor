@@ -523,6 +523,26 @@ fn blueprint_to_legacy_parts(bp: &serde_json::Value) -> Result<(String, String),
     Ok((format!("{}\n", manifest_text), format!("{}\n", settings_text)))
 }
 
+/// 保存时保留旧 `pipeline.ocblueprint` 中由主应用写入的扩展字段。
+fn merge_preserved_blueprint_fields(
+    new_bp: &mut serde_json::Value,
+    old_bp: Option<&serde_json::Value>,
+) {
+    let Some(old) = old_bp else {
+        return;
+    };
+    let Some(new_obj) = new_bp.as_object_mut() else {
+        return;
+    };
+    for key in ["includes", "groups", "expert_overlay", "runtime_config"] {
+        if let Some(v) = old.get(key) {
+            if !v.is_null() {
+                new_obj.insert(key.to_string(), v.clone());
+            }
+        }
+    }
+}
+
 fn write_blueprint_from_legacy_parts(
     root: &std::path::Path,
     manifest_text: &str,
@@ -530,12 +550,21 @@ fn write_blueprint_from_legacy_parts(
 ) -> Result<(), String> {
     use std::fs;
 
+    let blueprint_path = root.join(PIPELINE_BLUEPRINT_FILENAME);
+    let old_bp: Option<serde_json::Value> = if blueprint_path.is_file() {
+        let text = fs::read_to_string(&blueprint_path).map_err(|e| e.to_string())?;
+        Some(serde_json::from_str(&text).map_err(|e| e.to_string())?)
+    } else {
+        None
+    };
+
     let manifest_path = root.join("manifest.json");
     let settings_path = root.join("settings.json");
     fs::write(&manifest_path, manifest_text.as_bytes()).map_err(|e| e.to_string())?;
     fs::write(&settings_path, settings_text.as_bytes()).map_err(|e| e.to_string())?;
 
-    let bp = build_blueprint_v2_from_legacy_dir(root).map_err(|e| e.join("\n"))?;
+    let mut bp = build_blueprint_v2_from_legacy_dir(root).map_err(|e| e.join("\n"))?;
+    merge_preserved_blueprint_fields(&mut bp, old_bp.as_ref());
     let blueprint_text = serde_json::to_string_pretty(&bp).map_err(|e| e.to_string())?;
     fs::write(
         root.join(PIPELINE_BLUEPRINT_FILENAME),
@@ -679,6 +708,43 @@ fn validate_blueprint_v2_json(
         },
     )
     .map_err(|e| e.join("\n"))
+}
+
+#[cfg(test)]
+mod blueprint_save_tests {
+    use super::merge_preserved_blueprint_fields;
+    use serde_json::json;
+
+    #[test]
+    fn merge_preserves_includes_groups_expert_overlay_runtime_config() {
+        let old = json!({
+            "schema_version": 2,
+            "meta": { "id": "x" },
+            "slot_registry": {},
+            "includes": [{ "path": "blueprint/includes/expert_routing.json", "target": "expert_routing", "mode": "merge" }],
+            "groups": { "g1": { "label": "G", "type": "llm", "members": ["llm_a"] } },
+            "expert_overlay": { "routing_path": "blueprint/includes/expert_routing.json" },
+            "runtime_config": { "expert_hints": {} }
+        });
+        let mut new_bp = json!({
+            "schema_version": 2,
+            "meta": { "id": "x", "name": "new" },
+            "slot_registry": { "llm": { "type": "llm", "label": "L", "backend": "ollama", "position": 0 } }
+        });
+        merge_preserved_blueprint_fields(&mut new_bp, Some(&old));
+        assert_eq!(new_bp["meta"]["name"], "new");
+        assert_eq!(new_bp["includes"].as_array().unwrap().len(), 1);
+        assert!(new_bp.get("groups").is_some());
+        assert!(new_bp.get("expert_overlay").is_some());
+        assert!(new_bp.get("runtime_config").is_some());
+    }
+
+    #[test]
+    fn merge_skips_when_no_old_blueprint() {
+        let mut new_bp = json!({ "schema_version": 2, "meta": { "id": "x" }, "slot_registry": {} });
+        merge_preserved_blueprint_fields(&mut new_bp, None);
+        assert!(new_bp.get("includes").is_none());
+    }
 }
 
 fn main() {
