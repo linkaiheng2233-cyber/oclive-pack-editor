@@ -68,6 +68,53 @@ export function validateRolePackTypescript(
   return errors
 }
 
+/** Validate config.json reply_post_processor (mirrors oclive_validation rules). */
+export function validateReplyPostProcessorConfigJson(configJson: string | null): string[] {
+  if (configJson == null || configJson.trim() === '') {
+    return []
+  }
+  let root: Record<string, unknown>
+  try {
+    root = JSON.parse(configJson) as Record<string, unknown>
+  }
+  catch (e) {
+    return [`config.json 语法错误: ${e}`]
+  }
+  const rpp = root.reply_post_processor
+  if (rpp == null) {
+    return []
+  }
+  if (typeof rpp !== 'object' || Array.isArray(rpp)) {
+    return ['config.json reply_post_processor 须为对象']
+  }
+  const cfg = rpp as Record<string, unknown>
+  const errs: string[] = []
+  const backend = String(cfg.backend ?? 'builtin').trim().toLowerCase()
+  if (!['builtin', 'remote', 'directory'].includes(backend)) {
+    errs.push(`config.json reply_post_processor.backend 须为 builtin | remote | directory（当前「${cfg.backend}」）`)
+  }
+  if (cfg.enabled === true && backend === 'remote') {
+    const url = (cfg.remote as { url?: string } | undefined)?.url
+    if (!url?.trim()) {
+      errs.push('config.json reply_post_processor: backend=remote 且 enabled 时 remote.url 必填非空')
+    }
+  }
+  if (cfg.enabled === true && backend === 'directory') {
+    const pid = (cfg.directory as { plugin_id?: string } | undefined)?.plugin_id
+    if (!pid?.trim()) {
+      errs.push('config.json reply_post_processor: backend=directory 且 enabled 时 directory.plugin_id 必填非空')
+    }
+  }
+  const profile = (cfg.builtin as { profile?: string } | undefined)?.profile
+  if (profile != null) {
+    const p = profile.trim().toLowerCase()
+    if (!['standard', 'minimal'].includes(p)) {
+      errs.push(`config.json reply_post_processor.builtin.profile 须为 standard | minimal（当前「${profile}」）`)
+    }
+  }
+  return errs
+}
+
 export type RolePackEditorValidateResult = {
   ok: boolean
   errors: string[]
@@ -80,10 +127,13 @@ export async function validateRolePackEditorState(
   settingsJson: string | null,
   mergedSceneIds: string[],
   hostVersion: string,
+  configJson?: string | null,
 ): Promise<RolePackEditorValidateResult> {
   const tsErrors = validateRolePackTypescript(manifestJson, settingsJson, mergedSceneIds, hostVersion)
-  if (tsErrors.length > 0) {
-    return { ok: false, errors: tsErrors, usedWasm: false }
+  const configErrors = validateReplyPostProcessorConfigJson(configJson ?? null)
+  const allErrors = [...tsErrors, ...configErrors]
+  if (allErrors.length > 0) {
+    return { ok: false, errors: allErrors, usedWasm: false }
   }
 
   if (typeof window !== 'undefined' && '__TAURI__' in window) {

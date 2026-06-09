@@ -129,6 +129,7 @@ export function usePackEditor() {
       emotionImages: emotionImageFiles.value,
       creatorMessage: creatorMessageToOthers.value,
       creatorMessageMode: creatorMessageMode.value,
+      configJson: '{\n  "reply_post_processor": {\n    "enabled": false,\n    "backend": "builtin",\n    "builtin": { "profile": "standard" }\n  }\n}\n',
       ...(authorJson ? { authorJson } : {}),
     }
   }

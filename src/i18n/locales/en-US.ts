@@ -790,6 +790,13 @@ export default {
         },
       },
     },
+    replyPostProcessor: {
+      title: "Reply post-processor",
+      enabled: "Enabled",
+      backend: "backend",
+      builtinProfile: "builtin.profile",
+      directoryPlugin: "directory.plugin_id",
+    },
     check: {
       lastRustWasm: "Last check: Tauri v2 blueprint validation",
       lastTypeScript: "Last check: TypeScript (Tauri validation unavailable)",

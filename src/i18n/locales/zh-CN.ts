@@ -762,6 +762,13 @@ export default {
         },
       },
     },
+    replyPostProcessor: {
+      title: "回复后处理",
+      enabled: "启用",
+      backend: "backend",
+      builtinProfile: "builtin.profile",
+      directoryPlugin: "directory.plugin_id",
+    },
     check: {
       lastRustWasm: "最近一次检查：Tauri v2 蓝图校验",
       lastTypeScript: "最近一次检查：TypeScript（Tauri 校验不可用）",

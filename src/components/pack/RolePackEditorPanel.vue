@@ -7,6 +7,7 @@ import { invokeLoadRolePackForEditor, invokeSaveRolePackEditor } from '../../lib
 import { validateRolePackEditorState } from '../../lib/rolePackEditorValidate'
 import { HOST_RUNTIME_VERSION } from '../../lib/hostRuntimeVersion'
 import AnchorPresetManager from './AnchorPresetManager.vue'
+import ReplyPostProcessorForm from './ReplyPostProcessorForm.vue'
 
 const { t } = useI18n()
 
@@ -205,6 +206,36 @@ const replyAnchor = computed({
   },
 })
 
+function parseConfigRoot(): Record<string, unknown> {
+  try {
+    return JSON.parse(configJsonText.value) as Record<string, unknown>
+  }
+  catch {
+    return {}
+  }
+}
+
+const replyPostProcessor = computed({
+  get() {
+    const cfg = parseConfigRoot()
+    const rpp = cfg.reply_post_processor
+    if (rpp && typeof rpp === 'object' && !Array.isArray(rpp)) {
+      return rpp as Record<string, unknown>
+    }
+    return {
+      enabled: false,
+      backend: 'builtin',
+      builtin: { profile: 'standard' },
+    }
+  },
+  set(v: Record<string, unknown>) {
+    const cfg = parseConfigRoot()
+    cfg.reply_post_processor = v
+    configJsonText.value = `${JSON.stringify(cfg, null, 2)}\n`
+    scheduleValidate()
+  },
+})
+
 let validateTimer: ReturnType<typeof setTimeout> | undefined
 function scheduleValidate() {
   if (!roleDir.value) return
@@ -215,7 +246,13 @@ function scheduleValidate() {
 async function runValidate() {
   const mj = currentManifestJson()
   const sj = currentSettingsJson()
-  const r = await validateRolePackEditorState(mj, sj, mergedSceneIds.value, HOST_RUNTIME_VERSION)
+  const r = await validateRolePackEditorState(
+    mj,
+    sj,
+    mergedSceneIds.value,
+    HOST_RUNTIME_VERSION,
+    configJsonText.value,
+  )
   validationErrors.value = r.errors
   validationUsedWasm.value = r.usedWasm
 }
@@ -475,7 +512,8 @@ function dimLabel(key: string): string {
       <section class="card">
         <h3 class="h3">{{ t('packEditor.rolePack.configCard') }}</h3>
         <p class="hint-sm">{{ t('packEditor.rolePack.configHint') }}</p>
-        <textarea v-model="configJsonText" class="json-ta compact" spellcheck="false" rows="8" />
+        <ReplyPostProcessorForm v-model="replyPostProcessor" />
+        <textarea v-model="configJsonText" class="json-ta compact" spellcheck="false" rows="6" @input="scheduleValidate" />
       </section>
       <section class="card">
         <h3 class="h3">{{ t('packEditor.rolePack.userIdentitiesCard') }}</h3>
