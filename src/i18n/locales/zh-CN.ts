@@ -696,6 +696,10 @@ export default {
       saved: "已写入 pipeline.ocblueprint（及 prompts/reply_quality_anchor.md 等附属文件）。",
       manifestCard: "角色门面（meta 视图）",
       settingsCard: "运行时（settings 视图）",
+      configCard: "config.json（后处理等）",
+      configHint: "编辑 reply_post_processor 等运行时 config；保存时写入角色包根目录 config.json。",
+      userIdentitiesCard: "user_identities/index.json",
+      userIdentitiesHint: "用户身份 Prompt 模板目录索引；模板 .md 文件请放在 user_identities/ 下并在此引用。",
       validationAria: "校验结果",
       validationOk: "当前内容校验通过。",
       err: {

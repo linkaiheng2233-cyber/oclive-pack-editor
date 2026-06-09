@@ -17,6 +17,8 @@ const manifestJsonText = ref('')
 const settingsJsonText = ref('')
 const manifestObj = ref<Record<string, unknown>>({})
 const settingsObj = ref<Record<string, unknown>>({})
+const configJsonText = ref('')
+const userIdentitiesIndexText = ref('')
 const validationErrors = ref<string[]>([])
 const validationUsedWasm = ref<boolean | null>(null)
 const statusMessage = ref('')
@@ -41,34 +43,40 @@ const backendOptions: Record<(typeof PLUGIN_SLOTS)[number], { value: string; lab
     { value: 'remote', label: 'remote' },
     { value: 'local', label: 'local' },
     { value: 'directory', label: 'directory' },
+    { value: 'none', label: 'none' },
   ],
   emotion: [
     { value: 'builtin', label: 'builtin' },
     { value: 'builtin_v2', label: 'builtin_v2' },
     { value: 'remote', label: 'remote' },
     { value: 'directory', label: 'directory' },
+    { value: 'none', label: 'none' },
   ],
   event: [
     { value: 'builtin', label: 'builtin' },
     { value: 'builtin_v2', label: 'builtin_v2' },
     { value: 'remote', label: 'remote' },
     { value: 'directory', label: 'directory' },
+    { value: 'none', label: 'none' },
   ],
   prompt: [
     { value: 'builtin', label: 'builtin' },
     { value: 'builtin_v2', label: 'builtin_v2' },
     { value: 'remote', label: 'remote' },
     { value: 'directory', label: 'directory' },
+    { value: 'none', label: 'none' },
   ],
   llm: [
     { value: 'ollama', label: 'ollama' },
     { value: 'remote', label: 'remote' },
     { value: 'directory', label: 'directory' },
+    { value: 'none', label: 'none' },
   ],
   agent: [
     { value: 'builtin', label: 'builtin' },
     { value: 'remote', label: 'remote' },
     { value: 'directory', label: 'directory' },
+    { value: 'none', label: 'none' },
   ],
 }
 
@@ -281,6 +289,16 @@ async function onOpenPack() {
     } else {
       settingsJsonText.value = `${JSON.stringify(defaultSettings(), null, 2)}\n`
     }
+    configJsonText.value = load.configText?.endsWith('\n')
+      ? load.configText
+      : load.configText
+        ? `${load.configText}\n`
+        : '{\n  "reply_post_processor": {\n    "enabled": false,\n    "backend": "builtin",\n    "builtin": { "profile": "standard" }\n  }\n}\n'
+    userIdentitiesIndexText.value = load.userIdentitiesIndexText?.endsWith('\n')
+      ? load.userIdentitiesIndexText
+      : load.userIdentitiesIndexText
+        ? `${load.userIdentitiesIndexText}\n`
+        : '{\n  "schema_version": 1,\n  "default_identity_id": "default",\n  "identities": []\n}\n'
     const formErr = trySyncFormFromJson()
     if (formErr) {
       editMode.value = 'json'
@@ -321,7 +339,13 @@ async function onSave() {
     return
   }
   try {
-    await invokeSaveRolePackEditor(roleDir.value, currentManifestJson(), currentSettingsJson() ?? '{}')
+    await invokeSaveRolePackEditor(
+      roleDir.value,
+      currentManifestJson(),
+      currentSettingsJson() ?? '{}',
+      configJsonText.value,
+      userIdentitiesIndexText.value,
+    )
     statusMessage.value = String(t('packEditor.rolePack.saved'))
     statusIsError.value = false
   } catch (e) {
@@ -429,6 +453,16 @@ function dimLabel(key: string): string {
           </select>
         </div>
         <AnchorPresetManager v-model="replyAnchor" />
+      </section>
+      <section class="card">
+        <h3 class="h3">{{ t('packEditor.rolePack.configCard') }}</h3>
+        <p class="hint-sm">{{ t('packEditor.rolePack.configHint') }}</p>
+        <textarea v-model="configJsonText" class="json-ta compact" spellcheck="false" rows="8" />
+      </section>
+      <section class="card">
+        <h3 class="h3">{{ t('packEditor.rolePack.userIdentitiesCard') }}</h3>
+        <p class="hint-sm">{{ t('packEditor.rolePack.userIdentitiesHint') }}</p>
+        <textarea v-model="userIdentitiesIndexText" class="json-ta compact" spellcheck="false" rows="8" />
       </section>
     </div>
     <div v-else-if="roleDir && editMode === 'json'" class="json-split">
@@ -611,5 +645,21 @@ function dimLabel(key: string): string {
 }
 .status.err {
   color: #ffb4b4;
+}
+.hint-sm {
+  font-size: 12px;
+  opacity: 0.85;
+  margin: 0 0 0.5rem;
+}
+.json-ta.compact {
+  min-height: 120px;
+  width: 100%;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
+  background: var(--surface-2, rgba(255, 255, 255, 0.06));
+  color: inherit;
 }
 </style>

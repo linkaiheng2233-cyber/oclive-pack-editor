@@ -724,6 +724,10 @@ export default {
       saved: "Wrote pipeline.ocblueprint (and companion files such as prompts/reply_quality_anchor.md).",
       manifestCard: "Role meta (meta view)",
       settingsCard: "Runtime (settings view)",
+      configCard: "config.json (post-process, etc.)",
+      configHint: "Edit reply_post_processor and other runtime config; saved to role pack root config.json.",
+      userIdentitiesCard: "user_identities/index.json",
+      userIdentitiesHint: "User identity prompt catalog index; place .md templates under user_identities/ and reference them here.",
       validationAria: "Validation",
       validationOk: "Current content passes validation.",
       err: {

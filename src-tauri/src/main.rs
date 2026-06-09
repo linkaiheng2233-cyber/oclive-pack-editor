@@ -455,6 +455,10 @@ struct RolePackEditorLoad {
     manifest_text: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     settings_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    config_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    user_identities_index_text: Option<String>,
     merged_scene_ids: Vec<String>,
 }
 
@@ -632,9 +636,21 @@ fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, Str
             .unwrap_or_default();
         let merged_scene_ids =
             merge_role_pack_scene_ids(&root, &scenes_for_merge).map_err(|e| e.to_string())?;
+        let config_path = root.join("config.json");
+        let config_text = config_path
+            .is_file()
+            .then(|| fs::read_to_string(&config_path).map_err(|e| e.to_string()))
+            .transpose()?;
+        let ui_path = root.join("user_identities").join("index.json");
+        let user_identities_index_text = ui_path
+            .is_file()
+            .then(|| fs::read_to_string(&ui_path).map_err(|e| e.to_string()))
+            .transpose()?;
         return Ok(RolePackEditorLoad {
             manifest_text,
             settings_text: Some(settings_text),
+            config_text,
+            user_identities_index_text,
             merged_scene_ids,
         });
     }
@@ -655,12 +671,42 @@ fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, Str
 
 /// 写回 v2 `pipeline.ocblueprint`（及 `prompts/reply_quality_anchor.md`）；不保留 legacy 三件套。
 #[tauri::command]
-fn save_role_pack_editor(role_dir: String, manifest_text: String, settings_text: String) -> Result<(), String> {
+fn save_role_pack_editor(
+    role_dir: String,
+    manifest_text: String,
+    settings_text: String,
+    config_text: Option<String>,
+    user_identities_index_text: Option<String>,
+) -> Result<(), String> {
     let root = std::path::PathBuf::from(role_dir.trim());
     if !root.is_dir() {
         return Err("所选路径不是目录".into());
     }
-    write_blueprint_from_legacy_parts(&root, &manifest_text, &settings_text)
+    write_blueprint_from_legacy_parts(&root, &manifest_text, &settings_text)?;
+    if let Some(text) = config_text {
+        let trimmed = text.trim();
+        if trimmed.is_empty() {
+            let _ = std::fs::remove_file(root.join("config.json"));
+        } else {
+            let _: serde_json::Value =
+                serde_json::from_str(trimmed).map_err(|e| format!("config.json 解析失败: {e}"))?;
+            std::fs::write(root.join("config.json"), format!("{trimmed}\n")).map_err(|e| e.to_string())?;
+        }
+    }
+    if let Some(text) = user_identities_index_text {
+        let trimmed = text.trim();
+        let ui_dir = root.join("user_identities");
+        if trimmed.is_empty() {
+            let _ = std::fs::remove_file(ui_dir.join("index.json"));
+        } else {
+            let _: serde_json::Value = serde_json::from_str(trimmed)
+                .map_err(|e| format!("user_identities/index.json 解析失败: {e}"))?;
+            std::fs::create_dir_all(&ui_dir).map_err(|e| e.to_string())?;
+            std::fs::write(ui_dir.join("index.json"), format!("{trimmed}\n"))
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]
