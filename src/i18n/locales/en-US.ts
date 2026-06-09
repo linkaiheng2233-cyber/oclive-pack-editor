@@ -791,6 +791,8 @@ export default {
       },
     },
     check: {
+      lastRustWasm: "Last check: Tauri v2 blueprint validation",
+      lastTypeScript: "Last check: TypeScript (Tauri validation unavailable)",
       exportOcpak: "Export .ocpak (zip)",
       exportZip: "Export .zip",
       exportFolder: "Write to folder (pick roles root)",

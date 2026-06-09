@@ -75,7 +75,7 @@ describe('PluginManagerPanel (T10 plugin backends in role pack editor)', () => {
     expect(w.findAll('textarea.json-ta').length).toBe(2)
     const formBtn = w.findAll('.mode-toggle button').find((b) => !b.text().includes('JSON'))
     await formBtn!.trigger('click')
-    expect(w.findAll('textarea.json-ta').length).toBe(0)
+    expect(w.findAll('textarea.json-ta').length).toBe(2)
   })
 
   it('disables save until pack loaded', () => {

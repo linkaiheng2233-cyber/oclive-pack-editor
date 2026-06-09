@@ -103,7 +103,7 @@ pub fn invoke_directory_plugin_jsonrpc(
     let (tx, rx) = std::sync::mpsc::channel::<Result<String, String>>();
     std::thread::spawn(move || {
         let reader = BufReader::new(stdout);
-        for line in reader.lines().flatten() {
+        for line in reader.lines().map_while(Result::ok) {
             let t = line.trim();
             if let Some(rest) = t.strip_prefix(READY_PREFIX) {
                 let url = rest.trim().to_string();

@@ -31,6 +31,8 @@ describe('rolePackEditorApi (T05 tauri invoke mapping)', () => {
       role_dir: 'C:\\roles\\demo',
       manifest_text: '{"id":"x"}',
       settings_text: '{"schema_version":1}',
+      config_text: null,
+      user_identities_index_text: null,
     })
   })
 })

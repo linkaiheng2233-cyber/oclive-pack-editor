@@ -763,6 +763,8 @@ export default {
       },
     },
     check: {
+      lastRustWasm: "最近一次检查：Tauri v2 蓝图校验",
+      lastTypeScript: "最近一次检查：TypeScript（Tauri 校验不可用）",
       exportOcpak: "导出 .ocpak（zip）",
       exportZip: "导出 .zip",
       exportFolder: "写入文件夹（自选 roles 根目录）",
