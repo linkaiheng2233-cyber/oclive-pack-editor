@@ -176,6 +176,10 @@ export default {
       minRuntimeLabel: "Minimum oclive version (optional)",
       minRuntimePlaceholder:
         "semver, e.g. 0.2.0; align with HOST_RUNTIME_VERSION / runtime. Empty = no limit.",
+      featuredLabel: "Featured in preset list (featured)",
+      featuredHint: "Writes meta.featured; host may highlight this pack in presets.",
+      presetOrderLabel: "Preset order (preset_order)",
+      presetOrderHint: "Lower sorts earlier; 0 omits the field.",
       scenesLabel: "Scene IDs (comma-separated)",
       personalityVectorTitle: "Personality vector (0–1)",
       personalityVectorProfileHint:
@@ -744,6 +748,8 @@ export default {
         description: "Description",
         tags: "Tags (comma-separated)",
         license: "License (optional)",
+        featured: "Featured in preset list",
+        presetOrder: "Preset order (preset_order)",
         interactionMode: "interaction_mode",
         interactionUnset: "(unset)",
       },

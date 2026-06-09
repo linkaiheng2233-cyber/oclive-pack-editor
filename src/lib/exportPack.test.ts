@@ -57,11 +57,45 @@ describe('buildRolePackFiles', () => {
     expect(bp.meta.creator_message_to_downloader).toBe('感谢游玩')
   })
 
-  it('writes reply quality anchor to prompts path', () => {
-    const files = buildRolePackFiles('x', baseManifest, { schema_version: 1 }, {
-      replyQualityAnchorMarkdown: 'anchor text',
-    })
+  it('writes reply quality anchor to prompts path and meta.reply_quality_anchor', () => {
+    const files = buildRolePackFiles(
+      'x',
+      baseManifest,
+      { schema_version: 1, reply_quality_anchor: 'anchor text' },
+      { replyQualityAnchorMarkdown: 'anchor text' },
+    )
     expect(files.get(`x/${REPLY_QUALITY_ANCHOR_REL_PATH}`)).toBe('anchor text\n')
+    const bp = JSON.parse(files.get(`x/${PIPELINE_BLUEPRINT_FILENAME}`)!) as {
+      meta: { reply_quality_anchor?: string }
+    }
+    expect(bp.meta.reply_quality_anchor).toBe('anchor text')
+  })
+
+  it('writes config.json when extra is set', () => {
+    const body = '{"reply_post_processor":{"enabled":false}}\n'
+    const files = buildRolePackFiles('x', baseManifest, { schema_version: 1 }, {
+      configJson: body,
+    })
+    expect(files.get('x/config.json')).toBe(body)
+  })
+
+  it('writes user_identities/index.json when extra is set', () => {
+    const body =
+      '{"schema_version":1,"default_identity_id":"friend","identities":{"friend":{"display_name":"好友","template_file":"friend.md"}}}\n'
+    const files = buildRolePackFiles('x', baseManifest, { schema_version: 1 }, {
+      userIdentitiesIndexJson: body,
+    })
+    expect(files.get('x/user_identities/index.json')).toBe(body)
+  })
+
+  it('writes featured and preset_order into blueprint meta', () => {
+    const manifest = { ...baseManifest, featured: true, preset_order: 3 }
+    const files = buildRolePackFiles('x', manifest, { schema_version: 1 })
+    const bp = JSON.parse(files.get(`x/${PIPELINE_BLUEPRINT_FILENAME}`)!) as {
+      meta: { featured?: boolean; preset_order?: number }
+    }
+    expect(bp.meta.featured).toBe(true)
+    expect(bp.meta.preset_order).toBe(3)
   })
 
   it('writes multiple lines in per_module mode', () => {

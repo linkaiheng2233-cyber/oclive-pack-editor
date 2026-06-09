@@ -377,6 +377,26 @@ const emit = defineEmits<{
               :placeholder="String(t('simpleCreation.manifest.minRuntimePlaceholder'))"
             />
           </div>
+          <div class="form-row two">
+            <div>
+              <label for="f-featured">
+                <input id="f-featured" v-model="simpleM.featured" type="checkbox" />
+                {{ t('simpleCreation.manifest.featuredLabel') }}
+              </label>
+              <p class="hint tiny">{{ t('simpleCreation.manifest.featuredHint') }}</p>
+            </div>
+            <div>
+              <label for="f-preset-order">{{ t('simpleCreation.manifest.presetOrderLabel') }}</label>
+              <input
+                id="f-preset-order"
+                v-model.number="simpleM.presetOrder"
+                type="number"
+                min="0"
+                step="1"
+              />
+              <p class="hint tiny">{{ t('simpleCreation.manifest.presetOrderHint') }}</p>
+            </div>
+          </div>
           <div class="form-row">
             <div class="label-hint-row">
               <label for="f-scenes">{{ t("simpleCreation.manifest.scenesLabel") }}</label>

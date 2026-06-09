@@ -14,6 +14,7 @@ import { pickRolesRootAndWritePack, isFolderExportSupported } from '../lib/expor
 import { importRolePackFromZip, importedPackBrainHint } from '../lib/importPack'
 import { filterEmotionImageFiles } from '../lib/emotionAssets'
 import { prepareExportPayload } from '../lib/exportPrepare'
+import { validateExportPackDirectory } from '../lib/exportValidate'
 import {
   mergeEditorReplyQualityAnchor,
   shouldPromptReplyQualityAnchor,
@@ -491,7 +492,21 @@ export function usePackEditor() {
         message: '请先通过全部检查，或关闭「导出前校验包内容」后再导出。',
       }
     }
-    return prepareExportPayload(manifestText.value, settingsText.value)
+    const payload = prepareExportPayload(manifestText.value, settingsText.value)
+    if (!payload.ok) return payload
+    const dirCheck = await validateExportPackDirectory(
+      payload.roleId,
+      payload.manifest,
+      payload.settings,
+      packExtra(),
+    )
+    if (!dirCheck.ok) {
+      return {
+        ok: false,
+        message: `导出目录校验未通过：\n${dirCheck.errors.join('\n')}`,
+      }
+    }
+    return payload
   }
 
   function setFeedback(text: string, isError: boolean): void {

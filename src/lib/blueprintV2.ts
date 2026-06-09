@@ -187,6 +187,13 @@ export function buildBlueprintV2FromLegacy(
   if (settings.interaction_mode != null) meta.interaction_mode = settings.interaction_mode
   if (settings.remote_presence != null) meta.remote_presence = settings.remote_presence
   if (settings.autonomous_scene != null) meta.autonomous_scene = settings.autonomous_scene
+  const anchor =
+    typeof settings.reply_quality_anchor === 'string'
+      ? String(settings.reply_quality_anchor).trim()
+      : ''
+  if (anchor) meta.reply_quality_anchor = anchor
+  if (manifest.featured != null) meta.featured = manifest.featured
+  if (manifest.preset_order != null) meta.preset_order = manifest.preset_order
   if (manifest.creator_message_to_downloader != null) {
     meta.creator_message_to_downloader = manifest.creator_message_to_downloader
   }
@@ -232,6 +239,8 @@ export function blueprintToLegacyParts(bp: BlueprintV2): {
     life_schedule: meta.life_schedule,
     min_runtime_version: meta.min_runtime_version,
     creator_message_to_downloader: meta.creator_message_to_downloader,
+    featured: meta.featured,
+    preset_order: meta.preset_order,
   }
   if (meta.ollama_model != null) manifest.ollama_model = meta.ollama_model
 
@@ -246,6 +255,9 @@ export function blueprintToLegacyParts(bp: BlueprintV2): {
     remote_presence: meta.remote_presence,
     autonomous_scene: meta.autonomous_scene,
     plugin_backends,
+  }
+  if (typeof meta.reply_quality_anchor === 'string' && meta.reply_quality_anchor.trim()) {
+    settings.reply_quality_anchor = meta.reply_quality_anchor
   }
   if (bp.runtime_config) {
     Object.assign(settings, bp.runtime_config)

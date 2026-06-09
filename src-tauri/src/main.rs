@@ -11,7 +11,8 @@ use std::time::Duration;
 use oclive_validation::blueprint_migrate::build_blueprint_v2_from_legacy_dir;
 use oclive_validation::blueprint_v2::{
     slot_registry_to_plugin_backends, validate_blueprint_v2_json_with_context,
-    BlueprintV2ValidateContext, SlotRegistryEntry, PIPELINE_BLUEPRINT_FILENAME,
+    validate_role_pack_blueprint_v2_directory, BlueprintV2ValidateContext, SlotRegistryEntry,
+    PIPELINE_BLUEPRINT_FILENAME,
 };
 use oclive_validation::disk_role_settings::DiskRoleSettings;
 use oclive_validation::manifest::DiskRoleManifest;
@@ -709,6 +710,60 @@ fn save_role_pack_editor(
     Ok(())
 }
 
+#[derive(Debug, Deserialize)]
+struct RolePackExportFile {
+    path: String,
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ValidateRolePackExportRequest {
+    role_id: String,
+    files: Vec<RolePackExportFile>,
+    host_runtime_version: String,
+}
+
+/// Write export-shaped files to a temp role dir and run full `pack validate` (v2 directory profile).
+#[tauri::command]
+fn validate_role_pack_export(req: ValidateRolePackExportRequest) -> Result<(), String> {
+    let role_id = req.role_id.trim();
+    if role_id.is_empty() {
+        return Err("role_id 不能为空".into());
+    }
+    let root = std::env::temp_dir().join(format!(
+        "oclive-pack-editor-export-validate-{}-{}",
+        std::process::id(),
+        role_id
+    ));
+    let role_dir = root.join(role_id);
+    if role_dir.exists() {
+        let _ = std::fs::remove_dir_all(&role_dir);
+    }
+    std::fs::create_dir_all(&role_dir).map_err(|e| e.to_string())?;
+
+    for f in &req.files {
+        let rel = f.path.replace('\\', "/").trim().to_string();
+        if !rel.starts_with(&format!("{role_id}/")) {
+            return Err(format!("导出校验路径须以 {role_id}/ 开头：{rel}"));
+        }
+        let under = rel.strip_prefix(&format!("{role_id}/")).unwrap_or("");
+        if under.is_empty() || under.contains("..") {
+            return Err(format!("非法导出路径：{rel}"));
+        }
+        let dest = role_dir.join(under);
+        if let Some(parent) = dest.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        std::fs::write(&dest, &f.content).map_err(|e| e.to_string())?;
+    }
+
+    let host = req.host_runtime_version.trim();
+    let host_version = if host.is_empty() { "0.3.0" } else { host };
+    let result = validate_role_pack_blueprint_v2_directory(&role_dir, host_version);
+    let _ = std::fs::remove_dir_all(&root);
+    result.map_err(|e| e.join("\n"))
+}
+
 #[tauri::command]
 fn validate_blueprint_v2_json(
     manifest_text: String,
@@ -810,6 +865,7 @@ fn main() {
             load_role_pack_for_editor,
             save_role_pack_editor,
             validate_blueprint_v2_json,
+            validate_role_pack_export,
         ])
         .run(tauri::generate_context!())
         .expect("error while running oclive-pack-editor");

@@ -421,6 +421,24 @@ function dimLabel(key: string): string {
         <label class="field"><span class="lbl">{{ t('packEditor.rolePack.fields.license') }}</span>
           <input v-model="licenseString" class="inp" type="text" />
         </label>
+        <label class="field checkbox-field">
+          <input
+            type="checkbox"
+            :checked="Boolean(manifestObj.featured)"
+            @change="patchManifest('featured', ($event.target as HTMLInputElement).checked)"
+          />
+          <span class="lbl">{{ t('packEditor.rolePack.fields.featured') }}</span>
+        </label>
+        <label class="field"><span class="lbl">{{ t('packEditor.rolePack.fields.presetOrder') }}</span>
+          <input
+            class="inp"
+            type="number"
+            min="0"
+            step="1"
+            :value="Number(manifestObj.preset_order ?? 0)"
+            @input="patchManifest('preset_order', Number(($event.target as HTMLInputElement).value) || 0)"
+          />
+        </label>
       </section>
       <section class="card">
         <h3 class="h3">{{ t('packEditor.rolePack.personality.title') }}</h3>
@@ -650,6 +668,11 @@ function dimLabel(key: string): string {
   font-size: 12px;
   opacity: 0.85;
   margin: 0 0 0.5rem;
+}
+.checkbox-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
 }
 .json-ta.compact {
   min-height: 120px;

@@ -104,8 +104,12 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
 
   const bp = parseBlueprintV2Json(blueprintRaw)
   const { manifest, settings } = blueprintToLegacyParts(bp)
+  const anchorFromMeta =
+    typeof settings.reply_quality_anchor === 'string'
+      ? String(settings.reply_quality_anchor).trim()
+      : ''
   const anchorMd = await readText(REPLY_QUALITY_ANCHOR_REL_PATH)
-  if (anchorMd.trim()) {
+  if (!anchorFromMeta && anchorMd.trim()) {
     settings.reply_quality_anchor = anchorMd.trim()
   }
 

@@ -44,10 +44,14 @@ export type PackExtraFiles = {
   creatorMessage?: string
   /** unified：全文只取首条非空行；per_module：每行一条（多模块拼接时汇总展示） */
   creatorMessageMode?: CreatorMessageExportMode
-  /** 写入 prompts/reply_quality_anchor.md（v2 推荐路径） */
+  /** 写入 prompts/reply_quality_anchor.md（人类可读镜像；运行时 SSOT 为 meta.reply_quality_anchor） */
   replyQualityAnchorMarkdown?: string
   /** 为 true 时若 settings 无锚点则写入编辑器默认锚点 */
   includeDefaultReplyQualityAnchor?: boolean
+  /** 可选：`roles/{id}/config.json` 全文 */
+  configJson?: string
+  /** 可选：`roles/{id}/user_identities/index.json` 全文 */
+  userIdentitiesIndexJson?: string
 }
 
 function worldMdBody(body: string): string {
@@ -79,9 +83,6 @@ export function buildRolePackFiles(
     extra?.replyQualityAnchorMarkdown?.trim() ||
     anchorFromSettings.trim() ||
     ''
-  if (anchorBody) {
-    delete settingsForBlueprint.reply_quality_anchor
-  }
 
   const blueprint = buildBlueprintV2FromLegacy(m, settingsForBlueprint)
   blueprint.meta.id = id
@@ -93,6 +94,16 @@ export function buildRolePackFiles(
 
   if (anchorBody) {
     files.set(`${id}/${REPLY_QUALITY_ANCHOR_REL_PATH}`, `${anchorBody.trim()}\n`)
+  } else {
+    files.set(
+      `${id}/prompts/.oclive_placeholder.txt`,
+      '可选：在此目录放置 reply_quality_anchor.md 等创作辅助 Markdown。\n',
+    )
+  }
+
+  const configRaw = extra?.configJson?.trim()
+  if (configRaw) {
+    files.set(`${id}/config.json`, configRaw.endsWith('\n') ? configRaw : `${configRaw}\n`)
   }
 
   const uiRaw = extra?.uiConfigJson?.trim()
@@ -103,6 +114,14 @@ export function buildRolePackFiles(
   const authorRaw = extra?.authorJson?.trim()
   if (authorRaw) {
     files.set(`${id}/author.json`, authorRaw.endsWith('\n') ? authorRaw : `${authorRaw}\n`)
+  }
+
+  const uiIndexRaw = extra?.userIdentitiesIndexJson?.trim()
+  if (uiIndexRaw) {
+    files.set(
+      `${id}/user_identities/index.json`,
+      uiIndexRaw.endsWith('\n') ? uiIndexRaw : `${uiIndexRaw}\n`,
+    )
   }
 
   const core = (extra?.corePersonality ?? '').trim()

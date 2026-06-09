@@ -53,6 +53,10 @@ export type SimpleManifestForm = {
   knowledgeGlob: string
   /** manifest `creator_message_to_downloader`：导入者在主程序可见的一句话 */
   creatorMessageToDownloader: string
+  /** 蓝图 meta.featured：是否在预设列表突出展示 */
+  featured: boolean
+  /** 蓝图 meta.preset_order：预设排序（越小越靠前；0 表示不写） */
+  presetOrder: number
 }
 
 export type SimpleSettingsForm = {
@@ -100,6 +104,8 @@ export function defaultSimpleManifestForm(): SimpleManifestForm {
     knowledgeEnabled: true,
     knowledgeGlob: DEFAULT_KNOWLEDGE_GLOB,
     creatorMessageToDownloader: '',
+    featured: false,
+    presetOrder: 0,
   }
 }
 
@@ -203,6 +209,8 @@ export function manifestRecordToSimpleForm(m: Record<string, unknown>): SimpleMa
       typeof m.creator_message_to_downloader === 'string'
         ? String(m.creator_message_to_downloader)
         : '',
+    featured: Boolean(m.featured),
+    presetOrder: Number.isFinite(m.preset_order as number) ? Number(m.preset_order) : 0,
   }
 }
 
@@ -311,6 +319,17 @@ export function applySimpleManifestToJson(currentJson: string, form: SimpleManif
     base.creator_message_to_downloader = dl
   } else {
     delete base.creator_message_to_downloader
+  }
+
+  if (form.featured) {
+    base.featured = true
+  } else {
+    delete base.featured
+  }
+  if (form.presetOrder > 0) {
+    base.preset_order = Math.floor(form.presetOrder)
+  } else {
+    delete base.preset_order
   }
 
   return JSON.stringify(base, null, 2) + '\n'
