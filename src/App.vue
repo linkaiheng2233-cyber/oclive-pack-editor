@@ -61,6 +61,7 @@ const {
   flushSimpleToJson,
   applyMarketComposeJson,
   applyLoadedPackTargets,
+  bindPackSession,
 } = usePackEditor()
 
 const marketComposePaste = ref('')
@@ -81,6 +82,8 @@ const {
   loadSelectedRole,
   resetToNewPack,
 } = useRolesWorkspace(applyLoadedPackTargets)
+
+bindPackSession(packSession)
 
 const { themePreference, setTheme, bumpScale, scaleLabel } = usePackShellPreferences()
 
@@ -194,7 +197,7 @@ async function onWorkspaceLoadRole() {
 async function onWorkspaceImportPack(e: Event) {
   await onImportPack(e)
   if (!lastMessageIsError.value) {
-    packSession.value = 'new'
+    packSession.value = 'loaded'
   }
 }
 

@@ -5,6 +5,6 @@ export async function listDirectoryPluginsForRolesRoot(
   rolesRoot: string | null,
 ): Promise<DirectoryPluginInfo[]> {
   return invoke<DirectoryPluginInfo[]>('list_directory_plugins_for_roles_root', {
-    roles_root: rolesRoot,
+    rolesRoot,
   })
 }

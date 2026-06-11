@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, type Ref } from 'vue'
 import {
   DEFAULT_CORE_PERSONALITY_TEXT,
   DEFAULT_MANIFEST_JSON,
@@ -25,6 +25,7 @@ import {
   shouldPromptReplyQualityAnchor,
 } from '../lib/replyQualityAnchorPreset'
 import { parseJson, runAllPackChecks } from '../lib/packChecks'
+import type { PackSession } from './useRolesWorkspace'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from '../lib/knowledgeFiles'
 import { validateKnowledgeFiles } from '../lib/knowledgeFrontMatter'
 import { mergeMarketComposeIntoEditor, parseMarketComposeV1 } from '../lib/marketComposeImport'
@@ -95,6 +96,20 @@ export function usePackEditor() {
   const syncFormWarning = ref('')
   /** 最近一次「写入文件夹」的 roles 根路径（桌面版 Tauri），供试聊默认角色目录 */
   const lastExportedRolesRoot = ref('')
+
+  /** 由 App 绑定：idle 时拒绝「检查角色包」 */
+  let packSessionRef: Ref<PackSession> | null = null
+
+  function bindPackSession(session: Ref<PackSession>): void {
+    packSessionRef = session
+  }
+
+  function noActivePackForCheck(): boolean {
+    return packSessionRef?.value === 'idle'
+  }
+
+  const NO_ACTIVE_PACK_MSG =
+    '当前没有可检查的角色包：请从开始页加载角色、导入 zip，或点击「创建新角色包」。'
 
   const creationMode = ref<'simple' | 'advanced'>('simple')
   const advancedTab = ref<'manifest' | 'settings' | 'core' | 'world' | 'images'>('manifest')
@@ -342,6 +357,12 @@ export function usePackEditor() {
   }
 
   async function runValidate(): Promise<void> {
+    if (noActivePackForCheck()) {
+      validationErrors.value = [NO_ACTIVE_PACK_MSG]
+      validationLastUsedWasm.value = null
+      setFeedback(NO_ACTIVE_PACK_MSG, true)
+      return
+    }
     const v = await collectValidationState()
     validationErrors.value = v.errors
     validationLastUsedWasm.value = v.wasmUsed
@@ -354,6 +375,12 @@ export function usePackEditor() {
 
   async function checksPassForExport(): Promise<boolean> {
     if (!requireChecksBeforeExport.value) return true
+    if (noActivePackForCheck()) {
+      validationErrors.value = [NO_ACTIVE_PACK_MSG]
+      validationLastUsedWasm.value = null
+      setFeedback(NO_ACTIVE_PACK_MSG, true)
+      return false
+    }
     const v = await collectValidationState()
     validationErrors.value = v.errors
     validationLastUsedWasm.value = v.wasmUsed
@@ -649,6 +676,7 @@ export function usePackEditor() {
     emotionImageSummary,
     folderExportOk,
     manifestRoleId,
+    bindPackSession,
     runValidate,
     onImportPack,
     onEmotionFilesPick,

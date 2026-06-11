@@ -87,13 +87,13 @@ export async function writePackToRolesRootPath(
   const files = buildRolePackFiles(id, m, settings, extra)
   const payload = [...files.entries()].map(([path, content]) => ({ path, content }))
   await invoke('write_role_pack_files', {
-    roles_root: rolesRootPath,
+    rolesRoot: rolesRootPath,
     files: payload,
   })
   const bins = await binaryPayloadForImages(id, extra?.emotionImages ?? [])
   if (bins.length > 0) {
     await invoke('write_role_pack_binaries', {
-      roles_root: rolesRootPath,
+      rolesRoot: rolesRootPath,
       files: bins,
     })
   }

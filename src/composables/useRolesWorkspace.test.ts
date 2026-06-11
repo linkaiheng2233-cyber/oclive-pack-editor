@@ -39,9 +39,9 @@ describe('useRolesWorkspace', () => {
     }
   }
 
-  it('starts in new pack session', () => {
+  it('starts in idle pack session', () => {
     const ws = useRolesWorkspace(makeApplyTargets())
-    expect(ws.packSession.value).toBe('new')
+    expect(ws.packSession.value).toBe('idle')
   })
 
   it('resetToNewPack clears loaded session', async () => {

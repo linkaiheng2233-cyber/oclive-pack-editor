@@ -18,11 +18,11 @@ export type RolePackEditorLoadPayload = {
 export async function invokeListRolePacksUnderRolesRoot(
   rolesRoot: string,
 ): Promise<RolePackListEntry[]> {
-  return invoke<RolePackListEntry[]>('list_role_packs_under_roles_root', { roles_root: rolesRoot })
+  return invoke<RolePackListEntry[]>('list_role_packs_under_roles_root', { rolesRoot })
 }
 
 export async function invokeLoadRolePackForEditor(roleDir: string): Promise<RolePackEditorLoadPayload> {
-  return invoke<RolePackEditorLoadPayload>('load_role_pack_for_editor', { role_dir: roleDir })
+  return invoke<RolePackEditorLoadPayload>('load_role_pack_for_editor', { roleDir })
 }
 
 export async function invokeSaveRolePackEditor(
@@ -33,10 +33,10 @@ export async function invokeSaveRolePackEditor(
   userIdentitiesIndexText?: string | null,
 ): Promise<void> {
   await invoke('save_role_pack_editor', {
-    role_dir: roleDir,
-    manifest_text: manifestText,
-    settings_text: settingsText,
-    config_text: configText ?? null,
-    user_identities_index_text: userIdentitiesIndexText ?? null,
+    roleDir,
+    manifestText,
+    settingsText,
+    configText: configText ?? null,
+    userIdentitiesIndexText: userIdentitiesIndexText ?? null,
   })
 }

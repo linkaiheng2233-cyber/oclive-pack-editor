@@ -23,7 +23,7 @@ import { emptyAuthorRecRow } from '../lib/authorPack'
 const ROLES_ROOT_KEY = 'oclive-pack-editor-roles-root'
 const LEGACY_LAST_ROLES_ROOT_KEY = 'oclive-pack-editor-last-roles-root'
 
-export type PackSession = 'new' | 'loaded'
+export type PackSession = 'idle' | 'new' | 'loaded'
 
 function readStoredRolesRoot(): string {
   try {
@@ -70,7 +70,7 @@ export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
   const rolesRootPath = ref('')
   const availableRoles = ref<RolePackListEntry[]>([])
   const selectedRoleId = ref('')
-  const packSession = ref<PackSession>('new')
+  const packSession = ref<PackSession>('idle')
   const loadedRoleDir = ref('')
   const loadedRoleName = ref('')
   const loadedRoleId = ref('')

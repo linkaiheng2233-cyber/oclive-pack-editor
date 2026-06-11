@@ -12,7 +12,7 @@ describe('rolePackEditorApi (T05 tauri invoke mapping)', () => {
     vi.clearAllMocks()
   })
 
-  it('load uses snake_case role_dir payload', async () => {
+  it('load uses camelCase roleDir payload', async () => {
     vi.mocked(invoke).mockResolvedValueOnce({
       manifestText: '{}',
       settingsText: '{}',
@@ -20,15 +20,15 @@ describe('rolePackEditorApi (T05 tauri invoke mapping)', () => {
     })
     await invokeLoadRolePackForEditor('C:\\roles\\demo')
     expect(invoke).toHaveBeenCalledWith('load_role_pack_for_editor', {
-      role_dir: 'C:\\roles\\demo',
+      roleDir: 'C:\\roles\\demo',
     })
   })
 
-  it('list uses snake_case roles_root payload', async () => {
+  it('list uses camelCase rolesRoot payload', async () => {
     vi.mocked(invoke).mockResolvedValueOnce([])
     await invokeListRolePacksUnderRolesRoot('C:\\roles')
     expect(invoke).toHaveBeenCalledWith('list_role_packs_under_roles_root', {
-      roles_root: 'C:\\roles',
+      rolesRoot: 'C:\\roles',
     })
   })
 
@@ -36,11 +36,11 @@ describe('rolePackEditorApi (T05 tauri invoke mapping)', () => {
     vi.mocked(invoke).mockResolvedValueOnce(undefined)
     await invokeSaveRolePackEditor('C:\\roles\\demo', '{"id":"x"}', '{"schema_version":1}')
     expect(invoke).toHaveBeenCalledWith('save_role_pack_editor', {
-      role_dir: 'C:\\roles\\demo',
-      manifest_text: '{"id":"x"}',
-      settings_text: '{"schema_version":1}',
-      config_text: null,
-      user_identities_index_text: null,
+      roleDir: 'C:\\roles\\demo',
+      manifestText: '{"id":"x"}',
+      settingsText: '{"schema_version":1}',
+      configText: null,
+      userIdentitiesIndexText: null,
     })
   })
 })
