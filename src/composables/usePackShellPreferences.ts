@@ -122,10 +122,15 @@ export function usePackShellPreferences() {
 
   const scaleLabel = computed(() => `${Math.round((UI_SCALE_STEPS[uiScaleIndex.value] ?? 1) * 100)}%`)
 
+  function setTheme(pref: ThemePreference) {
+    themePreference.value = pref
+  }
+
   return {
     themePreference,
     themeCycleLabel,
     cycleTheme,
+    setTheme,
     bumpScale,
     scaleLabel,
   }

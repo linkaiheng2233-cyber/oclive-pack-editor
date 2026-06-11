@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import HelpHint from '../HelpHint.vue'
 import { ADV_EMOTION_IMAGES } from '../../lib/advancedEditorHints'
+import { CANONICAL_EMOTION_TAGS, hasEmotionTagAsset } from '../../lib/emotionAssets'
 import { useI18n } from "vue-i18n";
 
-defineProps<{
+const props = defineProps<{
   summary: string
+  fileNames?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -45,7 +47,17 @@ const { t } = useI18n()
       </label>
       <button type="button" class="btn-lite ghost" @click="emit('clear')">{{ t("emotionAssetsControl.clear") }}</button>
     </div>
-    <p class="emotion-sum">{{ summary }}</p>
+    <ul class="tag-grid" aria-label="canonical emotion tags">
+      <li
+        v-for="tag in CANONICAL_EMOTION_TAGS"
+        :key="tag"
+        :class="{ present: hasEmotionTagAsset(props.fileNames ?? [], tag), missing: !hasEmotionTagAsset(props.fileNames ?? [], tag) }"
+      >
+        <span class="tag-name">{{ tag }}</span>
+        <span class="tag-state">{{ hasEmotionTagAsset(props.fileNames ?? [], tag) ? '✓' : '缺' }}</span>
+      </li>
+    </ul>
+    <p class="emotion-sum">{{ props.summary }}</p>
   </div>
 </template>
 
@@ -69,6 +81,32 @@ const { t } = useI18n()
   margin: 0.5rem 0 0;
   font-size: 0.8125rem;
   color: var(--fluent-text-secondary);
+}
+.tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.tag-grid li {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid var(--fluent-border-stroke);
+}
+.tag-grid li.present {
+  border-color: var(--fluent-accent, #0078d4);
+}
+.tag-grid li.missing {
+  opacity: 0.65;
+}
+.tag-state {
+  font-size: 0.7rem;
 }
 .btn-lite {
   display: inline-block;

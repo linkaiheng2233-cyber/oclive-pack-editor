@@ -134,11 +134,12 @@ export default {
   simpleCreation: {
     syncWarning: "Simple form is not fully synced with JSON: {detail}",
     base: {
-      title: "Base: core profile & emotion assets",
+      title: "Base: role, personality & model",
       desc:
-        "Use plain language to fill the form. When you save, it writes into the pack: the core personality text determines how the AI behaves, and emotion assets decide which images are used (filenames must match oclive conventions, e.g. happy.png). Runtime reads core_personality.txt and assets/images/.",
+        "Start with role ID, display name, personality text, and chat model; emotion assets, announcements, and six slots live under Advanced options below.",
+      essentialsTitle: "Role & model",
       corePersonalityLabel: "Core personality (long text)",
-      faqTitle: "FAQ · Base (core profile, assets, creator message)",
+      faqTitle: "FAQ · Base",
     },
     creatorMessage: {
       title: "Creator message (optional; edit here only)",
@@ -340,6 +341,8 @@ export default {
       leadPrefix: "In advanced mode you edit file contents directly. If unsure, click the ",
       leadSuffix: " next to each heading first.",
       aria: "Advanced editor sections",
+      extensionsHint:
+        "Edit blueprint includes / groups / expert_overlay in Chat Pro’s architecture view; exporting from this page may rebuild and overwrite those fields.",
     },
     tabs: {
       manifest: "Role contract",
@@ -528,6 +531,8 @@ export default {
       neverRan: "Checks have not been run yet. After running, we’ll show whether Tauri v2 blueprint validation or TypeScript was used.",
       lastRustWasm: "Last check: Tauri v2 blueprint validation",
       lastTypeScript: "Last check: TypeScript (Tauri validation unavailable)",
+      lastPackCheckRust: "Last pack check: Tauri v2 blueprint validation",
+      lastPackCheckTypeScript: "Last pack check: TypeScript",
     },
     runAll: "Run all checks",
     requireBeforeExport: "Require checks before export",
@@ -593,7 +598,7 @@ export default {
       nav: "Feature navigation",
     },
     header: {
-      kicker: "oclive · Role Pack Editor",
+      kicker: "Role Pack Editor",
       toolsAria: "Appearance and language",
       scaleAria: "UI scale",
       shrink: "Shrink",
@@ -608,6 +613,56 @@ export default {
         dark: "Dark",
       },
     },
+    headerActions: {
+      aria: "Checks and export",
+      check: "Check pack",
+      checkTitle: "Validate persona / JSON / v2 blueprint contract (not Ollama or kernel environment)",
+      checkAria: "Check pack: validate persona, JSON, and v2 blueprint",
+      export: "Export",
+      exportMenuAria: "More export options",
+    },
+    shellMenu: {
+      localeAria: "UI language",
+      localeMenuAria: "Choose language",
+      themeAria: "UI theme",
+      themeMenuAria: "Choose theme",
+    },
+    writeback: {
+      title: "Write to roles folder",
+      lead: "Overwrite “{roleId}” under roles root “{root}”, or save as a new role ID.",
+      overwrite: "Overwrite {roleId}",
+      saveAsNew: "Save as new role",
+      newRoleIdPrompt: "New role ID (folder name)",
+    },
+    rolesWorkspace: {
+      aria: "Bind roles and open a pack",
+      kicker: "Quick start",
+      title: "Open an existing role or create new",
+      lead: "Pick your oclive roles root, load a v2 blueprint pack from the list, import zip, or start from a template.",
+      browserNote: "Browser build supports zip/ocpak import only; binding a roles directory requires the desktop app.",
+      rootLabel: "Roles directory",
+      rootUnset: "(not set)",
+      pickRoot: "Choose folder",
+      changeRoot: "Change",
+      roleLabel: "Role pack",
+      rolePlaceholder: "Select…",
+      refresh: "Refresh list",
+      openRole: "Open selected role",
+      createNew: "Create new role pack",
+      createdNew: "Reset to a new template. Continue in Simple or Advanced.",
+      hints: {
+        pickRoot: "Choose the roles root (the folder that contains role subfolders).",
+        empty: "No role packs with pipeline.ocblueprint found under this folder.",
+        onlyLegacy: "Only legacy manifest.json packs found; migrate to v2 blueprint first.",
+      },
+    },
+    toast: {
+      errorCount: "{count} issue(s) found",
+      expand: "Expand",
+      collapse: "Collapse",
+      dismiss: "Dismiss",
+      moreErrors: "{count} more not shown",
+    },
     nav: {
       start: "Start",
       simple: "Simple",
@@ -620,8 +675,8 @@ export default {
     },
     titles: {
       start: "Start",
-      simple: "Simple creation",
-      advanced: "Advanced creation",
+      simple: "Simple",
+      advanced: "Advanced",
       check: "Checks & export",
       chat: "Try chat",
       feedback: "Feedback workspace",
@@ -647,10 +702,9 @@ export default {
       conflictHint: "Duplicate shortcut combinations detected; fix before saving.",
     },
     shell: {
-      startSubPrefix: "A standalone tool that outputs a runtime-compatible directory tree. See the contract in oclivenewnew: ",
-      startSubMiddle: " and ",
-      startSubSuffix: ".",
-      subMuted: "Use the left navigation to switch between features and keep each page focused.",
+      startSub: "Import or create a role pack; use the header to check and export when ready.",
+      subMuted: "Use the header to check and export your role pack.",
+      editingLoaded: "Editing: {name}",
     },
     start: {
       kickers: {
@@ -679,20 +733,12 @@ export default {
         leadSuffix: " to read the guide.",
         tiles: {
           simple: {
-            title: "Simple creation",
+            title: "Simple",
             desc: "Persona, emotion assets, and advanced fields (collapsed)",
           },
           advanced: {
-            title: "Advanced creation",
+            title: "Advanced",
             desc: "Edit JSON and knowledge directly, with plain-language guides",
-          },
-          check: {
-            title: "Checks & export",
-            desc: "Validate contract, export zip / write to folder",
-          },
-          chat: {
-            title: "Try chat",
-            desc: "Connect to local oclive HTTP API and chat quickly",
           },
         },
       },

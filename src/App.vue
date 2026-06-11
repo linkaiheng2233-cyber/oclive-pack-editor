@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, ref } from 'vue'
-import { useI18n } from "vue-i18n";
+import { useI18n } from 'vue-i18n'
 import { type EditorViewId, useEditorViewState } from './composables/useEditorViewState'
 import { usePackEditor } from './composables/usePackEditor'
 import { usePackShellPreferences } from './composables/usePackShellPreferences'
-import { setAppLocale, getLocalePreference, type AppLocale } from "./i18n";
+import { useRolesWorkspace } from './composables/useRolesWorkspace'
+import { setAppLocale, getLocalePreference, type AppLocale } from './i18n'
+import PackHeaderActions from './components/pack/PackHeaderActions.vue'
+import PackShellMenu from './components/pack/PackShellMenu.vue'
+import PackConfirmDialog from './components/pack/PackConfirmDialog.vue'
+import PackToastBar from './components/pack/PackToastBar.vue'
+import RolesWorkspacePanel from './components/pack/RolesWorkspacePanel.vue'
 
 const AdvancedCreationPanel = defineAsyncComponent(() => import('./components/pack/AdvancedCreationPanel.vue'))
-const ChatPanel = defineAsyncComponent(() => import('./components/pack/ChatPanel.vue'))
-const FeedbackWorkspace = defineAsyncComponent(() => import('./components/pack/FeedbackWorkspace.vue'))
-const PackChecksSection = defineAsyncComponent(() => import('./components/pack/PackChecksSection.vue'))
 const SimpleCreationPanel = defineAsyncComponent(() => import('./components/pack/SimpleCreationPanel.vue'))
-const RolePackEditorPanel = defineAsyncComponent(() => import('./components/pack/RolePackEditorPanel.vue'))
 
 const {
   manifestText,
@@ -32,6 +34,7 @@ const {
   uiConfig,
   multiRelationWarning,
   emotionImageSummary,
+  emotionImageFiles,
   creatorMessageToOthers,
   creatorMessageMode,
   creatorMessageToDownloaderManifest,
@@ -57,55 +60,58 @@ const {
   exportFolder,
   flushSimpleToJson,
   applyMarketComposeJson,
+  applyLoadedPackTargets,
 } = usePackEditor()
 
 const marketComposePaste = ref('')
 
-const { themePreference, cycleTheme, bumpScale, scaleLabel } = usePackShellPreferences()
+const {
+  rolesRootPath,
+  availableRoles,
+  selectableRoles,
+  selectedRoleId,
+  packSession,
+  loadedRoleName,
+  loadedRoleId,
+  workspaceBusy,
+  workspaceMessage,
+  workspaceMessageIsError,
+  pickRolesRoot,
+  scanRoles,
+  loadSelectedRole,
+  resetToNewPack,
+} = useRolesWorkspace(applyLoadedPackTargets)
 
-const { t } = useI18n();
-const uiLocale = ref<AppLocale>(getLocalePreference());
+const { themePreference, setTheme, bumpScale, scaleLabel } = usePackShellPreferences()
 
-const themeCycleLabel = computed(() => {
-  if (themePreference.value === 'system') return String(t("packEditor.header.themeLabels.system"))
-  if (themePreference.value === 'dark') return String(t("packEditor.header.themeLabels.dark"))
-  return String(t("packEditor.header.themeLabels.light"))
-})
+const { t } = useI18n()
+const uiLocale = ref<AppLocale>(getLocalePreference())
 
-const themeCycleIcon = computed(() => {
-  if (themePreference.value === 'system') return '◐'
-  if (themePreference.value === 'dark') return '🌙'
-  return '☀️'
-})
+const writebackOpen = ref(false)
+let writebackResolve: ((v: 'overwrite' | 'saveAsNew' | 'cancel') => void) | null = null
 
-function onLocaleChange(v: string) {
-  const next = (v as AppLocale) || "system";
-  uiLocale.value = next;
-  setAppLocale(next);
+const emotionImageFileNames = computed(() => emotionImageFiles.value.map((f) => f.name))
+
+function onLocaleChange(v: AppLocale) {
+  uiLocale.value = v
+  setAppLocale(v)
 }
 
 function onApplyMarketCompose() {
   const r = applyMarketComposeJson(marketComposePaste.value)
   if (r.ok) {
     marketComposePaste.value = ''
+    packSession.value = 'new'
     goEditorView('simple')
   }
 }
 
-const { editorView, shouldMountView } = useEditorViewState((v) => {
-  if (v === 'check' || v === 'chat') {
-    flushSimpleToJson()
-  }
-})
+const { editorView, shouldMountView } = useEditorViewState()
 
 const editorNav = computed((): { id: EditorViewId; label: string; icon: string }[] => [
-  { id: 'start', label: String(t("packEditor.nav.start")), icon: '🏠' },
-  { id: 'simple', label: String(t("packEditor.nav.simple")), icon: '📝' },
-  { id: 'advanced', label: String(t("packEditor.nav.advanced")), icon: '⚙️' },
-  { id: 'check', label: String(t("packEditor.nav.check")), icon: '✓' },
-  { id: 'chat', label: String(t("packEditor.nav.chat")), icon: '💬' },
-  { id: 'rolePackEditor', label: String(t("packEditor.nav.rolePackEditor")), icon: '📦' },
-  { id: 'feedback', label: String(t("packEditor.nav.feedback")), icon: '📬' },
+  { id: 'start', label: String(t('packEditor.nav.start')), icon: '🏠' },
+  { id: 'simple', label: String(t('packEditor.nav.simple')), icon: '📝' },
+  { id: 'advanced', label: String(t('packEditor.nav.advanced')), icon: '⚙️' },
 ])
 
 function goEditorView(id: EditorViewId) {
@@ -116,15 +122,96 @@ function goEditorView(id: EditorViewId) {
 
 const viewTitle = computed(() => {
   const id = editorView.value
-  if (id === 'start') return String(t("packEditor.titles.start"))
-  if (id === 'simple') return String(t("packEditor.titles.simple"))
-  if (id === 'advanced') return String(t("packEditor.titles.advanced"))
-  if (id === 'check') return String(t("packEditor.titles.check"))
-  if (id === 'chat') return String(t("packEditor.titles.chat"))
-  if (id === 'rolePackEditor') return String(t("packEditor.titles.rolePackEditor"))
-  if (id === 'feedback') return String(t("packEditor.titles.feedback"))
-  return ""
+  if (id === 'start') return String(t('packEditor.titles.start'))
+  if (id === 'simple') return String(t('packEditor.titles.simple'))
+  if (id === 'advanced') return String(t('packEditor.titles.advanced'))
+  return ''
 })
+
+const headerSubtitle = computed(() => {
+  if (packSession.value === 'loaded' && loadedRoleName.value && editorView.value !== 'start') {
+    return String(t('packEditor.shell.editingLoaded', { name: loadedRoleName.value }))
+  }
+  if (editorView.value === 'start') return String(t('packEditor.shell.startSub'))
+  return String(t('packEditor.shell.subMuted'))
+})
+
+async function onHeaderValidate(): Promise<void> {
+  flushSimpleToJson()
+  await runValidate()
+}
+
+async function onExportOcpak(): Promise<void> {
+  flushSimpleToJson()
+  await exportZip(true)
+}
+
+async function onExportZip(): Promise<void> {
+  flushSimpleToJson()
+  await exportZip(false)
+}
+
+function promptWriteback(): Promise<'overwrite' | 'saveAsNew' | 'cancel'> {
+  return new Promise((resolve) => {
+    writebackResolve = resolve
+    writebackOpen.value = true
+  })
+}
+
+function closeWriteback(choice: 'overwrite' | 'saveAsNew' | 'cancel') {
+  writebackOpen.value = false
+  writebackResolve?.(choice)
+  writebackResolve = null
+}
+
+async function onExportFolder(): Promise<void> {
+  flushSimpleToJson()
+  const root = rolesRootPath.value.trim()
+  if (packSession.value === 'loaded' && root) {
+    const choice = await promptWriteback()
+    if (choice === 'cancel') return
+    if (choice === 'overwrite') {
+      await exportFolder({ rolesRootPath: root, roleIdOverride: loadedRoleId.value || manifestRoleId.value })
+      return
+    }
+    const suggested = `${manifestRoleId.value || loadedRoleId.value}_copy`
+    const newId = window.prompt(String(t('packEditor.writeback.newRoleIdPrompt')), suggested)?.trim()
+    if (!newId) return
+    await exportFolder({ rolesRootPath: root, roleIdOverride: newId })
+    return
+  }
+  await exportFolder(root ? { rolesRootPath: root } : undefined)
+}
+
+async function onWorkspaceLoadRole() {
+  const r = await loadSelectedRole()
+  if (r.ok) {
+    lastMessage.value = workspaceMessage.value
+    lastMessageIsError.value = workspaceMessageIsError.value
+  }
+}
+
+async function onWorkspaceImportPack(e: Event) {
+  await onImportPack(e)
+  if (!lastMessageIsError.value) {
+    packSession.value = 'new'
+  }
+}
+
+function onCreateNewPack() {
+  resetToNewPack()
+  lastMessage.value = String(t('packEditor.rolesWorkspace.createdNew'))
+  lastMessageIsError.value = false
+  goEditorView('simple')
+}
+
+function onGoSimpleFromStart() {
+  goEditorView('simple')
+}
+
+function onGoAdvancedFromStart() {
+  goEditorView('advanced')
+}
 </script>
 
 <template>
@@ -164,14 +251,21 @@ const viewTitle = computed(() => {
             <h1 class="shell-h1">{{ viewTitle }}</h1>
           </div>
           <div class="shell-header-tools" role="toolbar" :aria-label="String(t('packEditor.header.toolsAria'))">
-            <label class="shell-locale">
-              <span class="sr-only">{{ t("common.language") }}</span>
-              <select class="shell-locale-select" :value="uiLocale" @change="onLocaleChange(($event.target as HTMLSelectElement).value)">
-                <option value="system">{{ t("common.system") }}</option>
-                <option value="zh-CN">{{ t("common.zhCN") }}</option>
-                <option value="en-US">{{ t("common.enUS") }}</option>
-              </select>
-            </label>
+            <PackHeaderActions
+              v-model:require-checks-before-export="requireChecksBeforeExport"
+              :folder-export-ok="folderExportOk"
+              :validation-last-used-wasm="validationLastUsedWasm"
+              @run-validate="onHeaderValidate"
+              @export-ocpak="onExportOcpak"
+              @export-zip="onExportZip"
+              @export-folder="onExportFolder"
+            />
+            <PackShellMenu
+              :locale="uiLocale"
+              :theme="themePreference"
+              @update:locale="onLocaleChange"
+              @update:theme="setTheme"
+            />
             <div class="shell-scale" :aria-label="String(t('packEditor.header.scaleAria'))">
               <button type="button" class="shell-tool-btn" :title="String(t('packEditor.header.shrink'))" :aria-label="String(t('packEditor.header.shrinkAria'))" @click="bumpScale(-1)">
                 A−
@@ -181,97 +275,48 @@ const viewTitle = computed(() => {
                 A+
               </button>
             </div>
-            <button
-              type="button"
-              class="shell-tool-btn shell-theme-btn"
-              :title="String(t('packEditor.header.themeTitle', { label: themeCycleLabel }))"
-              @click="cycleTheme"
-            >
-              {{ themeCycleIcon }}
-              {{ themeCycleLabel }}
-            </button>
           </div>
         </div>
-        <p v-if="editorView === 'start'" class="sub">
-          {{ t("packEditor.shell.startSubPrefix") }}
-          <code>creator-docs/</code> {{ t("packEditor.shell.startSubMiddle") }}
-          <code>roles/README_MANIFEST.md</code>{{ t("packEditor.shell.startSubSuffix") }}
+        <p class="sub" :class="{ 'sub-muted': editorView !== 'start' && packSession === 'loaded' }">
+          {{ headerSubtitle }}
         </p>
-        <p v-else class="sub sub-muted">{{ t("packEditor.shell.subMuted") }}</p>
       </header>
 
-      <!-- 开始：导入 + 入口 -->
-      <div v-show="editorView === 'start'" class="view-stack">
-        <section class="import-wrap" :aria-label="String(t('packEditor.start.import.aria'))">
-          <p class="section-kicker">{{ t("packEditor.start.kickers.quickStart") }}</p>
-          <div class="import-bar">
-            <label class="import-btn">
-              <input
-                type="file"
-                accept=".zip,.ocpak,application/zip"
-                class="sr-only"
-                @change="onImportPack"
-              />
-              {{ t("packEditor.start.import.button") }}
-            </label>
-            <span class="import-hint">{{ t("packEditor.start.import.hint") }}</span>
-          </div>
-        </section>
+      <PackToastBar
+        :message="lastMessage"
+        :is-error="lastMessageIsError"
+        :validation-errors="validationErrors"
+      />
 
-        <section class="market-compose-wrap" :aria-label="String(t('packEditor.start.marketCompose.aria'))">
-          <p class="section-kicker">{{ t("packEditor.start.kickers.community") }}</p>
-          <h2 class="mc-h2">{{ t("packEditor.start.marketCompose.title") }}</h2>
-          <p class="mc-lead">{{ t("packEditor.start.marketCompose.lead") }}</p>
-          <textarea
-            v-model="marketComposePaste"
-            class="mc-textarea"
-            rows="8"
-            spellcheck="false"
-            :placeholder="String(t('packEditor.start.marketCompose.placeholder'))"
-          />
-          <div class="mc-actions">
-            <button type="button" class="mc-btn primary" @click="onApplyMarketCompose">{{ t("packEditor.start.marketCompose.apply") }}</button>
-          </div>
-        </section>
+      <!-- 开始：roles 工作区 -->
+      <RolesWorkspacePanel
+        v-show="editorView === 'start'"
+        v-model:selected-role-id="selectedRoleId"
+        v-model:market-compose-paste="marketComposePaste"
+        :roles-root-path="rolesRootPath"
+        :selectable-roles="selectableRoles"
+        :available-roles="availableRoles"
+        :workspace-busy="workspaceBusy"
+        :workspace-message="workspaceMessage"
+        :workspace-message-is-error="workspaceMessageIsError"
+        @pick-roles-root="pickRolesRoot"
+        @scan-roles="scanRoles"
+        @load-selected-role="onWorkspaceLoadRole"
+        @create-new-pack="onCreateNewPack"
+        @import-pack="onWorkspaceImportPack"
+        @apply-market-compose="onApplyMarketCompose"
+        @go-simple="onGoSimpleFromStart"
+        @go-advanced="onGoAdvancedFromStart"
+      />
 
-        <section class="quick-card" :aria-label="String(t('packEditor.start.quickNav.aria'))">
-          <p class="section-kicker">{{ t("packEditor.start.kickers.modes") }}</p>
-          <p class="quick-lead">
-            {{ t("packEditor.start.quickNav.leadPrefix") }}
-            <span class="quick-hint-ico" aria-hidden="true">?</span> {{ t("packEditor.start.quickNav.leadSuffix") }}
-          </p>
-          <div class="quick-actions">
-            <button type="button" class="quick-tile" @click="goEditorView('simple')">
-              <span class="quick-tile-ico" aria-hidden="true">📝</span>
-              <span class="quick-tile-title">{{ t("packEditor.start.quickNav.tiles.simple.title") }}</span>
-              <span class="quick-tile-desc">{{ t("packEditor.start.quickNav.tiles.simple.desc") }}</span>
-            </button>
-            <button type="button" class="quick-tile" @click="goEditorView('advanced')">
-              <span class="quick-tile-ico" aria-hidden="true">⚙️</span>
-              <span class="quick-tile-title">{{ t("packEditor.start.quickNav.tiles.advanced.title") }}</span>
-              <span class="quick-tile-desc">{{ t("packEditor.start.quickNav.tiles.advanced.desc") }}</span>
-            </button>
-            <button type="button" class="quick-tile quick-tile-accent" @click="goEditorView('check')">
-              <span class="quick-tile-ico" aria-hidden="true">✓</span>
-              <span class="quick-tile-title">{{ t("packEditor.start.quickNav.tiles.check.title") }}</span>
-              <span class="quick-tile-desc">{{ t("packEditor.start.quickNav.tiles.check.desc") }}</span>
-            </button>
-            <button type="button" class="quick-tile" @click="goEditorView('chat')">
-              <span class="quick-tile-ico" aria-hidden="true">💬</span>
-              <span class="quick-tile-title">{{ t("packEditor.start.quickNav.tiles.chat.title") }}</span>
-              <span class="quick-tile-desc">{{ t("packEditor.start.quickNav.tiles.chat.desc") }}</span>
-            </button>
-          </div>
-        </section>
-      </div>
-
-      <div v-if="shouldMountView('feedback')" v-show="editorView === 'feedback'" class="view-stack">
-        <FeedbackWorkspace :role-id="manifestRoleId" :active="editorView === 'feedback'" />
-      </div>
-
-      <div v-if="shouldMountView('rolePackEditor')" v-show="editorView === 'rolePackEditor'" class="view-stack">
-        <RolePackEditorPanel />
-      </div>
+      <PackConfirmDialog
+        :open="writebackOpen"
+        :role-id="loadedRoleId || manifestRoleId"
+        :roles-root-path="rolesRootPath"
+        @overwrite="closeWriteback('overwrite')"
+        @save-as-new="closeWriteback('saveAsNew')"
+        @cancel="closeWriteback('cancel')"
+      />
 
       <!-- 简单创作 -->
       <div v-if="shouldMountView('simple')" v-show="editorView === 'simple'" class="view-stack">
@@ -291,6 +336,7 @@ const viewTitle = computed(() => {
           :multi-relation-warning="multiRelationWarning"
           :sync-form-warning="syncFormWarning"
           :emotion-summary="emotionImageSummary"
+          :emotion-file-names="emotionImageFileNames"
           :last-exported-roles-root="lastExportedRolesRoot"
           @emotion-pick="onEmotionFilesPick"
           @emotion-append="onEmotionFilesAppend"
@@ -313,6 +359,7 @@ const viewTitle = computed(() => {
           v-model:advanced-tab="advancedTab"
           :manifest-role-id="manifestRoleId"
           :emotion-summary="emotionImageSummary"
+          :emotion-file-names="emotionImageFileNames"
           @add-knowledge-file="addKnowledgeFile"
           @update-knowledge-file="updateKnowledgeFile"
           @remove-knowledge-file="removeKnowledgeFile"
@@ -320,55 +367,6 @@ const viewTitle = computed(() => {
           @emotion-append="onEmotionFilesAppend"
           @emotion-clear="clearEmotionImages"
         />
-      </div>
-
-      <!-- 试聊 -->
-      <div v-if="shouldMountView('chat')" v-show="editorView === 'chat'" class="view-stack">
-        <ChatPanel :role-id="manifestRoleId" :last-roles-root="lastExportedRolesRoot" />
-      </div>
-
-      <!-- 检查与导出 -->
-      <div v-if="shouldMountView('check')" v-show="editorView === 'check'" class="view-stack view-stack--check">
-        <PackChecksSection
-          v-model:require-checks-before-export="requireChecksBeforeExport"
-          :validation-last-used-wasm="validationLastUsedWasm"
-          @run-validate="runValidate"
-        />
-
-        <div class="actions">
-          <button type="button" @click="exportZip(true)">{{ t("packEditor.check.exportOcpak") }}</button>
-          <button type="button" @click="exportZip(false)">{{ t("packEditor.check.exportZip") }}</button>
-          <button
-            v-if="folderExportOk"
-            type="button"
-            class="secondary"
-            @click="exportFolder"
-          >
-            {{ t("packEditor.check.exportFolder") }}
-          </button>
-        </div>
-        <p class="hint muted post-actions-hint export-anchor-hint">
-          {{ t("packEditor.check.exportAnchorHint") }}
-        </p>
-
-        <div v-if="validationErrors.length" class="errors-block" role="alert">
-          <strong>{{ t("packEditor.check.resultsTitle") }}</strong>
-          <ul>
-            <li v-for="(e, i) in validationErrors" :key="i">{{ e }}</li>
-          </ul>
-        </div>
-        <p v-else class="hint muted post-actions-hint">
-          {{ t("packEditor.check.noErrorsHint") }}
-        </p>
-
-        <p
-          v-if="lastMessage"
-          class="feedback-msg"
-          :class="{ 'feedback-msg--ok': !lastMessageIsError, 'feedback-msg--err': lastMessageIsError }"
-          role="status"
-        >
-          {{ lastMessage }}
-        </p>
       </div>
     </div>
   </div>
@@ -529,6 +527,9 @@ const viewTitle = computed(() => {
   border: 1px solid var(--fluent-border-stroke);
   border-left: 3px solid var(--rail-accent-editor);
   box-shadow: var(--fluent-shadow-card);
+  position: relative;
+  z-index: 30;
+  overflow: visible;
 }
 
 .shell-header-row {

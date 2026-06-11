@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { invokeLoadRolePackForEditor, invokeSaveRolePackEditor } from './rolePackEditorApi'
+import { invokeLoadRolePackForEditor, invokeListRolePacksUnderRolesRoot, invokeSaveRolePackEditor } from './rolePackEditorApi'
 
 vi.mock('@tauri-apps/api/tauri', () => ({
   invoke: vi.fn(),
@@ -21,6 +21,14 @@ describe('rolePackEditorApi (T05 tauri invoke mapping)', () => {
     await invokeLoadRolePackForEditor('C:\\roles\\demo')
     expect(invoke).toHaveBeenCalledWith('load_role_pack_for_editor', {
       role_dir: 'C:\\roles\\demo',
+    })
+  })
+
+  it('list uses snake_case roles_root payload', async () => {
+    vi.mocked(invoke).mockResolvedValueOnce([])
+    await invokeListRolePacksUnderRolesRoot('C:\\roles')
+    expect(invoke).toHaveBeenCalledWith('list_role_packs_under_roles_root', {
+      roles_root: 'C:\\roles',
     })
   })
 

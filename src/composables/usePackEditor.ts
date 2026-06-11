@@ -10,8 +10,13 @@ import {
   triggerDownload,
   type PackExtraFiles,
 } from '../lib/exportPack'
-import { pickRolesRootAndWritePack, isFolderExportSupported } from '../lib/exportFolder'
+import { pickRolesRootAndWritePack, isFolderExportSupported, writePackToRolesRootPath } from '../lib/exportFolder'
 import { importRolePackFromZip, importedPackBrainHint } from '../lib/importPack'
+import {
+  applyLoadedPackToEditor,
+  importedPackToApplyInput,
+  type ApplyLoadedPackTargets,
+} from '../lib/applyLoadedPackToEditor'
 import { filterEmotionImageFiles } from '../lib/emotionAssets'
 import { prepareExportPayload } from '../lib/exportPrepare'
 import { validateExportPackDirectory } from '../lib/exportValidate'
@@ -31,10 +36,9 @@ import type { CreatorMessageExportMode } from '../lib/rolePackCreatorMessage'
 import {
   buildAuthorJsonDisk,
   emptyAuthorRecRow,
-  parseAuthorImport,
   type AuthorRecRow,
 } from '../lib/authorPack'
-import { parseUiConfigJson, serializeUiConfig } from '../lib/uiConfig'
+import { serializeUiConfig } from '../lib/uiConfig'
 import { defaultUiConfig, type UiConfig } from '../types/uiConfig'
 import {
   applySimpleManifestToJson,
@@ -55,6 +59,11 @@ const STORAGE_CREATOR_MSG_MODE = 'oclive-pack-editor-creator-msg-mode'
 
 /** 简单模式表单 → JSON 防抖：避免每次按键都整表序列化，减轻大字段输入卡顿。 */
 const SIMPLE_JSON_DEBOUNCE_MS = 220
+
+export type ExportFolderWriteOptions = {
+  rolesRootPath: string
+  roleIdOverride?: string
+}
 
 export function usePackEditor() {
   const manifestText = ref(DEFAULT_MANIFEST_JSON)
@@ -336,6 +345,11 @@ export function usePackEditor() {
     const v = await collectValidationState()
     validationErrors.value = v.errors
     validationLastUsedWasm.value = v.wasmUsed
+    if (v.ok) {
+      setFeedback('角色包检查通过，未发现错误（非环境/Ollama 检测）。', false)
+    } else {
+      setFeedback(`角色包有 ${v.errors.length} 处问题（非环境故障）。`, true)
+    }
   }
 
   async function checksPassForExport(): Promise<boolean> {
@@ -353,39 +367,7 @@ export function usePackEditor() {
     if (!f) return
     try {
       const imp = await importRolePackFromZip(f)
-      manifestText.value = imp.manifestJson
-      settingsText.value = imp.settingsJson
-      corePersonalityText.value =
-        imp.corePersonality.trim() || DEFAULT_CORE_PERSONALITY_TEXT
-      worldviewMarkdown.value = imp.worldviewMarkdown
-      knowledgeMarkdownFiles.value = imp.knowledgeMarkdownFiles
-      emotionImageFiles.value = imp.emotionImageFiles
-      creatorMessageToOthers.value = imp.creatorMessage
-      Object.assign(uiConfig, parseUiConfigJson(imp.uiJson || '{}'))
-      if (imp.authorJson.trim()) {
-        const pa = parseAuthorImport(imp.authorJson)
-        if (pa) {
-          authorSummary.value = pa.summary
-          authorDetailMarkdown.value = pa.detailMarkdown
-          authorRecommendedRows.value =
-            pa.rows.length > 0 ? pa.rows : [emptyAuthorRecRow()]
-          authorIncludeSuggestedUi.value = pa.includeSuggestedUi
-          authorSuggestedBackendsJson.value = pa.suggestedPluginBackendsJson
-          if (pa.suggestedUi) {
-            Object.assign(
-              uiConfig,
-              parseUiConfigJson(JSON.stringify(pa.suggestedUi)),
-            )
-          }
-        }
-      } else {
-        authorSummary.value = ''
-        authorDetailMarkdown.value = ''
-        authorRecommendedRows.value = [emptyAuthorRecRow()]
-        authorIncludeSuggestedUi.value = false
-        authorSuggestedBackendsJson.value = ''
-      }
-      syncFormsFromJson()
+      applyLoadedPackToEditor(importedPackToApplyInput(imp), applyLoadedPackTargets)
       setFeedback(
         `已导入角色「${imp.roleId}」。可继续编辑后导出。 ${importedPackBrainHint(imp.settingsJson)}`,
         false,
@@ -563,7 +545,25 @@ export function usePackEditor() {
     }
   }
 
-  async function exportFolder(): Promise<void> {
+  const applyLoadedPackTargets: ApplyLoadedPackTargets = {
+    manifestText,
+    settingsText,
+    corePersonalityText,
+    worldviewMarkdown,
+    knowledgeMarkdownFiles,
+    emotionImageFiles,
+    creatorMessageToOthers,
+    creatorMessageMode,
+    uiConfig,
+    authorSummary,
+    authorDetailMarkdown,
+    authorRecommendedRows,
+    authorIncludeSuggestedUi,
+    authorSuggestedBackendsJson,
+    syncFormsFromJson,
+  }
+
+  async function exportFolder(writeOptions?: ExportFolderWriteOptions): Promise<void> {
     setFeedback('', false)
     const built = await tryBuildExportPayload()
     if (!built.ok) {
@@ -571,14 +571,40 @@ export function usePackEditor() {
       return
     }
     let { roleId, manifest, settings } = built
+    if (writeOptions?.roleIdOverride?.trim()) {
+      roleId = writeOptions.roleIdOverride.trim()
+      manifest = { ...manifest, id: roleId }
+    }
     settings = applyReplyQualityAnchorPrompt(settings)
     try {
+      if (writeOptions?.rolesRootPath.trim()) {
+        await writePackToRolesRootPath(
+          writeOptions.rolesRootPath.trim(),
+          roleId,
+          manifest,
+          settings,
+          packExtra(),
+        )
+        lastExportedRolesRoot.value = writeOptions.rolesRootPath.trim()
+        try {
+          localStorage.setItem('oclive-pack-editor-last-roles-root', writeOptions.rolesRootPath.trim())
+          localStorage.setItem('oclive-pack-editor-roles-root', writeOptions.rolesRootPath.trim())
+        } catch {
+          /* ignore */
+        }
+        setFeedback(
+          `已写入 ${roleId}/ 到 ${writeOptions.rolesRootPath.trim()}（roles 根）。可直接启动 oclive 测试。`,
+          false,
+        )
+        return
+      }
       const result = await pickRolesRootAndWritePack(roleId, manifest, settings, packExtra())
       if (!result.wrote) return
       if (result.rolesRootPath) {
         lastExportedRolesRoot.value = result.rolesRootPath
         try {
           localStorage.setItem('oclive-pack-editor-last-roles-root', result.rolesRootPath)
+          localStorage.setItem('oclive-pack-editor-roles-root', result.rolesRootPath)
         } catch {
           /* ignore */
         }
@@ -639,5 +665,6 @@ export function usePackEditor() {
     flushSimpleToJson,
     /** 市场「模块组合」JSON → 合并进简单创作 */
     applyMarketComposeJson,
+    applyLoadedPackTargets,
   }
 }

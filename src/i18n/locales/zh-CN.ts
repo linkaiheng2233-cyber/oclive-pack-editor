@@ -125,11 +125,12 @@ export default {
   simpleCreation: {
     syncWarning: "简单表单未与 JSON 完全同步：{detail}",
     base: {
-      title: "基础：核心档案与情绪图",
+      title: "基础：角色、性格与模型",
       desc:
-        "这一页用大白话填表，保存后就会写进包里：核心性格档案（包内长文）决定 AI 怎么演，情绪图决定立绘用哪些文件（文件名要和 oclive 约定一致，如 happy.png），运行时读 core_personality.txt 与 assets/images/。",
+        "先填角色 ID、显示名、性格长文与对话模型；情绪图、公告与六槽等收在下方「进阶选项」。",
+      essentialsTitle: "角色与模型",
       corePersonalityLabel: "核心性格档案（长文）",
-      faqTitle: "常见问题 · 基础区（核心档案、立绘、寄语）",
+      faqTitle: "常见问题 · 基础区",
     },
     creatorMessage: {
       title: "创作者公告（可选，仅在此编写）",
@@ -325,6 +326,8 @@ export default {
       leadPrefix: "高级模式直接编辑文件内容；不懂可先点标题旁的",
       leadSuffix: "。",
       aria: "高级编辑分区",
+      extensionsHint:
+        "蓝图中的 includes / groups / expert_overlay 等扩展字段请在 Chat Pro 架构图编辑；本页导出 rebuild 可能覆盖这些字段。",
     },
     tabs: {
       manifest: "角色契约",
@@ -504,6 +507,8 @@ export default {
       neverRan: "尚未运行检查；运行后将显示使用的校验方式（Tauri v2 蓝图校验或 TypeScript）。",
       lastRustWasm: "最近一次检查：Tauri v2 蓝图校验",
       lastTypeScript: "最近一次检查：TypeScript（Tauri 校验不可用）",
+      lastPackCheckRust: "上次角色包检查：Tauri v2 蓝图校验",
+      lastPackCheckTypeScript: "上次角色包检查：TypeScript",
     },
     runAll: "运行全部检查",
     requireBeforeExport: "导出前校验包内容",
@@ -566,7 +571,7 @@ export default {
       nav: "功能导航",
     },
     header: {
-      kicker: "oclive · 角色包编写器",
+      kicker: "角色包编写器",
       toolsAria: "外观与语言",
       scaleAria: "界面大小",
       shrink: "缩小",
@@ -581,6 +586,56 @@ export default {
         dark: "深色",
       },
     },
+    headerActions: {
+      aria: "检查与导出",
+      check: "检查角色包",
+      checkTitle: "校验人设与 JSON / v2 蓝图契约（非 Ollama 或内核环境检测）",
+      checkAria: "检查角色包：校验人设、JSON 与 v2 蓝图",
+      export: "导出",
+      exportMenuAria: "更多导出选项",
+    },
+    shellMenu: {
+      localeAria: "界面语言",
+      localeMenuAria: "选择语言",
+      themeAria: "界面主题",
+      themeMenuAria: "选择主题",
+    },
+    writeback: {
+      title: "写入 roles 目录",
+      lead: "将覆盖 roles 根「{root}」下的「{roleId}」文件夹，或另存为新角色 ID。",
+      overwrite: "覆盖 {roleId}",
+      saveAsNew: "另存为新角色",
+      newRoleIdPrompt: "新角色 ID（文件夹名）",
+    },
+    rolesWorkspace: {
+      aria: "绑定 roles 并打开角色包",
+      kicker: "快速开始",
+      title: "打开已有角色或新建",
+      lead: "选择本机 oclive 的 roles 根目录，从列表加载 v2 蓝图包；也可导入 zip 或创建新模板。",
+      browserNote: "浏览器版仅支持 zip/ocpak 导入；绑定 roles 目录扫描需桌面版。",
+      rootLabel: "Roles 目录",
+      rootUnset: "（未绑定）",
+      pickRoot: "选择目录",
+      changeRoot: "更改",
+      roleLabel: "角色包",
+      rolePlaceholder: "请选择…",
+      refresh: "刷新列表",
+      openRole: "打开所选角色",
+      createNew: "创建新角色包",
+      createdNew: "已重置为新建模板，请到简单或高级编辑。",
+      hints: {
+        pickRoot: "请先选择 roles 根目录（包含各角色子文件夹的那一层）。",
+        empty: "该目录下未找到含 pipeline.ocblueprint 的角色包。",
+        onlyLegacy: "仅发现 legacy manifest.json 包，需先迁移为 v2 蓝图。",
+      },
+    },
+    toast: {
+      errorCount: "共 {count} 项问题",
+      expand: "展开",
+      collapse: "收起",
+      dismiss: "关闭",
+      moreErrors: "另有 {count} 项未显示",
+    },
     nav: {
       start: "开始",
       simple: "简单",
@@ -593,8 +648,8 @@ export default {
     },
     titles: {
       start: "开始",
-      simple: "简单创作",
-      advanced: "高级创作",
+      simple: "简单",
+      advanced: "高级",
       check: "检查与导出",
       chat: "试聊",
       feedback: "反馈工作台",
@@ -620,10 +675,9 @@ export default {
       conflictHint: "存在重复的快捷键组合，请修改后再保存。",
     },
     shell: {
-      startSubPrefix: "独立工具，仅产出与运行时兼容的目录树；契约见 oclivenewnew 仓库 ",
-      startSubMiddle: " 与 ",
-      startSubSuffix: "。",
-      subMuted: "使用左侧导航在不同功能间切换，避免单页堆砌。",
+      startSub: "导入或新建角色包，编辑后可经顶栏检查与导出。",
+      subMuted: "顶栏可检查与导出角色包。",
+      editingLoaded: "正在编辑：{name}",
     },
     start: {
       kickers: {
@@ -651,20 +705,12 @@ export default {
         leadSuffix: "看说明。",
         tiles: {
           simple: {
-            title: "简单创作",
+            title: "简单",
             desc: "人设、情绪图、进阶字段折叠",
           },
           advanced: {
-            title: "高级创作",
+            title: "高级",
             desc: "直接编辑 JSON 与知识库；有白话提示",
-          },
-          check: {
-            title: "检查与导出",
-            desc: "校验契约、导出 zip / 写入文件夹",
-          },
-          chat: {
-            title: "试聊",
-            desc: "连接本机 oclive HTTP API，快速对话",
           },
         },
       },

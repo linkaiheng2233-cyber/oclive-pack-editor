@@ -1,3 +1,4 @@
+<!-- @deprecated 已从壳层移除（2026-06 Phase 1）；Tauri 命令仍可用，编写器 UI 不再暴露 -->
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

@@ -452,6 +452,97 @@ async fn directory_plugin_jsonrpc_invoke(
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RolePackListEntry {
+    role_id: String,
+    display_name: String,
+    abs_path: String,
+    needs_migration: bool,
+}
+
+fn read_display_name_from_blueprint(path: &std::path::Path) -> Option<String> {
+    use std::fs;
+    let text = fs::read_to_string(path).ok()?;
+    let bp: serde_json::Value = serde_json::from_str(&text).ok()?;
+    bp.get("meta")?
+        .get("name")?
+        .as_str()
+        .map(str::to_string)
+}
+
+/// 扫描 roles 根下一级子目录，纳入含 v2 蓝图的角色包；legacy manifest 标记需迁移。
+#[tauri::command]
+fn list_role_packs_under_roles_root(roles_root: String) -> Result<Vec<RolePackListEntry>, String> {
+    use std::fs;
+    use std::path::PathBuf;
+
+    let root = PathBuf::from(roles_root.trim());
+    if !root.is_dir() {
+        return Err("所选路径不是目录".into());
+    }
+
+    let mut out = Vec::new();
+    for entry in fs::read_dir(&root).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let role_id = path
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_string();
+        if role_id.is_empty() || role_id.starts_with('.') {
+            continue;
+        }
+
+        let blueprint_path = path.join(PIPELINE_BLUEPRINT_FILENAME);
+        let manifest_path = path.join("manifest.json");
+
+        if blueprint_path.is_file() {
+            let display_name = read_display_name_from_blueprint(&blueprint_path).unwrap_or_else(|| role_id.clone());
+            out.push(RolePackListEntry {
+                role_id,
+                display_name,
+                abs_path: path.to_string_lossy().to_string(),
+                needs_migration: false,
+            });
+        } else if manifest_path.is_file() {
+            out.push(RolePackListEntry {
+                role_id: role_id.clone(),
+                display_name: format!("{role_id} (需迁移)"),
+                abs_path: path.to_string_lossy().to_string(),
+                needs_migration: true,
+            });
+        }
+    }
+    out.sort_by(|a, b| a.role_id.cmp(&b.role_id));
+    Ok(out)
+}
+
+/// 首次启动时猜测默认 roles 根（OCLIVE_MONOREPO 或同级 oclivenewnew/roles）。
+#[tauri::command]
+fn guess_default_roles_root() -> Option<String> {
+    use std::path::PathBuf;
+
+    if let Ok(monorepo) = std::env::var("OCLIVE_MONOREPO") {
+        let roles = PathBuf::from(monorepo.trim()).join("roles");
+        if roles.is_dir() {
+            return roles.canonicalize().ok().map(|p| p.to_string_lossy().to_string());
+        }
+    }
+    let sibling = PathBuf::from("..").join("oclivenewnew").join("roles");
+    if sibling.is_dir() {
+        return sibling
+            .canonicalize()
+            .ok()
+            .map(|p| p.to_string_lossy().to_string());
+    }
+    None
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RolePackEditorLoad {
     manifest_text: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -841,6 +932,33 @@ mod blueprint_save_tests {
     }
 
     #[test]
+    fn list_role_packs_finds_blueprint_and_legacy() {
+        use super::{list_role_packs_under_roles_root, PIPELINE_BLUEPRINT_FILENAME};
+        use std::fs;
+        let root = std::env::temp_dir().join(format!("oclive-pe-list-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+
+        let v2 = root.join("demo");
+        fs::create_dir_all(&v2).unwrap();
+        fs::write(
+            v2.join(PIPELINE_BLUEPRINT_FILENAME),
+            r#"{"schema_version":2,"meta":{"id":"demo","name":"Demo Role"},"slot_registry":{"llm":{"type":"llm","label":"L","backend":"ollama","position":0}}}"#,
+        )
+        .unwrap();
+
+        let legacy = root.join("old");
+        fs::create_dir_all(&legacy).unwrap();
+        fs::write(legacy.join("manifest.json"), r#"{"id":"old"}"#).unwrap();
+
+        let list = list_role_packs_under_roles_root(root.to_string_lossy().to_string()).unwrap();
+        assert_eq!(list.len(), 2);
+        assert!(list.iter().any(|e| e.role_id == "demo" && !e.needs_migration));
+        assert!(list.iter().any(|e| e.role_id == "old" && e.needs_migration));
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
     fn merge_skips_when_no_old_blueprint() {
         let mut new_bp = json!({ "schema_version": 2, "meta": { "id": "x" }, "slot_registry": {} });
         merge_preserved_blueprint_fields(&mut new_bp, None);
@@ -862,6 +980,8 @@ fn main() {
             spawn_oclive_api,
             list_directory_plugins_for_roles_root,
             directory_plugin_jsonrpc_invoke,
+            list_role_packs_under_roles_root,
+            guess_default_roles_root,
             load_role_pack_for_editor,
             save_role_pack_editor,
             validate_blueprint_v2_json,

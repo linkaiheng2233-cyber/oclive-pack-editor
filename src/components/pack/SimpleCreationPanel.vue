@@ -53,6 +53,7 @@ const props = defineProps<{
   multiRelationWarning: boolean
   syncFormWarning: string
   emotionSummary: string
+  emotionFileNames?: string[]
   /** 最近一次「写入文件夹」的 roles 根路径；用于定位同级 `plugins/` 扫描目录插件 */
   lastExportedRolesRoot: string
 }>()
@@ -235,6 +236,23 @@ const emit = defineEmits<{
       <p class="base-desc">
         {{ t("simpleCreation.base.desc") }}
       </p>
+      <h3 class="h3 essentials-title">{{ t("simpleCreation.base.essentialsTitle") }}</h3>
+      <div class="form-row two">
+        <div>
+          <div class="label-hint-row">
+            <label for="f-id-base">{{ t("simpleCreation.manifest.roleIdLabel") }}</label>
+            <HelpHint :paragraphs="SIMPLE_FIELD_ROLE_ID" />
+          </div>
+          <input id="f-id-base" v-model="simpleM.id" type="text" autocomplete="off" />
+        </div>
+        <div>
+          <div class="label-hint-row">
+            <label for="f-name-base">{{ t("simpleCreation.manifest.displayNameLabel") }}</label>
+            <HelpHint :paragraphs="SIMPLE_FIELD_DISPLAY_NAME" />
+          </div>
+          <input id="f-name-base" v-model="simpleM.name" type="text" />
+        </div>
+      </div>
       <div class="form-row">
         <div class="label-hint-row">
           <label for="core-ta">{{ t("simpleCreation.base.corePersonalityLabel") }}</label>
@@ -248,68 +266,25 @@ const emit = defineEmits<{
           spellcheck="false"
         />
       </div>
-      <div class="form-row">
-        <EmotionAssetsControl
-          :summary="emotionSummary"
-          @pick="emit('emotionPick', $event)"
-          @append="emit('emotionAppend', $event)"
-          @clear="emit('emotionClear')"
-        />
-      </div>
-      <div class="form-row">
-        <div class="label-hint-row">
-          <span class="labelish">{{ t("simpleCreation.creatorMessage.title") }}</span>
-          <HelpHint :paragraphs="SIMPLE_CREATOR_MESSAGE_MODE" />
+      <div class="form-row two">
+        <div>
+          <label for="f-brain-mode-base">{{ t("simpleCreation.settings.brain.modeLabel") }}</label>
+          <select id="f-brain-mode-base" v-model="simpleS.pluginLlm">
+            <option value="ollama">{{ t("simpleCreation.settings.brain.modes.ollama") }}</option>
+            <option value="remote">{{ t("simpleCreation.settings.brain.modes.remote") }}</option>
+            <option value="directory">{{ t("simpleCreation.settings.brain.modes.directory") }}</option>
+          </select>
         </div>
-        <p class="hint tiny">
-          {{ t("simpleCreation.creatorMessage.desc") }}
-        </p>
-        <div
-          class="creator-msg-mode"
-          role="radiogroup"
-          :aria-label="String(t('simpleCreation.creatorMessage.modeAria'))"
-        >
-          <label class="radio-line">
-            <input v-model="creatorMessageMode" type="radio" value="unified" />
-            {{ t("simpleCreation.creatorMessage.modes.unified") }}
-          </label>
-          <label class="radio-line">
-            <input v-model="creatorMessageMode" type="radio" value="per_module" />
-            {{ t("simpleCreation.creatorMessage.modes.perModule") }}
-          </label>
+        <div>
+          <label for="f-model-base">{{ t("simpleCreation.settings.brain.ollamaModelLabel") }}</label>
+          <input
+            id="f-model-base"
+            v-model="simpleS.model"
+            type="text"
+            placeholder="qwen2.5:7b"
+            autocomplete="off"
+          />
         </div>
-        <div class="label-hint-row">
-          <label for="creator-msg-others">{{
-            creatorMessageMode === 'unified'
-              ? t("simpleCreation.creatorMessage.bodyLabelUnified")
-              : t("simpleCreation.creatorMessage.bodyLabelPerModule")
-          }}</label>
-          <HelpHint :paragraphs="SIMPLE_CREATOR_MESSAGE_BODY" />
-        </div>
-        <textarea
-          id="creator-msg-others"
-          v-model="creatorMessageToOthers"
-          :rows="creatorMessageMode === 'unified' ? 2 : 5"
-          class="txt"
-          spellcheck="true"
-          :placeholder="
-            creatorMessageMode === 'unified'
-              ? String(t('simpleCreation.creatorMessage.placeholders.unified'))
-              : String(t('simpleCreation.creatorMessage.placeholders.perModule'))
-          "
-        />
-        <div class="label-hint-row">
-          <label for="creator-msg-downloader">{{ t('simpleCreation.creatorMessage.downloaderLabel') }}</label>
-        </div>
-        <p class="hint tiny">{{ t('simpleCreation.creatorMessage.downloaderDesc') }}</p>
-        <textarea
-          id="creator-msg-downloader"
-          v-model="simpleM.creatorMessageToDownloader"
-          rows="2"
-          class="txt"
-          spellcheck="true"
-          :placeholder="String(t('simpleCreation.creatorMessage.downloaderPlaceholder'))"
-        />
       </div>
       <details class="simple-faq-details">
         <summary class="simple-faq-sum">{{ t("simpleCreation.base.faqTitle") }}</summary>
@@ -325,24 +300,76 @@ const emit = defineEmits<{
         </span>
       </summary>
       <div class="simple-grid">
+        <section class="panel form-panel adv-extra-panel">
+          <div class="form-row">
+            <EmotionAssetsControl
+              :summary="emotionSummary"
+              :file-names="emotionFileNames"
+              @pick="emit('emotionPick', $event)"
+              @append="emit('emotionAppend', $event)"
+              @clear="emit('emotionClear')"
+            />
+          </div>
+          <div class="form-row">
+            <div class="label-hint-row">
+              <span class="labelish">{{ t("simpleCreation.creatorMessage.title") }}</span>
+              <HelpHint :paragraphs="SIMPLE_CREATOR_MESSAGE_MODE" />
+            </div>
+            <p class="hint tiny">
+              {{ t("simpleCreation.creatorMessage.desc") }}
+            </p>
+            <div
+              class="creator-msg-mode"
+              role="radiogroup"
+              :aria-label="String(t('simpleCreation.creatorMessage.modeAria'))"
+            >
+              <label class="radio-line">
+                <input v-model="creatorMessageMode" type="radio" value="unified" />
+                {{ t("simpleCreation.creatorMessage.modes.unified") }}
+              </label>
+              <label class="radio-line">
+                <input v-model="creatorMessageMode" type="radio" value="per_module" />
+                {{ t("simpleCreation.creatorMessage.modes.perModule") }}
+              </label>
+            </div>
+            <div class="label-hint-row">
+              <label for="creator-msg-others">{{
+                creatorMessageMode === 'unified'
+                  ? t("simpleCreation.creatorMessage.bodyLabelUnified")
+                  : t("simpleCreation.creatorMessage.bodyLabelPerModule")
+              }}</label>
+              <HelpHint :paragraphs="SIMPLE_CREATOR_MESSAGE_BODY" />
+            </div>
+            <textarea
+              id="creator-msg-others"
+              v-model="creatorMessageToOthers"
+              :rows="creatorMessageMode === 'unified' ? 2 : 5"
+              class="txt"
+              spellcheck="true"
+              :placeholder="
+                creatorMessageMode === 'unified'
+                  ? String(t('simpleCreation.creatorMessage.placeholders.unified'))
+                  : String(t('simpleCreation.creatorMessage.placeholders.perModule'))
+              "
+            />
+            <div class="label-hint-row">
+              <label for="creator-msg-downloader">{{ t('simpleCreation.creatorMessage.downloaderLabel') }}</label>
+            </div>
+            <p class="hint tiny">{{ t('simpleCreation.creatorMessage.downloaderDesc') }}</p>
+            <textarea
+              id="creator-msg-downloader"
+              v-model="simpleM.creatorMessageToDownloader"
+              rows="2"
+              class="txt"
+              spellcheck="true"
+              :placeholder="String(t('simpleCreation.creatorMessage.downloaderPlaceholder'))"
+            />
+          </div>
+        </section>
         <section class="panel form-panel">
           <div class="section-title-row">
             <h2>{{ t("simpleCreation.manifest.title") }}</h2>
             <HelpHint :paragraphs="SIMPLE_MANIFEST_INTRO" />
-          </div>
-          <div class="form-row">
-            <div class="label-hint-row">
-              <label for="f-id">{{ t("simpleCreation.manifest.roleIdLabel") }}</label>
-              <HelpHint :paragraphs="SIMPLE_FIELD_ROLE_ID" />
-            </div>
-            <input id="f-id" v-model="simpleM.id" type="text" autocomplete="off" />
-          </div>
-          <div class="form-row">
-            <div class="label-hint-row">
-              <label for="f-name">{{ t("simpleCreation.manifest.displayNameLabel") }}</label>
-              <HelpHint :paragraphs="SIMPLE_FIELD_DISPLAY_NAME" />
-            </div>
-            <input id="f-name" v-model="simpleM.name" type="text" />
           </div>
           <div class="form-row two">
             <div>
@@ -1085,6 +1112,11 @@ code {
   font-size: 0.875rem;
   color: var(--fluent-text-secondary);
   line-height: 1.5;
+}
+.essentials-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 .adv-details {
   margin-top: 1rem;

@@ -1,11 +1,24 @@
 import { invoke } from '@tauri-apps/api/tauri'
 
+export type RolePackListEntry = {
+  roleId: string
+  displayName: string
+  absPath: string
+  needsMigration: boolean
+}
+
 export type RolePackEditorLoadPayload = {
   manifestText: string
   settingsText?: string
   configText?: string
   userIdentitiesIndexText?: string
   mergedSceneIds: string[]
+}
+
+export async function invokeListRolePacksUnderRolesRoot(
+  rolesRoot: string,
+): Promise<RolePackListEntry[]> {
+  return invoke<RolePackListEntry[]>('list_role_packs_under_roles_root', { roles_root: rolesRoot })
 }
 
 export async function invokeLoadRolePackForEditor(roleDir: string): Promise<RolePackEditorLoadPayload> {

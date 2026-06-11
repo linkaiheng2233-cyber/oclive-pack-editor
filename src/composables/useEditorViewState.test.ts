@@ -22,10 +22,10 @@ describe('useEditorViewState (T07 settings tier / view routing)', () => {
     const { editorView } = useEditorViewState((id) => {
       seen.push(id)
     })
-    editorView.value = 'chat'
+    editorView.value = 'simple'
     await nextTick()
-    editorView.value = 'feedback'
+    editorView.value = 'advanced'
     await nextTick()
-    expect(seen).toEqual(['chat', 'feedback'])
+    expect(seen).toEqual(['simple', 'advanced'])
   })
 })

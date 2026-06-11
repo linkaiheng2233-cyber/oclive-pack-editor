@@ -1,3 +1,4 @@
+<!-- @deprecated 已从壳层移除（2026-06 Phase 1）；检查/导出已迁至顶栏 PackHeaderActions -->
 <script setup lang="ts">
 import AdvFaqList from '../AdvFaqList.vue'
 import { CHECKS_FAQ } from '../../lib/simpleEditorFaq'

@@ -10,12 +10,12 @@
 
 ## 计划
 
-### M1 · 情绪图片编辑（编写器）
+### M1 · 情绪图片编辑（编写器）— **Done**（2026-06-11）
 
-- 列表展示 7 标签 + 可选 `disgust_*` 变体占位说明。
-- 拖拽/选择替换单张 PNG（jpg/webp 可选）。
-- 导出时写入 `assets/images/`；校验文件名与标签表。
-- 缺图时编写器警告，运行时桌面/VS Code emoji 回退（已有）。
+- [x] `EmotionAssetsControl.vue`：7 标签网格 + 缺图 badge（`CANONICAL_EMOTION_TAGS`）
+- [x] 多选上传 / 追加 / 清空；导出 `assets/images/`
+- [x] `emotionAssets.test.ts` 文件名与标签校验
+- 可选后续：`disgust_*` 变体占位说明
 
 ### M2 · 情绪族扩展（产品 + 内核）
 

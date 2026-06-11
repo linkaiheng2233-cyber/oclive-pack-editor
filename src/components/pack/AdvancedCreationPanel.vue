@@ -76,6 +76,7 @@ const TAB_ORDER = ['manifest', 'settings', 'core', 'world', 'images'] as const
 
 const props = defineProps<{
   emotionSummary: string
+  emotionFileNames?: string[]
   manifestRoleId: string
 }>()
 
@@ -193,6 +194,7 @@ function resetAllPreviewWeightOverrides(): void {
       <span class="hint-ico" aria-hidden="true">?</span>{{ t("advancedCreation.toolbar.leadSuffix") }}
       <HelpHint :paragraphs="ADV_OVERVIEW" />
     </p>
+    <p class="adv-extensions-hint">{{ t('advancedCreation.toolbar.extensionsHint') }}</p>
     <div
       class="adv-toolbar"
       role="tablist"
@@ -805,6 +807,7 @@ function resetAllPreviewWeightOverrides(): void {
       </div>
       <EmotionAssetsControl
         :summary="emotionSummary"
+        :file-names="emotionFileNames"
         @pick="emit('emotionPick', $event)"
         @append="emit('emotionAppend', $event)"
         @clear="emit('emotionClear')"
@@ -884,6 +887,15 @@ code {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem;
+}
+.adv-extensions-hint {
+  margin: 0 0 0.85rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--fluent-radius);
+  background: color-mix(in srgb, var(--fluent-accent-subtle) 30%, transparent);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--fluent-text-secondary);
 }
 .hint-ico {
   display: inline-flex;
