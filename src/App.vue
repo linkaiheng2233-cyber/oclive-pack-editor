@@ -41,7 +41,12 @@ const {
   uiConfig,
   multiRelationWarning,
   emotionImageSummary,
-  emotionImageFiles,
+  portraitSlotFiles,
+  portraitExtraEntries,
+  visualPresentationEnabled,
+  visualPresentationBackend,
+  visualPresentationLive2dModel,
+  exportProfile,
   creatorMessageToOthers,
   creatorMessageMode,
   creatorMessageToDownloaderManifest,
@@ -57,9 +62,13 @@ const {
   lastExportedRolesRoot,
   runValidate,
   onImportPack,
-  onEmotionFilesPick,
-  onEmotionFilesAppend,
-  clearEmotionImages,
+  onPortraitSlotPick,
+  onPortraitSlotClear,
+  clearPortraitSlots,
+  addPortraitExtraEntry,
+  updatePortraitExtraEntry,
+  removePortraitExtraEntry,
+  onPortraitExtraPick,
   addKnowledgeFile,
   updateKnowledgeFile,
   removeKnowledgeFile,
@@ -117,8 +126,6 @@ const uiLocale = ref<AppLocale>(getLocalePreference())
 
 const writebackOpen = ref(false)
 let writebackResolve: ((v: 'overwrite' | 'saveAsNew' | 'cancel') => void) | null = null
-
-const emotionImageFileNames = computed(() => emotionImageFiles.value.map((f) => f.name))
 
 function onLocaleChange(v: AppLocale) {
   uiLocale.value = v
@@ -195,7 +202,7 @@ function autoSaveDraftOnLeaveEditView(prev: EditorViewId | undefined): void {
   onSaveDraft(false)
 }
 
-watch(editorView, (view, prev) => {
+watch(editorView, (_view, prev) => {
   autoSaveDraftOnLeaveEditView(prev)
 })
 
@@ -330,6 +337,7 @@ function onCreateNewPack() {
           <div class="shell-header-tools" role="toolbar" :aria-label="String(t('packEditor.header.toolsAria'))">
             <PackHeaderActions
               v-model:require-checks-before-export="requireChecksBeforeExport"
+              v-model:export-profile="exportProfile"
               :folder-export-ok="folderExportOk"
               :validation-last-used-wasm="validationLastUsedWasm"
               :show-save-draft="showSaveDraft"
@@ -416,11 +424,11 @@ function onCreateNewPack() {
           :multi-relation-warning="multiRelationWarning"
           :sync-form-warning="syncFormWarning"
           :emotion-summary="emotionImageSummary"
-          :emotion-file-names="emotionImageFileNames"
+          :portrait-slot-files="portraitSlotFiles"
           :last-exported-roles-root="lastExportedRolesRoot"
-          @emotion-pick="onEmotionFilesPick"
-          @emotion-append="onEmotionFilesAppend"
-          @emotion-clear="clearEmotionImages"
+          @portrait-slot-pick="onPortraitSlotPick"
+          @portrait-slot-clear="onPortraitSlotClear"
+          @portrait-clear-all="clearPortraitSlots"
           @add-author-rec-row="addAuthorRecommendedRow"
           @remove-author-rec-row="removeAuthorRecommendedRow"
         />
@@ -437,15 +445,23 @@ function onCreateNewPack() {
           v-model:creator-message-to-downloader-manifest="creatorMessageToDownloaderManifest"
           v-model:knowledge-files="knowledgeMarkdownFiles"
           v-model:advanced-tab="advancedTab"
+          v-model:visual-enabled="visualPresentationEnabled"
+          v-model:visual-backend="visualPresentationBackend"
+          v-model:live2d-model="visualPresentationLive2dModel"
           :manifest-role-id="manifestRoleId"
           :emotion-summary="emotionImageSummary"
-          :emotion-file-names="emotionImageFileNames"
+          :portrait-slot-files="portraitSlotFiles"
+          :portrait-extra-entries="portraitExtraEntries"
           @add-knowledge-file="addKnowledgeFile"
           @update-knowledge-file="updateKnowledgeFile"
           @remove-knowledge-file="removeKnowledgeFile"
-          @emotion-pick="onEmotionFilesPick"
-          @emotion-append="onEmotionFilesAppend"
-          @emotion-clear="clearEmotionImages"
+          @portrait-slot-pick="onPortraitSlotPick"
+          @portrait-slot-clear="onPortraitSlotClear"
+          @portrait-clear-all="clearPortraitSlots"
+          @portrait-extra-pick="onPortraitExtraPick"
+          @portrait-extra-update="updatePortraitExtraEntry"
+          @portrait-extra-add="addPortraitExtraEntry"
+          @portrait-extra-remove="removePortraitExtraEntry"
         />
       </div>
     </div>

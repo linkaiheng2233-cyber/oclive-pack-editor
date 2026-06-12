@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from "vue-i18n";
-import EmotionAssetsControl from './EmotionAssetsControl.vue'
+import PortraitCatalogEditor from './PortraitCatalogEditor.vue'
+import VisualPresentationFold from './VisualPresentationFold.vue'
+import type { PortraitCatalogEntry, PortraitSlotId } from '../../lib/portraitCatalog'
 import type { KnowledgeMarkdownFile } from '../../lib/knowledgeFiles'
 import {
   buildKnowledgeMarkdown,
@@ -62,11 +64,18 @@ const advancedTab = defineModel<'manifest' | 'settings' | 'core' | 'world' | 'im
     required: true,
   },
 )
+const visualEnabled = defineModel<boolean>('visualEnabled', { default: false })
+const visualBackend = defineModel<string>('visualBackend', { default: 'image' })
+const live2dModel = defineModel<string>('live2dModel', { default: '' })
 
 const emit = defineEmits<{
-  emotionPick: [e: Event]
-  emotionAppend: [e: Event]
-  emotionClear: []
+  portraitSlotPick: [id: PortraitSlotId, e: Event]
+  portraitSlotClear: [id: PortraitSlotId]
+  portraitClearAll: []
+  portraitExtraPick: [index: number, e: Event]
+  portraitExtraUpdate: [index: number, patch: Partial<PortraitCatalogEntry>]
+  portraitExtraAdd: []
+  portraitExtraRemove: [index: number]
   addKnowledgeFile: []
   updateKnowledgeFile: [index: number, patch: Partial<KnowledgeMarkdownFile>]
   removeKnowledgeFile: [index: number]
@@ -76,7 +85,8 @@ const TAB_ORDER = ['manifest', 'settings', 'core', 'world', 'images'] as const
 
 const props = defineProps<{
   emotionSummary: string
-  emotionFileNames?: string[]
+  portraitSlotFiles: Partial<Record<PortraitSlotId, File>>
+  portraitExtraEntries: PortraitCatalogEntry[]
   manifestRoleId: string
 }>()
 
@@ -805,12 +815,22 @@ function resetAllPreviewWeightOverrides(): void {
         <h2 class="adv-h2"><span>{{ t("advancedCreation.sections.images.title") }}</span></h2>
         <p class="adv-lead">{{ t("advancedCreation.sections.images.lead") }}</p>
       </div>
-      <EmotionAssetsControl
+      <PortraitCatalogEditor
         :summary="emotionSummary"
-        :file-names="emotionFileNames"
-        @pick="emit('emotionPick', $event)"
-        @append="emit('emotionAppend', $event)"
-        @clear="emit('emotionClear')"
+        :slot-files="portraitSlotFiles"
+        :extra-entries="portraitExtraEntries"
+        @pick-slot="(id, e) => emit('portraitSlotPick', id, e)"
+        @clear-slot="(id) => emit('portraitSlotClear', id)"
+        @clear-all="emit('portraitClearAll')"
+        @pick-extra-file="(index, e) => emit('portraitExtraPick', index, e)"
+        @update-extra="(index, patch) => emit('portraitExtraUpdate', index, patch)"
+        @add-extra="emit('portraitExtraAdd')"
+        @remove-extra="(index) => emit('portraitExtraRemove', index)"
+      />
+      <VisualPresentationFold
+        v-model:visual-enabled="visualEnabled"
+        v-model:visual-backend="visualBackend"
+        v-model:live2d-model="live2dModel"
       />
       <div class="adv-dock-stack">
         <details

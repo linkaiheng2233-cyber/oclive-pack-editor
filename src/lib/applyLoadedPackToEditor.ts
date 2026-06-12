@@ -3,6 +3,13 @@ import type { CreatorMessageExportMode } from './rolePackCreatorMessage'
 import { emptyAuthorRecRow, parseAuthorImport, type AuthorRecRow } from './authorPack'
 import type { ImportedRolePack } from './importPack'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
+import {
+  parseConfigJson,
+  parsePortraitCatalogJson,
+  slotFilesFromEmotionImages,
+  type PortraitCatalogEntry,
+  type PortraitSlotFileMap,
+} from './portraitCatalog'
 import { parseUiConfigJson } from './uiConfig'
 import type { UiConfig } from '../types/uiConfig'
 
@@ -14,6 +21,8 @@ export type ApplyLoadedPackInput = {
   worldviewMarkdown?: string
   knowledgeMarkdownFiles?: KnowledgeMarkdownFile[]
   emotionImageFiles?: File[]
+  portraitCatalogJson?: string
+  configJson?: string
   creatorMessage?: string
   uiJson?: string
   authorJson?: string
@@ -26,6 +35,11 @@ export type ApplyLoadedPackTargets = {
   worldviewMarkdown: { value: string }
   knowledgeMarkdownFiles: { value: KnowledgeMarkdownFile[] }
   emotionImageFiles: { value: File[] }
+  portraitSlotFiles: { value: PortraitSlotFileMap }
+  portraitExtraEntries: { value: PortraitCatalogEntry[] }
+  visualPresentationEnabled: { value: boolean }
+  visualPresentationBackend: { value: string }
+  visualPresentationLive2dModel: { value: string }
   creatorMessageToOthers: { value: string }
   creatorMessageMode: { value: CreatorMessageExportMode }
   uiConfig: UiConfig
@@ -46,6 +60,8 @@ export function importedPackToApplyInput(imp: ImportedRolePack): ApplyLoadedPack
     worldviewMarkdown: imp.worldviewMarkdown,
     knowledgeMarkdownFiles: imp.knowledgeMarkdownFiles,
     emotionImageFiles: imp.emotionImageFiles,
+    portraitCatalogJson: imp.portraitCatalogJson,
+    configJson: imp.configJson,
     creatorMessage: imp.creatorMessage,
     uiJson: imp.uiJson,
     authorJson: imp.authorJson,
@@ -63,7 +79,31 @@ export function applyLoadedPackToEditor(input: ApplyLoadedPackInput, targets: Ap
     path: normalizeKnowledgePath(d.path),
     content: d.content,
   }))
-  targets.emotionImageFiles.value = input.emotionImageFiles ?? []
+  const files = input.emotionImageFiles ?? []
+  if (input.portraitCatalogJson?.trim()) {
+    const parsed = parsePortraitCatalogJson(input.portraitCatalogJson)
+    const next: PortraitSlotFileMap = {}
+    for (const id of Object.keys(parsed.slotFiles)) {
+      const hint = parsed.slotFiles[id as keyof PortraitSlotFileMap]?.name
+      const blob = files.find((f) => f.name === hint)
+      if (blob) next[id as keyof PortraitSlotFileMap] = blob
+    }
+    targets.portraitSlotFiles.value = next
+    targets.portraitExtraEntries.value = parsed.extraEntries.map((e) => {
+      const name = e.path.split('/').pop() ?? ''
+      const blob = files.find((f) => f.name === name)
+      return { ...e, file: blob ?? e.file }
+    })
+    targets.emotionImageFiles.value = files
+  } else {
+    targets.portraitSlotFiles.value = slotFilesFromEmotionImages(files)
+    targets.portraitExtraEntries.value = []
+    targets.emotionImageFiles.value = files
+  }
+  const cfg = parseConfigJson(input.configJson)
+  targets.visualPresentationEnabled.value = cfg.visual.enabled
+  targets.visualPresentationBackend.value = cfg.visual.backend
+  targets.visualPresentationLive2dModel.value = cfg.visual.live2dModel ?? ''
   targets.creatorMessageToOthers.value = input.creatorMessage ?? ''
   Object.assign(targets.uiConfig, parseUiConfigJson(input.uiJson?.trim() || '{}'))
 

@@ -20,6 +20,10 @@ export type ImportedRolePack = {
   knowledgeMarkdownFiles: KnowledgeMarkdownFile[]
   /** 从包内 assets/images 解压出的文件，便于再次导出 */
   emotionImageFiles: File[]
+  /** roles/{id}/portrait_catalog.json 全文（可选） */
+  portraitCatalogJson: string
+  /** roles/{id}/config.json 全文（可选） */
+  configJson: string
   /** roles/{id}/creator_message.txt 全文（可含多行，与导出模式一致） */
   creatorMessage: string
   /** roles/{id}/ui.json（可选） */
@@ -157,6 +161,9 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
     emotionImageFiles.push(new File([blob], base, { type: blob.type || 'image/png' }))
   }
 
+  const portraitCatalogJson = await readText('portrait_catalog.json')
+  const configJson = await readText('config.json')
+
   return {
     roleId,
     manifestJson: manifestJson.endsWith('\n') ? manifestJson : `${manifestJson}\n`,
@@ -165,6 +172,8 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
     worldviewMarkdown,
     knowledgeMarkdownFiles,
     emotionImageFiles,
+    portraitCatalogJson,
+    configJson,
     creatorMessage,
     uiJson,
     authorJson,

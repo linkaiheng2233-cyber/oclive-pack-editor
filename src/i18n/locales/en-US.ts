@@ -352,6 +352,22 @@ export default {
       world: "World & knowledge",
       images: "Emotion assets",
     },
+    portraitCatalog: {
+      hint: "A2 SSOT: portrait_catalog.json lists assets; 7 fixed slots + optional cluster entries.",
+      fixedSlots: "7 fixed slots (B1)",
+      extraEntries: "Extra catalog entries",
+      addEntry: "Add entry",
+      noExtra: "No extra entries yet; add cluster variants or Live2D preview images.",
+      noFile: "No image",
+    },
+    visualPresentation: {
+      foldTitle: "Visual presentation (advanced)",
+      enabled: "Enable visual_presentation",
+      backend: "Backend",
+      live2dModel: "Live2D model3 path",
+      hint: "Off by default; when on, kernel may emit performance_directive (no second AI).",
+      backendHint: "Non-image backends need matching catalog kind; full Live2D only on Theater distro.",
+    },
     docks: {
       badges: {
         keypoints: "Key points",
@@ -870,6 +886,12 @@ export default {
       exportOcpak: "Export .ocpak (zip)",
       exportZip: "Export .zip",
       exportFolder: "Write to folder (pick roles root)",
+      exportProfile: "Export profile",
+      exportProfiles: {
+        desktopFull: "desktop-full (full catalog + VP)",
+        vscodeLite: "vscode-lite (7 slots, VP off)",
+        theater: "theater (Live2D stage)",
+      },
       exportAnchorHint:
         "If no reply quality anchor is configured yet, export will ask whether to add the recommended anchor (written to prompts/reply_quality_anchor.md; state continuity, length modulation by user sentence length and emotion, no parroting, etc.).",
       resultsTitle: "Check results",

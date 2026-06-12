@@ -155,6 +155,12 @@ export default {
     advanced: {
       foldTitle: "进阶：场景、用户身份、世界观、角色受影响程度等",
     },
+    portraitSlots: {
+      hint: "简单创作固定 7 槽；导出时写入 portrait_catalog.json（A2）并在 config.json 启用 catalog。",
+      missing: "未选图",
+      pick: "选图",
+      clear: "清除",
+    },
     manifest: {
       title: "角色信息（manifest）",
       roleIdLabel: "角色 ID（文件夹名）",
@@ -336,6 +342,22 @@ export default {
       coreFile: "core / 公告",
       world: "世界观与知识",
       images: "情绪立绘",
+    },
+    portraitCatalog: {
+      hint: "A2 SSOT：portrait_catalog.json 管理立绘 assets；7 固定槽 + 可追加簇条目。",
+      fixedSlots: "7 固定槽（B1）",
+      extraEntries: "额外 catalog 条目",
+      addEntry: "追加条目",
+      noExtra: "尚无额外条目；可追加同簇变体或 Live2D 预览图。",
+      noFile: "未选图",
+    },
+    visualPresentation: {
+      foldTitle: "视觉表现（高级）",
+      enabled: "启用 visual_presentation",
+      backend: "Backend",
+      live2dModel: "Live2D model3 路径",
+      hint: "默认关闭；开启后内核可下发 performance_directive（无二次 AI）。",
+      backendHint: "非 image backend 需 catalog kind 一致；Theater 发行版才完整渲染 Live2D。",
     },
     docks: {
       badges: {
@@ -842,6 +864,12 @@ export default {
       exportOcpak: "导出 .ocpak（zip）",
       exportZip: "导出 .zip",
       exportFolder: "写入文件夹（自选 roles 根目录）",
+      exportProfile: "导出 profile",
+      exportProfiles: {
+        desktopFull: "desktop-full（完整 catalog + VP）",
+        vscodeLite: "vscode-lite（7 槽、VP 关）",
+        theater: "theater（Live2D 舞台）",
+      },
       exportAnchorHint:
         "若尚未配置回复质量锚点，导出时会询问是否加入推荐的「回复质量锚点」（写入 prompts/reply_quality_anchor.md；含状态延续、按用户句长与情绪调节篇幅、禁止复述用户原句等完整约束）。",
       resultsTitle: "检查结果",

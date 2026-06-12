@@ -35,6 +35,21 @@ import {
 } from '../lib/manifestCreatorDownloader'
 import type { CreatorMessageExportMode } from '../lib/rolePackCreatorMessage'
 import {
+  applyExportProfile,
+  buildPortraitCatalogJson,
+  buildSimpleConfigJson,
+  emotionFilesFromCatalog,
+  parseConfigJson,
+  parsePortraitCatalogJson,
+  SIMPLE_PORTRAIT_SLOT_IDS,
+  slotFilesFromEmotionImages,
+  type ExportProfile,
+  type PortraitCatalogEntry,
+  type PortraitSlotFileMap,
+  type PortraitSlotId,
+} from '../lib/portraitCatalog'
+import { runPortraitCatalogChecks } from '../lib/portraitCatalogValidate'
+import {
   buildAuthorJsonDisk,
   emptyAuthorRecRow,
   type AuthorRecRow,
@@ -74,6 +89,52 @@ export function usePackEditor() {
   const worldviewMarkdown = ref('')
   const knowledgeMarkdownFiles = ref<KnowledgeMarkdownFile[]>([])
   const emotionImageFiles = ref<File[]>([])
+  const portraitSlotFiles = ref<PortraitSlotFileMap>({})
+  const portraitExtraEntries = ref<PortraitCatalogEntry[]>([])
+  const visualPresentationEnabled = ref(false)
+  const visualPresentationBackend = ref('image')
+  const visualPresentationLive2dModel = ref('')
+  const exportProfile = ref<ExportProfile>('desktop-full')
+
+  function syncEmotionFilesFromSlots(): void {
+    emotionImageFiles.value = emotionFilesFromCatalog(
+      portraitSlotFiles.value,
+      portraitExtraEntries.value,
+    )
+  }
+
+  function applyPortraitSlotsFromImport(
+    catalogJson: string | undefined,
+    files: File[],
+    configJson?: string,
+  ): void {
+    if (catalogJson?.trim()) {
+      const parsed = parsePortraitCatalogJson(catalogJson)
+      const next: PortraitSlotFileMap = {}
+      for (const id of Object.keys(parsed.slotFiles) as PortraitSlotId[]) {
+        const pathHint = parsed.slotFiles[id]?.name
+        const blob = files.find((f) => f.name === pathHint)
+        if (blob) next[id] = blob
+      }
+      portraitSlotFiles.value = next
+      portraitExtraEntries.value = parsed.extraEntries.map((e) => {
+        const name = e.path.split('/').pop() ?? ''
+        const blob = files.find((f) => f.name === name)
+        return {
+          ...e,
+          file: blob ?? e.file,
+        }
+      })
+    } else {
+      portraitSlotFiles.value = slotFilesFromEmotionImages(files)
+      portraitExtraEntries.value = []
+    }
+    const cfg = parseConfigJson(configJson)
+    visualPresentationEnabled.value = cfg.visual.enabled
+    visualPresentationBackend.value = cfg.visual.backend
+    visualPresentationLive2dModel.value = cfg.visual.live2dModel ?? ''
+    syncEmotionFilesFromSlots()
+  }
   /** 随包写入 creator_message.txt，供启动器只读展示（仅编写器可编辑） */
   const creatorMessageToOthers = ref('')
   /** unified：全文只导出首条非空行；per_module：每行一条（多模块各写一句时汇总） */
@@ -146,15 +207,32 @@ export function usePackEditor() {
       uiConfig,
       suggestedPluginBackendsJson: authorSuggestedBackendsJson.value,
     })
+    const profiled = applyExportProfile(
+      exportProfile.value,
+      Object.keys(portraitSlotFiles.value).length > 0,
+      {
+        enabled: visualPresentationEnabled.value,
+        backend: visualPresentationBackend.value,
+        live2dModel: visualPresentationLive2dModel.value,
+      },
+      portraitSlotFiles.value,
+      portraitExtraEntries.value,
+    )
+    const slotMap = profiled.slotFiles
+    const extras = profiled.extraEntries
+    const hasCatalog = Object.keys(slotMap).length > 0 || extras.length > 0
     return {
       uiConfigJson: serializeUiConfig(uiConfig),
       corePersonality: corePersonalityText.value,
       worldviewMarkdown: worldviewMarkdown.value,
       knowledgeMarkdownFiles: docs,
-      emotionImages: emotionImageFiles.value,
+      emotionImages: emotionFilesFromCatalog(slotMap, extras),
       creatorMessage: creatorMessageToOthers.value,
       creatorMessageMode: creatorMessageMode.value,
-      configJson: '{\n  "reply_post_processor": {\n    "enabled": false,\n    "backend": "builtin",\n    "builtin": { "profile": "standard" }\n  }\n}\n',
+      configJson: buildSimpleConfigJson(profiled.portraitEnabled && hasCatalog, profiled.visual),
+      ...(hasCatalog
+        ? { portraitCatalogJson: buildPortraitCatalogJson(slotMap, extras) }
+        : {}),
       ...(authorJson ? { authorJson } : {}),
     }
   }
@@ -350,10 +428,16 @@ export function usePackEditor() {
     flushSimpleToJson()
     const r = await runAllPackChecks(manifestText.value, settingsText.value)
     const kErrs = validateKnowledgeFiles(knowledgeMarkdownFiles.value)
+    const portrait = runPortraitCatalogChecks(
+      portraitSlotFiles.value,
+      portraitExtraEntries.value,
+      Object.keys(portraitSlotFiles.value).length > 0,
+    )
+    const errors = [...r.errors, ...kErrs, ...portrait.errors]
     return {
-      errors: [...r.errors, ...kErrs],
+      errors,
       wasmUsed: r.wasmUsed,
-      ok: r.ok && kErrs.length === 0,
+      ok: r.ok && kErrs.length === 0 && portrait.errors.length === 0,
     }
   }
 
@@ -396,6 +480,7 @@ export function usePackEditor() {
     try {
       const imp = await importRolePackFromZip(f)
       applyLoadedPackToEditor(importedPackToApplyInput(imp), applyLoadedPackTargets)
+      applyPortraitSlotsFromImport(imp.portraitCatalogJson, imp.emotionImageFiles, imp.configJson)
       setFeedback(
         `已导入角色「${imp.roleId}」。可继续编辑后导出。 ${importedPackBrainHint(imp.settingsJson)}`,
         false,
@@ -411,6 +496,77 @@ export function usePackEditor() {
     const fl = inp.files
     if (!fl?.length) return
     emotionImageFiles.value = filterEmotionImageFiles(fl)
+    portraitSlotFiles.value = slotFilesFromEmotionImages(emotionImageFiles.value)
+    inp.value = ''
+  }
+
+  function onPortraitSlotPick(id: string, e: Event): void {
+    if (!(SIMPLE_PORTRAIT_SLOT_IDS as readonly string[]).includes(id))
+      return
+    const slotId = id as PortraitSlotId
+    const inp = e.target as HTMLInputElement
+    const f = inp.files?.[0]
+    if (!f) return
+    portraitSlotFiles.value = { ...portraitSlotFiles.value, [slotId]: f }
+    syncEmotionFilesFromSlots()
+    inp.value = ''
+  }
+
+  function onPortraitSlotClear(id: string): void {
+    if (!(SIMPLE_PORTRAIT_SLOT_IDS as readonly string[]).includes(id))
+      return
+    const slotId = id as PortraitSlotId
+    const next = { ...portraitSlotFiles.value }
+    delete next[slotId]
+    portraitSlotFiles.value = next
+    syncEmotionFilesFromSlots()
+  }
+
+  function clearPortraitSlots(): void {
+    portraitSlotFiles.value = {}
+    portraitExtraEntries.value = []
+    emotionImageFiles.value = []
+  }
+
+  function addPortraitExtraEntry(): void {
+    const n = portraitExtraEntries.value.length + 1
+    portraitExtraEntries.value = [
+      ...portraitExtraEntries.value,
+      {
+        id: `extra_${n}`,
+        path: '',
+        desc: '',
+        tags: [],
+        kind: 'image',
+      },
+    ]
+  }
+
+  function updatePortraitExtraEntry(index: number, patch: Partial<PortraitCatalogEntry>): void {
+    const prev = portraitExtraEntries.value[index]
+    if (!prev) return
+    const next = [...portraitExtraEntries.value]
+    const merged = { ...prev, ...patch }
+    if (patch.file) {
+      merged.path = `assets/images/${patch.file.name}`
+    }
+    next[index] = merged
+    portraitExtraEntries.value = next
+    syncEmotionFilesFromSlots()
+  }
+
+  function removePortraitExtraEntry(index: number): void {
+    const next = [...portraitExtraEntries.value]
+    next.splice(index, 1)
+    portraitExtraEntries.value = next
+    syncEmotionFilesFromSlots()
+  }
+
+  function onPortraitExtraPick(index: number, e: Event): void {
+    const inp = e.target as HTMLInputElement
+    const f = inp.files?.[0]
+    if (!f) return
+    updatePortraitExtraEntry(index, { file: f })
     inp.value = ''
   }
 
@@ -430,7 +586,7 @@ export function usePackEditor() {
   }
 
   function clearEmotionImages(): void {
-    emotionImageFiles.value = []
+    clearPortraitSlots()
   }
 
   function addAuthorRecommendedRow(): void {
@@ -580,6 +736,11 @@ export function usePackEditor() {
     worldviewMarkdown,
     knowledgeMarkdownFiles,
     emotionImageFiles,
+    portraitSlotFiles,
+    portraitExtraEntries,
+    visualPresentationEnabled,
+    visualPresentationBackend,
+    visualPresentationLive2dModel,
     creatorMessageToOthers,
     creatorMessageMode,
     uiConfig,
@@ -684,6 +845,8 @@ export function usePackEditor() {
       content: d.content,
     }))
     emotionImageFiles.value = []
+    portraitSlotFiles.value = {}
+    portraitExtraEntries.value = []
     creatorMessageToOthers.value = snapshot.creatorMessageToOthers
     creatorMessageMode.value = snapshot.creatorMessageMode
     creatorMessageToDownloaderManifest.value = snapshot.creatorMessageToDownloaderManifest
@@ -710,6 +873,12 @@ export function usePackEditor() {
     worldviewMarkdown,
     knowledgeMarkdownFiles,
     emotionImageFiles,
+    portraitSlotFiles,
+    portraitExtraEntries,
+    visualPresentationEnabled,
+    visualPresentationBackend,
+    visualPresentationLive2dModel,
+    exportProfile,
     creatorMessageToOthers,
     creatorMessageMode,
     creatorMessageToDownloaderManifest,
@@ -738,6 +907,13 @@ export function usePackEditor() {
     runValidate,
     onImportPack,
     onEmotionFilesPick,
+    onPortraitSlotPick,
+    onPortraitSlotClear,
+    clearPortraitSlots,
+    addPortraitExtraEntry,
+    updatePortraitExtraEntry,
+    removePortraitExtraEntry,
+    onPortraitExtraPick,
     onEmotionFilesAppend,
     clearEmotionImages,
     addAuthorRecommendedRow,

@@ -17,6 +17,13 @@ function makeTargets() {
   const worldviewMarkdown = ref('')
   const knowledgeMarkdownFiles = ref<{ path: string; content: string }[]>([])
   const emotionImageFiles = ref<File[]>([])
+  const portraitSlotFiles = ref({})
+  const portraitExtraEntries = ref<
+    { id: string; path: string; desc: string; tags: string[]; kind: string }[]
+  >([])
+  const visualPresentationEnabled = ref(false)
+  const visualPresentationBackend = ref('none')
+  const visualPresentationLive2dModel = ref('')
   const creatorMessageToOthers = ref('')
   const creatorMessageMode = ref<'unified' | 'per_module'>('unified')
   const uiConfig = reactive(defaultUiConfig())
@@ -34,6 +41,11 @@ function makeTargets() {
       worldviewMarkdown,
       knowledgeMarkdownFiles,
       emotionImageFiles,
+      portraitSlotFiles,
+      portraitExtraEntries,
+      visualPresentationEnabled,
+      visualPresentationBackend,
+      visualPresentationLive2dModel,
       creatorMessageToOthers,
       creatorMessageMode,
       uiConfig,
@@ -85,6 +97,8 @@ describe('applyLoadedPackToEditor', () => {
       worldviewMarkdown: 'w',
       knowledgeMarkdownFiles: [],
       emotionImageFiles: [],
+      portraitCatalogJson: '',
+      configJson: '',
       creatorMessage: '',
       uiJson: '',
       authorJson: '',

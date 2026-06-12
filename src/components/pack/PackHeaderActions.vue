@@ -2,9 +2,12 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import type { ExportProfile } from '../../lib/portraitCatalog'
+
 const requireChecksBeforeExport = defineModel<boolean>('requireChecksBeforeExport', {
   required: true,
 })
+const exportProfile = defineModel<ExportProfile>('exportProfile', { default: 'desktop-full' })
 
 defineProps<{
   folderExportOk: boolean
@@ -161,6 +164,14 @@ onBeforeUnmount(() => {
             {{ t('packEditor.check.exportFolder') }}
           </button>
           <div class="pha-menu-footer">
+            <label class="pha-profile">
+              <span>{{ t('packEditor.check.exportProfile') }}</span>
+              <select v-model="exportProfile" class="pha-profile-select">
+                <option value="desktop-full">{{ t('packEditor.check.exportProfiles.desktopFull') }}</option>
+                <option value="vscode-lite">{{ t('packEditor.check.exportProfiles.vscodeLite') }}</option>
+                <option value="theater">{{ t('packEditor.check.exportProfiles.theater') }}</option>
+              </select>
+            </label>
             <label class="pha-chk">
               <input v-model="requireChecksBeforeExport" type="checkbox" />
               {{ t('packChecks.requireBeforeExport') }}
@@ -305,6 +316,22 @@ onBeforeUnmount(() => {
   margin-top: 0.25rem;
   padding: 0.55rem 0.85rem 0.45rem;
   border-top: 1px solid var(--pack-glass-border);
+}
+
+.pha-export-menu--teleport .pha-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--fluent-text-secondary);
+}
+
+.pha-export-menu--teleport .pha-profile-select {
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--fluent-border-control);
+  border-radius: var(--fluent-radius);
+  font-size: 0.78rem;
 }
 
 .pha-export-menu--teleport .pha-chk {

@@ -98,11 +98,11 @@ describe('buildRolePackFiles', () => {
     expect(bp.meta.preset_order).toBe(3)
   })
 
-  it('writes multiple lines in per_module mode', () => {
+  it('writes portrait_catalog.json when extra is set', () => {
+    const catalog = '{"schema_version":1,"assets":[]}\n'
     const files = buildRolePackFiles('x', baseManifest, { schema_version: 1 }, {
-      creatorMessage: 'one\ntwo',
-      creatorMessageMode: 'per_module',
+      portraitCatalogJson: catalog,
     })
-    expect(files.get('x/creator_message.txt')).toBe('one\ntwo\n')
+    expect(files.get('x/portrait_catalog.json')).toBe(catalog)
   })
 })

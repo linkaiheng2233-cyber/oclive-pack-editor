@@ -50,6 +50,8 @@ export type PackExtraFiles = {
   includeDefaultReplyQualityAnchor?: boolean
   /** 可选：`roles/{id}/config.json` 全文 */
   configJson?: string
+  /** 可选：`roles/{id}/portrait_catalog.json` 全文（A2 SSOT） */
+  portraitCatalogJson?: string
   /** 可选：`roles/{id}/user_identities/index.json` 全文 */
   userIdentitiesIndexJson?: string
 }
@@ -104,6 +106,14 @@ export function buildRolePackFiles(
   const configRaw = extra?.configJson?.trim()
   if (configRaw) {
     files.set(`${id}/config.json`, configRaw.endsWith('\n') ? configRaw : `${configRaw}\n`)
+  }
+
+  const catalogRaw = extra?.portraitCatalogJson?.trim()
+  if (catalogRaw) {
+    files.set(
+      `${id}/portrait_catalog.json`,
+      catalogRaw.endsWith('\n') ? catalogRaw : `${catalogRaw}\n`,
+    )
   }
 
   const uiRaw = extra?.uiConfigJson?.trim()

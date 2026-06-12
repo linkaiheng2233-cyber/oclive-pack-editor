@@ -3,7 +3,7 @@ import { computed, onMounted, toRef, watch } from 'vue'
 import { useI18n } from "vue-i18n";
 import AdvFaqList from '../AdvFaqList.vue'
 import HelpHint from '../HelpHint.vue'
-import EmotionAssetsControl from './EmotionAssetsControl.vue'
+import SimpleEmotionSlots from './SimpleEmotionSlots.vue'
 import { SIMPLE_BASE_FAQ, SIMPLE_MANIFEST_FAQ, SIMPLE_SETTINGS_FAQ } from '../../lib/simpleEditorFaq'
 import {
   SIMPLE_ADV_FOLD,
@@ -54,6 +54,7 @@ const props = defineProps<{
   syncFormWarning: string
   emotionSummary: string
   emotionFileNames?: string[]
+  portraitSlotFiles?: Partial<Record<string, File>>
   /** 最近一次「写入文件夹」的 roles 根路径；用于定位同级 `plugins/` 扫描目录插件 */
   lastExportedRolesRoot: string
 }>()
@@ -214,9 +215,9 @@ function onSlotDrop(slot: SlotKey, i: number) {
 }
 
 const emit = defineEmits<{
-  emotionPick: [e: Event]
-  emotionAppend: [e: Event]
-  emotionClear: []
+  portraitSlotPick: [id: string, e: Event]
+  portraitSlotClear: [id: string]
+  portraitClearAll: []
   addAuthorRecRow: []
   removeAuthorRecRow: [index: number]
 }>()
@@ -302,12 +303,12 @@ const emit = defineEmits<{
       <div class="simple-grid">
         <section class="panel form-panel adv-extra-panel">
           <div class="form-row">
-            <EmotionAssetsControl
+            <SimpleEmotionSlots
               :summary="emotionSummary"
-              :file-names="emotionFileNames"
-              @pick="emit('emotionPick', $event)"
-              @append="emit('emotionAppend', $event)"
-              @clear="emit('emotionClear')"
+              :slot-files="portraitSlotFiles ?? {}"
+              @pick-slot="(id, e) => emit('portraitSlotPick', id, e)"
+              @clear-slot="(id) => emit('portraitSlotClear', id)"
+              @clear-all="emit('portraitClearAll')"
             />
           </div>
           <div class="form-row">
