@@ -8,6 +8,8 @@ import {
 
   buildSimpleConfigJson,
 
+  collectCatalogBinaryAssets,
+
   parseConfigJson,
 
   parsePortraitCatalogJson,
@@ -201,6 +203,23 @@ describe('portraitCatalog', () => {
   })
 
 
+
+  it('collectCatalogBinaryAssets uses catalog path for live2d', () => {
+    const assets = collectCatalogBinaryAssets(
+      {},
+      [
+        {
+          id: 'l2d',
+          path: 'assets/live2d/m.model3.json',
+          desc: '',
+          tags: [],
+          kind: 'live2d',
+          file: new File(['{}'], 'm.model3.json', { type: 'application/json' }),
+        },
+      ],
+    )
+    expect(assets[0]?.relPath).toBe('assets/live2d/m.model3.json')
+  })
 
   it('validatePortraitCatalogState flags duplicate ids', () => {
 

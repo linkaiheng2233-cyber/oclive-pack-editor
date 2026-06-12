@@ -175,6 +175,34 @@ export function emotionFilesFromSlotMap(slotFiles: PortraitSlotFileMap): File[] 
   return out
 }
 
+export type CatalogAssetFile = { relPath: string; file: File }
+
+/** Slot + extra files with catalog-relative paths (live2d → assets/live2d/…). */
+export function collectCatalogBinaryAssets(
+  slotFiles: PortraitSlotFileMap,
+  extraEntries: PortraitCatalogEntry[],
+): CatalogAssetFile[] {
+  const seen = new Set<string>()
+  const out: CatalogAssetFile[] = []
+  for (const id of SIMPLE_PORTRAIT_SLOT_IDS) {
+    const f = slotFiles[id]
+    const rel = `assets/images/${f?.name ?? ''}`
+    if (f && !seen.has(rel)) {
+      seen.add(rel)
+      out.push({ relPath: rel, file: f })
+    }
+  }
+  for (const e of extraEntries) {
+    const rel = e.path.trim()
+    const f = e.file
+    if (f && rel && !seen.has(rel)) {
+      seen.add(rel)
+      out.push({ relPath: rel, file: f })
+    }
+  }
+  return out
+}
+
 export function emotionFilesFromCatalog(
   slotFiles: PortraitSlotFileMap,
   extraEntries: PortraitCatalogEntry[],
@@ -276,9 +304,18 @@ export function validatePortraitCatalogState(
       issues.push({ level: 'error', message: `portrait_catalog：重复 id「${e.id}」` })
     }
     ids.add(e.id)
-    if (isUnsafeAssetPath(e.path)) {
+    if (!e.path.trim()) {
+      issues.push({ level: 'error', message: `portrait_catalog：id「${e.id}」缺少 path` })
+    } else if (isUnsafeAssetPath(e.path)) {
       issues.push({ level: 'error', message: `portrait_catalog：id「${e.id}」path 不安全` })
     }
+  }
+
+  if (portraitEnabled && allEntries.length === 0) {
+    issues.push({
+      level: 'warning',
+      message: 'portrait_catalog 启用但尚无 assets 条目',
+    })
   }
 
   if (portraitEnabled) {

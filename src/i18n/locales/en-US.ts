@@ -354,6 +354,7 @@ export default {
     },
     portraitCatalog: {
       hint: "A2 SSOT: portrait_catalog.json lists assets; 7 fixed slots + optional cluster entries.",
+      pickLive2d: "Pick model3.json",
       fixedSlots: "7 fixed slots (B1)",
       extraEntries: "Extra catalog entries",
       addEntry: "Add entry",

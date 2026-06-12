@@ -27,6 +27,17 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const KIND_OPTIONS = ['image', 'live2d', 'rig3d', 'procedural'] as const
+
+function fileAcceptForKind(kind: PortraitCatalogEntry['kind']): string {
+  if (kind === 'live2d') return '.json,application/json'
+  if (kind === 'rig3d') return '.glb,.gltf,model/gltf-binary'
+  return 'image/png,image/jpeg,image/webp,image/gif'
+}
+
+function filePickLabel(kind: PortraitCatalogEntry['kind']): string {
+  if (kind === 'live2d') return t('advancedCreation.portraitCatalog.pickLive2d')
+  return t('simpleCreation.portraitSlots.pick')
+}
 </script>
 
 <template>
@@ -128,15 +139,15 @@ const KIND_OPTIONS = ['image', 'live2d', 'rig3d', 'procedural'] as const
         </label>
       </div>
       <div class="extra-row file-row">
-        <span class="file-name">{{ entry.file?.name ?? t('advancedCreation.portraitCatalog.noFile') }}</span>
+        <span class="file-name">{{ entry.path || entry.file?.name || t('advancedCreation.portraitCatalog.noFile') }}</span>
         <label class="btn-lite">
           <input
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
+            :accept="fileAcceptForKind(entry.kind)"
             class="sr-only"
             @change="emit('pickExtraFile', i, $event)"
           />
-          {{ t('simpleCreation.portraitSlots.pick') }}
+          {{ filePickLabel(entry.kind) }}
         </label>
         <button type="button" class="btn-lite ghost danger" @click="emit('removeExtra', i)">
           {{ t('advancedCreation.sections.world.delete') }}

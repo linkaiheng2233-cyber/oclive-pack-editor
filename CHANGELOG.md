@@ -2,6 +2,27 @@
 
 本文件随 **Git 标签 / Release** 更新；维护者发版步骤见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
+## [0.4.0] - 2026-06-12
+
+### Added
+
+- **`PortraitCatalogEditor`**：7 固定槽 + 高级 `extra_*` 条目；`kind: live2d` 支持 model3.json 文件选择。
+- **分级导出 profile**：`desktop-full` / `vscode-lite` / `theater`（导出菜单）。
+- **`visual_presentation` UI**：折叠面板含 live2d backend 与 model 路径。
+- **草稿 v2**：`oclive-pack-editor-draft-v2` 保存槽位文件名与 VP 配置（仍不存图片二进制）；自动迁移 v1。
+- **导出校验**：Tauri `validate_role_pack_export` 写入 catalog / live2d 占位路径，与主仓 `oclive_validation` portrait 规则对齐。
+- **导入 roundtrip**：zip 导入恢复 `portrait_catalog` + `config.json` visual 字段。
+
+### Changed
+
+- 移除遗留 `EmotionAssetsControl.vue`（由 `PortraitCatalogEditor` 取代）。
+- `HOST_RUNTIME_VERSION` 升至 **0.4.0**（catalog 需主程序 ≥0.4）。
+
+### Fixed
+
+- `vue-tsc` 编译：清理未使用的 emotion 批量 API 与 portrait slot 类型。
+- Live2D / rig3d 资源按 catalog `path` 写入 zip 与 roles 文件夹（不再一律落在 `assets/images/`）。
+
 ## [Unreleased]
 
 - **脚本**：新增 **`npm run check`**（`build` + `vitest` + **`contract:json-keys`**），与主仓发版前自检习惯对齐。

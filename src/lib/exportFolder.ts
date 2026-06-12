@@ -21,16 +21,23 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary)
 }
 
-async function binaryPayloadForImages(
+async function binaryPayloadForCatalogAssets(
   roleId: string,
-  images: File[],
+  extra?: Partial<PackExtraFiles>,
 ): Promise<{ path: string; base64: string }[]> {
   const id = roleId.trim()
+  const assets =
+    extra?.catalogAssets?.length
+      ? extra.catalogAssets
+      : (extra?.emotionImages ?? []).map((f) => ({
+          relPath: `assets/images/${f.name}`,
+          file: f,
+        }))
   const out: { path: string; base64: string }[] = []
-  for (const f of images) {
-    const buf = await f.arrayBuffer()
+  for (const { relPath, file } of assets) {
+    const buf = await file.arrayBuffer()
     out.push({
-      path: `${id}/assets/images/${f.name}`,
+      path: `${id}/${relPath.replace(/\\/g, '/')}`,
       base64: arrayBufferToBase64(buf),
     })
   }
@@ -60,9 +67,15 @@ export async function writePackToRolesRoot(
     await w.write(content)
     await w.close()
   }
-  const imgs = extra?.emotionImages ?? []
-  for (const f of imgs) {
-    const rel = `${id}/assets/images/${f.name}`
+  const assets =
+    extra?.catalogAssets?.length
+      ? extra.catalogAssets
+      : (extra?.emotionImages ?? []).map((f) => ({
+          relPath: `assets/images/${f.name}`,
+          file: f,
+        }))
+  for (const { relPath, file } of assets) {
+    const rel = `${id}/${relPath.replace(/\\/g, '/')}`
     const parts = rel.split('/').filter(Boolean)
     let dir: FileSystemDirectoryHandle = rolesRoot
     for (let i = 0; i < parts.length - 1; i++) {
@@ -70,7 +83,7 @@ export async function writePackToRolesRoot(
     }
     const fh = await dir.getFileHandle(parts[parts.length - 1]!, { create: true })
     const w = await fh.createWritable()
-    await w.write(await f.arrayBuffer())
+    await w.write(await file.arrayBuffer())
     await w.close()
   }
 }
@@ -90,7 +103,7 @@ export async function writePackToRolesRootPath(
     rolesRoot: rolesRootPath,
     files: payload,
   })
-  const bins = await binaryPayloadForImages(id, extra?.emotionImages ?? [])
+  const bins = await binaryPayloadForCatalogAssets(id, extra)
   if (bins.length > 0) {
     await invoke('write_role_pack_binaries', {
       rolesRoot: rolesRootPath,

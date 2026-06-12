@@ -2,12 +2,30 @@ import type { CreatorMessageExportMode } from './rolePackCreatorMessage'
 import type { AuthorRecRow } from './authorPack'
 import type { KnowledgeMarkdownFile } from './knowledgeFiles'
 import type { UiConfig } from '../types/uiConfig'
+import type { ExportProfile, PortraitAssetKind, PortraitSlotId } from './portraitCatalog'
 import { parseJson } from './packChecks'
 
-export const DRAFT_STORAGE_KEY = 'oclive-pack-editor-draft-v1'
+export const DRAFT_STORAGE_KEY = 'oclive-pack-editor-draft-v2'
+
+/** @deprecated v1 key — read-only migration */
+const DRAFT_STORAGE_KEY_V1 = 'oclive-pack-editor-draft-v1'
+
+export type PortraitSlotDraftMeta = {
+  fileName: string
+}
+
+export type PortraitExtraDraftMeta = {
+  id: string
+  path: string
+  desc: string
+  tags: string[]
+  kind: PortraitAssetKind
+  cluster?: string
+  fileName?: string
+}
 
 export type PackDraftSnapshot = {
-  version: 1
+  version: 2
   savedAt: string
   creationMode: 'simple' | 'advanced'
   advancedTab: 'manifest' | 'settings' | 'core' | 'world' | 'images'
@@ -25,6 +43,17 @@ export type PackDraftSnapshot = {
   authorIncludeSuggestedUi: boolean
   authorSuggestedBackendsJson: string
   uiConfig: UiConfig
+  /** Slot id → picked file name (no binary). */
+  portraitSlotMeta?: Partial<Record<PortraitSlotId, PortraitSlotDraftMeta>>
+  portraitExtraMeta?: PortraitExtraDraftMeta[]
+  visualPresentationEnabled?: boolean
+  visualPresentationBackend?: string
+  visualPresentationLive2dModel?: string
+  exportProfile?: ExportProfile
+}
+
+type PackDraftSnapshotV1 = Omit<PackDraftSnapshot, 'version' | 'portraitSlotMeta' | 'portraitExtraMeta' | 'visualPresentationEnabled' | 'visualPresentationBackend' | 'visualPresentationLive2dModel' | 'exportProfile'> & {
+  version: 1
 }
 
 export type PackDraftMeta = {
@@ -49,16 +78,51 @@ export function draftMetaFromSnapshot(snapshot: PackDraftSnapshot): PackDraftMet
   }
 }
 
+function normalizeV1ToV2(raw: PackDraftSnapshotV1): PackDraftSnapshot {
+  return {
+    ...raw,
+    version: 2,
+    portraitSlotMeta: {},
+    portraitExtraMeta: [],
+    visualPresentationEnabled: false,
+    visualPresentationBackend: 'image',
+    visualPresentationLive2dModel: '',
+    exportProfile: 'desktop-full',
+  }
+}
+
+function parseStoredDraft(raw: string): PackDraftSnapshot | null {
+  try {
+    const parsed = JSON.parse(raw) as PackDraftSnapshot | PackDraftSnapshotV1
+    if (parsed?.version === 2) {
+      if (typeof parsed.manifestText !== 'string' || typeof parsed.settingsText !== 'string') {
+        return null
+      }
+      return parsed
+    }
+    if (parsed?.version === 1) {
+      if (typeof parsed.manifestText !== 'string' || typeof parsed.settingsText !== 'string') {
+        return null
+      }
+      return normalizeV1ToV2(parsed)
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 export function readDraftSnapshot(): PackDraftSnapshot | null {
   try {
-    const raw = localStorage.getItem(DRAFT_STORAGE_KEY)
-    if (!raw?.trim()) return null
-    const parsed = JSON.parse(raw) as PackDraftSnapshot
-    if (parsed?.version !== 1) return null
-    if (typeof parsed.manifestText !== 'string' || typeof parsed.settingsText !== 'string') {
-      return null
+    const rawV2 = localStorage.getItem(DRAFT_STORAGE_KEY)
+    if (rawV2?.trim()) {
+      return parseStoredDraft(rawV2)
     }
-    return parsed
+    const rawV1 = localStorage.getItem(DRAFT_STORAGE_KEY_V1)
+    if (rawV1?.trim()) {
+      return parseStoredDraft(rawV1)
+    }
+    return null
   } catch {
     return null
   }
@@ -71,12 +135,25 @@ export function readDraftMeta(): PackDraftMeta | null {
 
 export function saveDraftSnapshot(snapshot: PackDraftSnapshot): void {
   localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(snapshot))
+  localStorage.removeItem(DRAFT_STORAGE_KEY_V1)
 }
 
 export function clearDraftSnapshot(): void {
   localStorage.removeItem(DRAFT_STORAGE_KEY)
+  localStorage.removeItem(DRAFT_STORAGE_KEY_V1)
 }
 
 export function hasDraftSnapshot(): boolean {
   return readDraftSnapshot() != null
+}
+
+/** Restore placeholder `File` from draft metadata (no binary). */
+export function placeholderFileFromMeta(fileName: string, kind: PortraitAssetKind = 'image'): File {
+  const type =
+    kind === 'live2d'
+      ? 'application/json'
+      : kind === 'rig3d'
+        ? 'model/gltf-binary'
+        : 'image/png'
+  return new File([], fileName, { type })
 }

@@ -38,9 +38,11 @@ import {
   applyExportProfile,
   buildPortraitCatalogJson,
   buildSimpleConfigJson,
+  collectCatalogBinaryAssets,
   emotionFilesFromCatalog,
   parseConfigJson,
   parsePortraitCatalogJson,
+  PORTRAIT_SLOT_TAG,
   SIMPLE_PORTRAIT_SLOT_IDS,
   slotFilesFromEmotionImages,
   type ExportProfile,
@@ -68,7 +70,12 @@ import {
   type SimpleManifestForm,
   type SimpleSettingsForm,
 } from '../lib/simpleCreation'
-import type { PackDraftSnapshot } from '../lib/draftStorage'
+import {
+  placeholderFileFromMeta,
+  type PackDraftSnapshot,
+  type PortraitExtraDraftMeta,
+  type PortraitSlotDraftMeta,
+} from '../lib/draftStorage'
 
 const STORAGE_REQUIRE_CHECKS = 'oclive-pack-editor-require-checks-before-export'
 const STORAGE_CREATION_MODE = 'oclive-pack-editor-creation-mode'
@@ -227,6 +234,7 @@ export function usePackEditor() {
       worldviewMarkdown: worldviewMarkdown.value,
       knowledgeMarkdownFiles: docs,
       emotionImages: emotionFilesFromCatalog(slotMap, extras),
+      catalogAssets: collectCatalogBinaryAssets(slotMap, extras),
       creatorMessage: creatorMessageToOthers.value,
       creatorMessageMode: creatorMessageMode.value,
       configJson: buildSimpleConfigJson(profiled.portraitEnabled && hasCatalog, profiled.visual),
@@ -566,7 +574,15 @@ export function usePackEditor() {
     const inp = e.target as HTMLInputElement
     const f = inp.files?.[0]
     if (!f) return
-    updatePortraitExtraEntry(index, { file: f })
+    const prev = portraitExtraEntries.value[index]
+    const kind = prev?.kind ?? 'image'
+    const base =
+      kind === 'live2d'
+        ? 'assets/live2d/'
+        : kind === 'rig3d'
+          ? 'assets/rig3d/'
+          : 'assets/images/'
+    updatePortraitExtraEntry(index, { file: f, path: `${base}${f.name}` })
     inp.value = ''
   }
 
@@ -807,10 +823,30 @@ export function usePackEditor() {
     }
   }
 
+  function capturePortraitSlotMeta(): Partial<Record<string, PortraitSlotDraftMeta>> {
+    const out: Partial<Record<string, PortraitSlotDraftMeta>> = {}
+    for (const [id, f] of Object.entries(portraitSlotFiles.value)) {
+      if (f?.name) out[id] = { fileName: f.name }
+    }
+    return out
+  }
+
+  function capturePortraitExtraMeta(): PortraitExtraDraftMeta[] {
+    return portraitExtraEntries.value.map((e) => ({
+      id: e.id,
+      path: e.path,
+      desc: e.desc,
+      tags: [...e.tags],
+      kind: e.kind,
+      cluster: e.cluster,
+      fileName: e.file?.name,
+    }))
+  }
+
   function captureDraftSnapshot(): PackDraftSnapshot {
     flushSimpleToJson()
     return {
-      version: 1,
+      version: 2,
       savedAt: new Date().toISOString(),
       creationMode: creationMode.value,
       advancedTab: advancedTab.value,
@@ -831,6 +867,12 @@ export function usePackEditor() {
       authorIncludeSuggestedUi: authorIncludeSuggestedUi.value,
       authorSuggestedBackendsJson: authorSuggestedBackendsJson.value,
       uiConfig: { ...uiConfig },
+      portraitSlotMeta: capturePortraitSlotMeta(),
+      portraitExtraMeta: capturePortraitExtraMeta(),
+      visualPresentationEnabled: visualPresentationEnabled.value,
+      visualPresentationBackend: visualPresentationBackend.value,
+      visualPresentationLive2dModel: visualPresentationLive2dModel.value,
+      exportProfile: exportProfile.value,
     }
   }
 
@@ -845,8 +887,28 @@ export function usePackEditor() {
       content: d.content,
     }))
     emotionImageFiles.value = []
-    portraitSlotFiles.value = {}
-    portraitExtraEntries.value = []
+    const slotMeta = snapshot.portraitSlotMeta ?? {}
+    const nextSlots: PortraitSlotFileMap = {}
+    for (const [id, meta] of Object.entries(slotMeta)) {
+      if (meta?.fileName && id in PORTRAIT_SLOT_TAG) {
+        nextSlots[id as PortraitSlotId] = placeholderFileFromMeta(meta.fileName, 'image')
+      }
+    }
+    portraitSlotFiles.value = nextSlots
+    portraitExtraEntries.value = (snapshot.portraitExtraMeta ?? []).map((e) => ({
+      id: e.id,
+      path: e.path,
+      desc: e.desc,
+      tags: e.tags,
+      kind: e.kind,
+      cluster: e.cluster,
+      file: e.fileName ? placeholderFileFromMeta(e.fileName, e.kind) : undefined,
+    }))
+    visualPresentationEnabled.value = snapshot.visualPresentationEnabled ?? false
+    visualPresentationBackend.value = snapshot.visualPresentationBackend ?? 'image'
+    visualPresentationLive2dModel.value = snapshot.visualPresentationLive2dModel ?? ''
+    exportProfile.value = snapshot.exportProfile ?? 'desktop-full'
+    syncEmotionFilesFromSlots()
     creatorMessageToOthers.value = snapshot.creatorMessageToOthers
     creatorMessageMode.value = snapshot.creatorMessageMode
     creatorMessageToDownloaderManifest.value = snapshot.creatorMessageToDownloaderManifest

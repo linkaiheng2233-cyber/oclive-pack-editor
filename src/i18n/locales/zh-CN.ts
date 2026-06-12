@@ -345,6 +345,7 @@ export default {
     },
     portraitCatalog: {
       hint: "A2 SSOT：portrait_catalog.json 管理立绘 assets；7 固定槽 + 可追加簇条目。",
+      pickLive2d: "选择 model3.json",
       fixedSlots: "7 固定槽（B1）",
       extraEntries: "额外 catalog 条目",
       addEntry: "追加条目",

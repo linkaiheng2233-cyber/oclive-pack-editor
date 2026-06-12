@@ -40,6 +40,8 @@ export type PackExtraFiles = {
   knowledgeMarkdownFiles: KnowledgeMarkdownFile[]
   /** 置于 assets/images/ 下，文件名应与 oclive 情绪资源命名一致（如 happy.png） */
   emotionImages: File[]
+  /** catalog 相对路径 → 文件（含 live2d model3 等） */
+  catalogAssets?: Array<{ relPath: string; file: File }>
   /** 写入 roles/{id}/creator_message.txt，随包分发；见 `creatorMessageMode` */
   creatorMessage?: string
   /** unified：全文只取首条非空行；per_module：每行一条（多模块拼接时汇总展示） */
@@ -187,10 +189,16 @@ export async function buildRolePackZipBlob(
     zip.file(path, content)
   }
   const id = roleId.trim()
-  const imgs = extra?.emotionImages ?? []
-  for (const f of imgs) {
-    const buf = await f.arrayBuffer()
-    zip.file(`${id}/assets/images/${f.name}`, buf)
+  const assets =
+    extra?.catalogAssets?.length
+      ? extra.catalogAssets
+      : (extra?.emotionImages ?? []).map((f) => ({
+          relPath: `assets/images/${f.name}`,
+          file: f,
+        }))
+  for (const { relPath, file } of assets) {
+    const buf = await file.arrayBuffer()
+    zip.file(`${id}/${relPath.replace(/\\/g, '/')}`, buf)
   }
   return zip.generateAsync({ type: 'blob' })
 }
