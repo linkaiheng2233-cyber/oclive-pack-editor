@@ -23,7 +23,7 @@
   "dependencies": {
     "@tauri-apps/api": "^1.5.6",
     "jszip": "^3.10.1",
-    "vue": "^3.5.32",
+    "vue": "^3.5.38",
     "vue-i18n": "^11.4.0"
   },
   "devDependencies": {
