@@ -1,40 +1,25 @@
-<script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useI18n } from "vue-i18n";
+﻿<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import PortraitCatalogEditor from './PortraitCatalogEditor.vue'
-import VisualPresentationFold from './VisualPresentationFold.vue'
-import type { PortraitCatalogEntry, PortraitSlotId } from '../../lib/portraitCatalog'
-import type { KnowledgeMarkdownFile } from '../../lib/knowledgeFiles'
-import {
-  buildKnowledgeMarkdown,
-  parseKnowledgeMarkdown,
-  type KnowledgeMeta,
-} from '../../lib/knowledgeFrontMatter'
-import { previewKnowledgeHits } from '../../lib/knowledgeHitPreview'
-import type { CreatorMessageExportMode } from '../../lib/rolePackCreatorMessage'
+import SceneSimpleEditor from './SceneSimpleEditor.vue'
+import WorldKnowledgeSimpleEditor from './WorldKnowledgeSimpleEditor.vue'
+import type { PortraitSlotId } from '../../lib/portraitCatalog'
+import type { ExtraEmotionUserChoices } from '../../lib/portraitExtraUser'
+import type { SceneEditorEntry } from '../../lib/scenePackUser'
+import type { WorldKnowledgeTexts } from '../../lib/worldKnowledgeUser'
 import {
   CORE_FAQ,
-  CREATOR_MSG_FAQ,
   IMAGES_FAQ,
-  KNOWLEDGE_FILE_FAQ,
-  KNOWLEDGE_PREVIEW_FAQ,
   MANIFEST_FAQ,
   SETTINGS_FAQ,
 } from '../../lib/advancedEditorFaq'
 import {
   ADV_CORE_TXT,
-  ADV_CREATOR_MESSAGE,
-  ADV_KNOWLEDGE_PREVIEW,
   ADV_MANIFEST,
   ADV_OVERVIEW,
   ADV_SETTINGS,
-  ADV_WORLD_KNOWLEDGE,
   CORE_PERSONALITY_SCOPE_GUIDE,
-  CREATOR_MSG_SCOPE_GUIDE,
   EMOTION_ASSET_SCOPE_GUIDE,
-  KNOWLEDGE_FILE_SCOPE_GUIDE,
-  KNOWLEDGE_META_GUIDE,
-  KNOWLEDGE_PREVIEW_SCOPE_GUIDE,
   MANIFEST_FIELD_SCOPE_GUIDE,
   MANIFEST_KEY_GUIDE,
   MANIFEST_MERGE_NOTE,
@@ -50,50 +35,30 @@ const { t } = useI18n()
 const manifestText = defineModel<string>('manifestText', { required: true })
 const settingsText = defineModel<string>('settingsText', { required: true })
 const corePersonality = defineModel<string>('corePersonality', { required: true })
-const creatorMessageToOthers = defineModel<string>('creatorMessageToOthers', { default: '' })
-const creatorMessageMode = defineModel<CreatorMessageExportMode>('creatorMessageMode', {
-  default: 'unified',
+const worldKnowledgeTexts = defineModel<WorldKnowledgeTexts>('worldKnowledgeTexts', { required: true })
+const sceneEditorEntries = defineModel<SceneEditorEntry[]>('sceneEditorEntries', { required: true })
+const advancedTab = defineModel<
+  'manifest' | 'settings' | 'core' | 'world' | 'scenes' | 'images'
+>('advancedTab', {
+  required: true,
 })
-const creatorMessageToDownloaderManifest = defineModel<string>('creatorMessageToDownloaderManifest', {
-  default: '',
-})
-const knowledgeFiles = defineModel<KnowledgeMarkdownFile[]>('knowledgeFiles', { required: true })
-const advancedTab = defineModel<'manifest' | 'settings' | 'core' | 'world' | 'images'>(
-  'advancedTab',
-  {
-    required: true,
-  },
-)
-const visualEnabled = defineModel<boolean>('visualEnabled', { default: false })
-const visualBackend = defineModel<string>('visualBackend', { default: 'image' })
-const live2dModel = defineModel<string>('live2dModel', { default: '' })
-
 const emit = defineEmits<{
   portraitSlotPick: [id: PortraitSlotId, e: Event]
   portraitSlotClear: [id: PortraitSlotId]
   portraitClearAll: []
-  portraitExtraPick: [index: number, e: Event]
-  portraitExtraUpdate: [index: number, patch: Partial<PortraitCatalogEntry>]
+  portraitExtraApplyChoices: [index: number, choices: ExtraEmotionUserChoices, file?: File]
   portraitExtraAdd: []
   portraitExtraRemove: [index: number]
-  addKnowledgeFile: []
-  updateKnowledgeFile: [index: number, patch: Partial<KnowledgeMarkdownFile>]
-  removeKnowledgeFile: [index: number]
 }>()
 
-const TAB_ORDER = ['manifest', 'settings', 'core', 'world', 'images'] as const
+const TAB_ORDER = ['manifest', 'settings', 'core', 'world', 'scenes', 'images'] as const
 
-const props = defineProps<{
+defineProps<{
   emotionSummary: string
   portraitSlotFiles: Partial<Record<PortraitSlotId, File>>
-  portraitExtraEntries: PortraitCatalogEntry[]
+  portraitExtraEntries: import('../../lib/portraitCatalog').PortraitCatalogEntry[]
   manifestRoleId: string
 }>()
-
-const knowledgeQuery = ref('')
-const previewSceneId = ref('')
-const previewStrictScene = ref(false)
-const previewWeightOverrides = ref<Record<string, number>>({})
 
 function onToolbarKeydown(e: KeyboardEvent): void {
   if (
@@ -121,79 +86,6 @@ function onToolbarKeydown(e: KeyboardEvent): void {
   } else {
     advancedTab.value = order[(i + 1) % order.length]!
   }
-}
-
-function docMeta(doc: KnowledgeMarkdownFile): KnowledgeMeta {
-  return parseKnowledgeMarkdown(doc.content).meta
-}
-
-function docBody(doc: KnowledgeMarkdownFile): string {
-  return parseKnowledgeMarkdown(doc.content).body
-}
-
-function updateMeta(index: number, patch: Partial<KnowledgeMeta>): void {
-  const doc = knowledgeFiles.value[index]
-  if (!doc) return
-  const parsed = parseKnowledgeMarkdown(doc.content)
-  const nextMeta: KnowledgeMeta = {
-    ...parsed.meta,
-    ...patch,
-  }
-  emit('updateKnowledgeFile', index, {
-    content: buildKnowledgeMarkdown(nextMeta, parsed.body),
-  })
-}
-
-function updateBody(index: number, body: string): void {
-  const doc = knowledgeFiles.value[index]
-  if (!doc) return
-  const parsed = parseKnowledgeMarkdown(doc.content)
-  emit('updateKnowledgeFile', index, {
-    content: buildKnowledgeMarkdown(parsed.meta, body),
-  })
-}
-
-const knowledgeHitPreview = computed(() =>
-  previewKnowledgeHits(knowledgeFiles.value, knowledgeQuery.value, {
-    sceneId: previewSceneId.value,
-    strictScene: previewStrictScene.value,
-  }),
-)
-
-const previewHitsWithOverrides = computed(() => {
-  const enriched = knowledgeHitPreview.value.map((h) => {
-    const key = `${h.path}#${h.id}`
-    const override = previewWeightOverrides.value[key]
-    const effectiveWeight = Number.isFinite(override) && override > 0 ? override : h.weight
-    const score = Number((h.baseScore * effectiveWeight).toFixed(2))
-    return {
-      ...h,
-      score,
-      effectiveWeight,
-      weightOverridden: Number.isFinite(override) && override > 0,
-      key,
-    }
-  })
-  return enriched.sort((a, b) => b.score - a.score)
-})
-
-function setPreviewWeightOverride(key: string, v: number): void {
-  const n = Number(v)
-  if (!Number.isFinite(n) || n <= 0) return
-  previewWeightOverrides.value = {
-    ...previewWeightOverrides.value,
-    [key]: Number(n.toFixed(2)),
-  }
-}
-
-function resetPreviewWeightOverride(key: string): void {
-  const next = { ...previewWeightOverrides.value }
-  delete next[key]
-  previewWeightOverrides.value = next
-}
-
-function resetAllPreviewWeightOverrides(): void {
-  previewWeightOverrides.value = {}
 }
 </script>
 
@@ -258,6 +150,18 @@ function resetAllPreviewWeightOverrides(): void {
         <span class="tab-stack">
           <span class="tab-title">{{ t("advancedCreation.tabs.world") }}</span>
           <span class="tab-file">knowledge/*.md</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="advancedTab === 'scenes'"
+        :class="{ on: advancedTab === 'scenes' }"
+        @click="advancedTab = 'scenes'"
+      >
+        <span class="tab-stack">
+          <span class="tab-title">{{ t("advancedCreation.tabs.scenes") }}</span>
+          <span class="tab-file">scenes/</span>
         </span>
       </button>
       <button
@@ -448,367 +352,12 @@ function resetAllPreviewWeightOverrides(): void {
           </div>
         </details>
       </div>
-      <div class="adv-section-head h2-spaced">
-        <h2 class="adv-h2">
-          <span>{{ t("advancedCreation.sections.core.creatorMsgTitle") }}</span>
-          <HelpHint :paragraphs="ADV_CREATOR_MESSAGE" />
-        </h2>
-        <p class="adv-lead">{{ t("advancedCreation.sections.core.creatorMsgLead") }}</p>
-      </div>
-      <div
-        class="creator-msg-mode"
-        role="radiogroup"
-        :aria-label="String(t('advancedCreation.sections.core.creatorMsgModeAria'))"
-      >
-        <label class="radio-line">
-          <input v-model="creatorMessageMode" type="radio" value="unified" />
-          {{ t("advancedCreation.sections.core.creatorMsgModes.unified") }}
-        </label>
-        <label class="radio-line">
-          <input v-model="creatorMessageMode" type="radio" value="per_module" />
-          {{ t("advancedCreation.sections.core.creatorMsgModes.perModule") }}
-        </label>
-      </div>
-      <textarea
-        v-model="creatorMessageToOthers"
-        class="ta ta--short"
-        :rows="creatorMessageMode === 'unified' ? 3 : 6"
-        spellcheck="true"
-        aria-label="creator_message.txt"
-      />
-      <p class="adv-lead">{{ t("simpleCreation.creatorMessage.downloaderLabel") }}</p>
-      <p class="adv-examples-dock-note adv-lead" style="margin-top: 0">
-        {{ t("simpleCreation.creatorMessage.downloaderDesc") }}
-      </p>
-      <textarea
-        v-model="creatorMessageToDownloaderManifest"
-        class="ta ta--short"
-        rows="2"
-        spellcheck="true"
-        :aria-label="'creator_message_to_downloader'"
-        :placeholder="String(t('simpleCreation.creatorMessage.downloaderPlaceholder'))"
-      />
-      <div class="adv-dock-stack">
-        <details
-          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          :aria-label="String(t('advancedCreation.sections.core.creatorMsgDocks.keypointsAria'))"
-        >
-          <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge">{{ t("advancedCreation.docks.badges.keypoints") }}</span>
-            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.core.creatorMsgDocks.keypointsTitle") }}</span>
-          </summary>
-          <div class="adv-examples-dock-body">
-            <h4 class="adv-ex-part">{{ t("advancedCreation.sections.core.creatorMsgDocks.scopeTitle") }}</h4>
-            <div class="adv-scope-matrix">
-              <ul class="adv-scope-list">
-                <li v-for="row in CREATOR_MSG_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
-                  <code class="adv-scope-field">{{ row.field }}</code>
-                  <p class="adv-scope-mean">{{ row.meaning }}</p>
-                  <p class="adv-scope-scope">
-                    <strong>{{ t("advancedCreation.docks.scopeStrong") }}</strong>{{ row.scope }}
-                  </p>
-                </li>
-              </ul>
-            </div>
-            <p class="adv-examples-dock-note">
-              {{ t("advancedCreation.sections.core.creatorMsgDocks.notePrefix") }}<strong>{{ t("advancedCreation.sections.core.creatorMsgDocks.noteStrongUnified") }}</strong>{{ t("advancedCreation.sections.core.creatorMsgDocks.noteMiddle") }}<strong>{{ t("advancedCreation.sections.core.creatorMsgDocks.noteStrongPerModule") }}</strong>{{ t("advancedCreation.sections.core.creatorMsgDocks.noteSuffix") }}
-            </p>
-          </div>
-        </details>
-        <details
-          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          :aria-label="String(t('advancedCreation.sections.core.creatorMsgDocks.faqAria'))"
-        >
-          <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge adv-examples-badge--faq">{{ t("advancedCreation.docks.badges.faq") }}</span>
-            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.core.creatorMsgDocks.faqTitle") }}</span>
-          </summary>
-          <div class="adv-examples-dock-body">
-            <AdvFaqList :items="CREATOR_MSG_FAQ" />
-          </div>
-        </details>
-      </div>
     </section>
     <section v-show="advancedTab === 'world'" class="panel adv-single">
-      <div class="adv-section-head">
-        <h2 class="adv-h2">
-          <span>{{ t("advancedCreation.sections.world.title") }}</span>
-          <HelpHint :paragraphs="ADV_WORLD_KNOWLEDGE" />
-        </h2>
-        <p class="adv-lead">
-          {{ t("advancedCreation.sections.world.lead") }}
-        </p>
-        <details class="adv-key-map">
-          <summary>{{ t("advancedCreation.sections.world.metaSummary") }}</summary>
-          <ul class="adv-key-list">
-            <li v-for="row in KNOWLEDGE_META_GUIDE" :key="row.key">
-              <code>{{ row.key }}</code>
-              <span class="adv-key-say">{{ row.say }}</span>
-            </li>
-          </ul>
-        </details>
-      </div>
-      <div class="knowledge-actions">
-        <button type="button" @click="emit('addKnowledgeFile')">{{ t("advancedCreation.sections.world.addKnowledgeFile") }}</button>
-      </div>
-      <div class="knowledge-preview">
-        <h3 class="adv-h3">
-          <span>{{ t("advancedCreation.sections.world.preview.title") }}</span>
-          <HelpHint :paragraphs="ADV_KNOWLEDGE_PREVIEW" />
-        </h3>
-        <p class="base-desc">{{ t("advancedCreation.sections.world.preview.desc") }}</p>
-        <div class="preview-controls">
-          <input
-            v-model="previewSceneId"
-            type="text"
-            class="knowledge-scene"
-            :placeholder="String(t('advancedCreation.sections.world.preview.scenePlaceholder'))"
-          />
-          <label class="preview-check">
-            <input v-model="previewStrictScene" type="checkbox" />
-            {{ t("advancedCreation.sections.world.preview.strictScene") }}
-          </label>
-          <button
-            v-if="Object.keys(previewWeightOverrides).length"
-            type="button"
-            class="preview-reset"
-            @click="resetAllPreviewWeightOverrides"
-          >
-            {{ t("advancedCreation.sections.world.preview.resetAllWeights") }}
-          </button>
-        </div>
-        <input
-          v-model="knowledgeQuery"
-          type="text"
-          class="knowledge-query"
-          :placeholder="String(t('advancedCreation.sections.world.preview.queryPlaceholder'))"
-        />
-        <div v-if="knowledgeQuery.trim() && knowledgeHitPreview.length === 0" class="empty-tip">
-          {{ t("advancedCreation.sections.world.preview.noHits") }}
-        </div>
-        <ul v-if="previewHitsWithOverrides.length" class="knowledge-hits">
-          <li v-for="h in previewHitsWithOverrides" :key="h.key">
-            <div class="hit-top">
-              <code>{{ h.path }}</code>
-              <strong>score {{ h.score }}</strong>
-            </div>
-            <div class="hit-score">
-              {{
-                t("advancedCreation.sections.world.preview.scoreLine", {
-                  base: h.baseScore,
-                  weight: h.effectiveWeight,
-                  score: h.score,
-                })
-              }}
-              <span v-if="h.weightOverridden">{{
-                t("advancedCreation.sections.world.preview.weightOverridden", { weight: h.weight })
-              }}</span>
-              <span v-if="previewSceneId.trim()">
-                ({{
-                  t("advancedCreation.sections.world.preview.sceneMatched", {
-                    matched: h.sceneMatched
-                      ? t("advancedCreation.sections.world.preview.sceneMatchedYes")
-                      : t("advancedCreation.sections.world.preview.sceneMatchedNo"),
-                  })
-                }})
-              </span>
-            </div>
-            <div class="hit-weight">
-              <label>
-                {{ t("advancedCreation.sections.world.preview.tempWeight") }}
-                <input
-                  :value="h.effectiveWeight"
-                  type="range"
-                  min="0.1"
-                  max="5"
-                  step="0.1"
-                  @input="setPreviewWeightOverride(h.key, Number(($event.target as HTMLInputElement).value))"
-                />
-              </label>
-              <button
-                v-if="h.weightOverridden"
-                type="button"
-                class="preview-reset-one"
-                @click="resetPreviewWeightOverride(h.key)"
-              >
-                {{ t("advancedCreation.sections.world.preview.resetOne") }}
-              </button>
-            </div>
-            <div class="hit-reasons">
-              {{ t("advancedCreation.sections.world.preview.reasons", { reasons: h.reasons.join("；") }) }}
-            </div>
-            <ul v-if="h.snippets.length" class="hit-snippets">
-              <li v-for="(s, si) in h.snippets" :key="si">{{ s }}</li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-      <div class="adv-dock-stack">
-        <details
-          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          :aria-label="String(t('advancedCreation.sections.world.previewDocks.keypointsAria'))"
-        >
-          <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge">{{ t("advancedCreation.docks.badges.keypoints") }}</span>
-            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.world.previewDocks.keypointsTitle") }}</span>
-          </summary>
-          <div class="adv-examples-dock-body">
-            <h4 class="adv-ex-part">{{ t("advancedCreation.sections.world.previewDocks.eachControlTitle") }}</h4>
-            <div class="adv-scope-matrix">
-              <ul class="adv-scope-list">
-                <li v-for="row in KNOWLEDGE_PREVIEW_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
-                  <code class="adv-scope-field">{{ row.field }}</code>
-                  <p class="adv-scope-mean">{{ row.meaning }}</p>
-                  <p class="adv-scope-scope">
-                    <strong>{{ t("advancedCreation.docks.scopeStrong") }}</strong>{{ row.scope }}
-                  </p>
-                </li>
-              </ul>
-            </div>
-            <p class="adv-examples-dock-note">
-              {{ t("advancedCreation.sections.world.previewDocks.notePrefix") }}<strong>{{ t("advancedCreation.sections.world.previewDocks.noteStrong") }}</strong>{{ t("advancedCreation.sections.world.previewDocks.noteSuffix") }}
-            </p>
-          </div>
-        </details>
-        <details
-          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          :aria-label="String(t('advancedCreation.sections.world.previewDocks.faqAria'))"
-        >
-          <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge adv-examples-badge--faq">{{ t("advancedCreation.docks.badges.faq") }}</span>
-            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.world.previewDocks.faqTitle") }}</span>
-          </summary>
-          <div class="adv-examples-dock-body">
-            <AdvFaqList :items="KNOWLEDGE_PREVIEW_FAQ" />
-          </div>
-        </details>
-      </div>
-      <div v-if="knowledgeFiles.length === 0" class="empty-tip">
-        {{ t("advancedCreation.sections.world.emptyNoFiles") }}
-      </div>
-      <div v-for="(d, i) in knowledgeFiles" :key="d.path + ':' + i" class="knowledge-card">
-        <div class="knowledge-head">
-          <input
-            :value="d.path"
-            type="text"
-            class="knowledge-path"
-            @input="emit('updateKnowledgeFile', i, { path: ($event.target as HTMLInputElement).value })"
-          />
-          <button type="button" class="danger" @click="emit('removeKnowledgeFile', i)">{{ t("advancedCreation.sections.world.delete") }}</button>
-        </div>
-        <div class="knowledge-meta">
-          <label>
-            <span>id</span>
-            <input
-              :value="docMeta(d).id"
-              type="text"
-              @input="updateMeta(i, { id: ($event.target as HTMLInputElement).value })"
-            />
-          </label>
-          <label>
-            <span>{{ t("advancedCreation.sections.world.meta.tagsCsv") }}</span>
-            <input
-              :value="docMeta(d).tags.join(', ')"
-              type="text"
-              @input="
-                updateMeta(i, {
-                  tags: ($event.target as HTMLInputElement).value
-                    .split(',')
-                    .map((x) => x.trim())
-                    .filter(Boolean),
-                })
-              "
-            />
-          </label>
-          <label>
-            <span>{{ t("advancedCreation.sections.world.meta.scenesCsv") }}</span>
-            <input
-              :value="docMeta(d).scenes.join(', ')"
-              type="text"
-              @input="
-                updateMeta(i, {
-                  scenes: ($event.target as HTMLInputElement).value
-                    .split(',')
-                    .map((x) => x.trim())
-                    .filter(Boolean),
-                })
-              "
-            />
-          </label>
-          <label>
-            <span>weight</span>
-            <input
-              :value="docMeta(d).weight"
-              type="number"
-              min="0.01"
-              step="0.1"
-              @input="updateMeta(i, { weight: Number(($event.target as HTMLInputElement).value) })"
-            />
-          </label>
-          <label>
-            <span>{{ t("advancedCreation.sections.world.meta.eventHintsCsv") }}</span>
-            <input
-              :value="docMeta(d).eventHints.join(', ')"
-              type="text"
-              @input="
-                updateMeta(i, {
-                  eventHints: ($event.target as HTMLInputElement).value
-                    .split(',')
-                    .map((x) => x.trim())
-                    .filter(Boolean),
-                })
-              "
-            />
-          </label>
-        </div>
-        <textarea
-          :value="docBody(d)"
-          spellcheck="false"
-          class="ta"
-          :aria-label="d.path"
-          @input="updateBody(i, ($event.target as HTMLTextAreaElement).value)"
-        />
-      </div>
-      <div class="adv-dock-stack">
-        <details
-          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--keypoints"
-          :aria-label="String(t('advancedCreation.sections.world.fileDocks.keypointsAria'))"
-        >
-          <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge">{{ t("advancedCreation.docks.badges.keypoints") }}</span>
-            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.world.fileDocks.keypointsTitle") }}</span>
-          </summary>
-          <div class="adv-examples-dock-body">
-            <h4 class="adv-ex-part">{{ t("advancedCreation.sections.world.fileDocks.eachPartTitle") }}</h4>
-            <div class="adv-scope-matrix">
-              <ul class="adv-scope-list">
-                <li v-for="row in KNOWLEDGE_FILE_SCOPE_GUIDE" :key="row.field" class="adv-scope-li">
-                  <code class="adv-scope-field">{{ row.field }}</code>
-                  <p class="adv-scope-mean">{{ row.meaning }}</p>
-                  <p class="adv-scope-scope">
-                    <strong>{{ t("advancedCreation.docks.scopeStrong") }}</strong>{{ row.scope }}
-                  </p>
-                </li>
-              </ul>
-            </div>
-            <p class="adv-examples-dock-note">
-              {{ t("advancedCreation.sections.world.fileDocks.notePrefix") }}<strong>{{ t("advancedCreation.sections.world.fileDocks.noteStrong") }}</strong>{{ t("advancedCreation.sections.world.fileDocks.noteSuffix") }}
-            </p>
-          </div>
-        </details>
-        <details
-          class="adv-examples-dock adv-examples-dock--collapsible adv-examples-dock--faq"
-          :aria-label="String(t('advancedCreation.sections.world.fileDocks.faqAria'))"
-        >
-          <summary class="adv-examples-dock-summary">
-            <span class="adv-examples-badge adv-examples-badge--faq">{{ t("advancedCreation.docks.badges.faq") }}</span>
-            <span class="adv-examples-dock-title">{{ t("advancedCreation.sections.world.fileDocks.faqTitle") }}</span>
-          </summary>
-          <div class="adv-examples-dock-body">
-            <AdvFaqList :items="KNOWLEDGE_FILE_FAQ" />
-          </div>
-        </details>
-      </div>
+      <WorldKnowledgeSimpleEditor v-model="worldKnowledgeTexts" />
+    </section>
+    <section v-show="advancedTab === 'scenes'" class="panel adv-single">
+      <SceneSimpleEditor v-model:entries="sceneEditorEntries" />
     </section>
     <section v-show="advancedTab === 'images'" class="panel adv-single">
       <div class="adv-section-head">
@@ -822,15 +371,9 @@ function resetAllPreviewWeightOverrides(): void {
         @pick-slot="(id, e) => emit('portraitSlotPick', id, e)"
         @clear-slot="(id) => emit('portraitSlotClear', id)"
         @clear-all="emit('portraitClearAll')"
-        @pick-extra-file="(index, e) => emit('portraitExtraPick', index, e)"
-        @update-extra="(index, patch) => emit('portraitExtraUpdate', index, patch)"
-        @add-extra="emit('portraitExtraAdd')"
-        @remove-extra="(index) => emit('portraitExtraRemove', index)"
-      />
-      <VisualPresentationFold
-        v-model:visual-enabled="visualEnabled"
-        v-model:visual-backend="visualBackend"
-        v-model:live2d-model="live2dModel"
+        @extra-apply-choices="(index, c, f) => emit('portraitExtraApplyChoices', index, c, f)"
+        @extra-add="emit('portraitExtraAdd')"
+        @extra-remove="(index) => emit('portraitExtraRemove', index)"
       />
       <div class="adv-dock-stack">
         <details
@@ -1052,7 +595,7 @@ code {
 .adv-examples-dock-body {
   padding: 0 0.95rem 0.95rem;
 }
-/* 重点区：字段表随内容增高，不占固定视窗高度 */
+/* 閲嶇偣鍖猴細瀛楁琛ㄩ殢鍐呭澧為珮锛屼笉鍗犲浐瀹氳绐楅珮搴?*/
 .adv-examples-dock--keypoints .adv-scope-matrix {
   max-height: none;
   overflow: visible;

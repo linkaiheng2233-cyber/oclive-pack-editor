@@ -245,6 +245,17 @@ describe('portraitCatalog', () => {
 
 
 
+  it('validatePortraitCatalogState ignores extra entries without path (draft)', () => {
+    const issues = validatePortraitCatalogState(
+      {},
+      [{ id: 'neutral_mild', path: '', desc: '平静，轻微程度', tags: ['neutral'], kind: 'image' }],
+      true,
+    )
+    expect(issues.some((i) => i.message.includes('缺少 path'))).toBe(false)
+  })
+
+
+
   it('applyExportProfile vscode-lite strips extras and disables VP', () => {
 
     const out = applyExportProfile(

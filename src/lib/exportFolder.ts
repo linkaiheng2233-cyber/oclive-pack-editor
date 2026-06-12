@@ -1,14 +1,38 @@
 import { invoke } from '@tauri-apps/api/tauri'
-import { open } from '@tauri-apps/api/dialog'
+import { confirm, open } from '@tauri-apps/api/dialog'
 import {
   buildRolePackFiles,
   type ExportableManifest,
   type ExportableSettings,
   type PackExtraFiles,
 } from './exportPack'
+import { duplicateRoleFolderConfirmMessage } from './exportErrorMessages'
 
 export function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI__' in window
+}
+
+/** Tauri：检测 roles 根下是否已有 `{roleId}/` 文件夹。 */
+export async function rolePackDirExists(rolesRoot: string, roleId: string): Promise<boolean> {
+  if (!isTauriRuntime()) return false
+  const root = rolesRoot.trim()
+  const id = roleId.trim()
+  if (!root || !id) return false
+  return invoke<boolean>('role_pack_dir_exists', { rolesRoot: root, roleId: id })
+}
+
+/** 重复导出时提醒：同名文件夹已存在则询问是否覆盖。 */
+export async function confirmOverwriteExistingRoleDir(
+  rolesRoot: string,
+  roleId: string,
+): Promise<boolean> {
+  const exists = await rolePackDirExists(rolesRoot, roleId)
+  if (!exists) return true
+  const message = duplicateRoleFolderConfirmMessage(roleId)
+  if (isTauriRuntime()) {
+    return confirm(message, { title: '覆盖已有角色包？', type: 'warning' })
+  }
+  return window.confirm(message)
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -122,8 +146,11 @@ export async function pickRolesRootAndWritePack(
   if (isTauriRuntime()) {
     const selected = await open({ directory: true, multiple: false })
     if (selected === null) return { wrote: false }
-    const path = Array.isArray(selected) ? selected[0] : selected
-    await writePackToRolesRootPath(path, roleId, manifest, settings, extra)
+  const path = Array.isArray(selected) ? selected[0] : selected
+  if (!(await confirmOverwriteExistingRoleDir(path, roleId))) {
+    return { wrote: false }
+  }
+  await writePackToRolesRootPath(path, roleId, manifest, settings, extra)
     return { wrote: true, rolesRootPath: path }
   }
   if (!isFolderExportSupported()) {

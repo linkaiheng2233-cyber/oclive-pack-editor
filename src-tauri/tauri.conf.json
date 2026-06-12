@@ -17,7 +17,8 @@
         "assetScope": ["**"]
       },
       "dialog": {
-        "open": true
+        "open": true,
+        "confirm": true
       }
     },
     "bundle": {

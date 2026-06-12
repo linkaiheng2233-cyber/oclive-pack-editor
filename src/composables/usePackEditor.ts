@@ -10,7 +10,7 @@ import {
   triggerDownload,
   type PackExtraFiles,
 } from '../lib/exportPack'
-import { pickRolesRootAndWritePack, isFolderExportSupported, writePackToRolesRootPath } from '../lib/exportFolder'
+import { pickRolesRootAndWritePack, isFolderExportSupported, writePackToRolesRootPath, confirmOverwriteExistingRoleDir } from '../lib/exportFolder'
 import { importRolePackFromZip, importedPackBrainHint } from '../lib/importPack'
 import {
   applyLoadedPackToEditor,
@@ -19,6 +19,7 @@ import {
 } from '../lib/applyLoadedPackToEditor'
 import { prepareExportPayload } from '../lib/exportPrepare'
 import { validateExportPackDirectory } from '../lib/exportValidate'
+import { formatExportDirectoryBlockedMessage, validateRoleIdForExport } from '../lib/exportErrorMessages'
 import {
   mergeEditorReplyQualityAnchor,
   shouldPromptReplyQualityAnchor,
@@ -27,6 +28,19 @@ import { parseJson, runAllPackChecks } from '../lib/packChecks'
 import type { PackSession } from './useRolesWorkspace'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from '../lib/knowledgeFiles'
 import { validateKnowledgeFiles } from '../lib/knowledgeFrontMatter'
+import {
+  emptyWorldKnowledgeTexts,
+  mergeWorldKnowledgeExportFiles,
+  parseWorldKnowledgeFromFiles,
+  worldKnowledgeHasContent,
+  type WorldKnowledgeTexts,
+} from '../lib/worldKnowledgeUser'
+import {
+  mergeSceneEntriesForIds,
+  parseSceneIdList,
+  sceneEntriesToIdList,
+  type SceneEditorEntry,
+} from '../lib/scenePackUser'
 import { mergeMarketComposeIntoEditor, parseMarketComposeV1 } from '../lib/marketComposeImport'
 import {
   patchManifestCreatorMessageToDownloader,
@@ -50,6 +64,10 @@ import {
   type PortraitSlotId,
 } from '../lib/portraitCatalog'
 import { runPortraitCatalogChecks } from '../lib/portraitCatalogValidate'
+import {
+  buildExtraEntryFromUserChoices,
+  type ExtraEmotionUserChoices,
+} from '../lib/portraitExtraUser'
 import {
   buildAuthorJsonDisk,
   emptyAuthorRecRow,
@@ -93,6 +111,10 @@ export function usePackEditor() {
   const settingsText = ref(DEFAULT_SETTINGS_JSON)
   const corePersonalityText = ref(DEFAULT_CORE_PERSONALITY_TEXT)
   const worldviewMarkdown = ref('')
+  const worldKnowledgeTexts = ref<WorldKnowledgeTexts>(emptyWorldKnowledgeTexts())
+  const extraKnowledgeFiles = ref<KnowledgeMarkdownFile[]>([])
+  const sceneEditorEntries = ref<SceneEditorEntry[]>([mergeSceneEntriesForIds(['home'], [])[0]!])
+  let syncingScenes = false
   const knowledgeMarkdownFiles = ref<KnowledgeMarkdownFile[]>([])
   const emotionImageFiles = ref<File[]>([])
   const portraitSlotFiles = ref<PortraitSlotFileMap>({})
@@ -180,7 +202,7 @@ export function usePackEditor() {
     '当前没有可检查的角色包：请从开始页继续草稿、创建新包、加载 roles 或导入 zip。'
 
   const creationMode = ref<'simple' | 'advanced'>('simple')
-  const advancedTab = ref<'manifest' | 'settings' | 'core' | 'world' | 'images'>('manifest')
+  const advancedTab = ref<'manifest' | 'settings' | 'core' | 'world' | 'scenes' | 'images'>('manifest')
 
   const simpleM = reactive<SimpleManifestForm>(defaultSimpleManifestForm())
   const simpleS = reactive<SimpleSettingsForm>(defaultSimpleSettingsForm())
@@ -198,12 +220,93 @@ export function usePackEditor() {
   })
 
   /** 与 manifest 同步写入 settings.knowledge；运行时合并以 settings 为准 */
-  const simpleKnowledgeForSettings = computed(() => ({
-    enabled: simpleM.knowledgeEnabled,
-    glob: simpleM.knowledgeGlob,
-  }))
+  const simpleKnowledgeForSettings = computed(() => {
+    const enabled =
+      worldKnowledgeHasContent(worldKnowledgeTexts.value) ||
+      extraKnowledgeFiles.value.some((f) => f.content.trim())
+    return {
+      enabled: enabled || simpleM.knowledgeEnabled,
+      glob: simpleM.knowledgeGlob.trim() || 'knowledge/**/*.md',
+    }
+  })
+
+  function syncKnowledgeFilesFromWorldTexts(): void {
+    knowledgeMarkdownFiles.value = mergeWorldKnowledgeExportFiles(
+      worldKnowledgeTexts.value,
+      extraKnowledgeFiles.value,
+    )
+    worldviewMarkdown.value = worldKnowledgeTexts.value.dialogueWorldview
+  }
+
+  function sceneIdsFromEditorState(): string[] {
+    if (creationMode.value === 'simple') {
+      return parseSceneIdList(simpleM.scenesCsv)
+    }
+    const m = parseJson<Record<string, unknown>>(manifestText.value, 'manifest.json')
+    if (m.ok && Array.isArray(m.value.scenes)) {
+      return parseSceneIdList(m.value.scenes as string[])
+    }
+    return ['home']
+  }
+
+  function syncSceneEntriesFromManifest(): void {
+    const ids = sceneIdsFromEditorState()
+    sceneEditorEntries.value = mergeSceneEntriesForIds(ids, sceneEditorEntries.value)
+  }
+
+  function patchManifestScenes(ids: string[]): void {
+    const m = parseJson<Record<string, unknown>>(manifestText.value, 'manifest.json')
+    if (!m.ok) return
+    const next = { ...m.value, scenes: ids }
+    manifestText.value = `${JSON.stringify(next, null, 2)}\n`
+  }
+
+  function syncManifestScenesFromEntries(): void {
+    let ids = sceneEntriesToIdList(sceneEditorEntries.value)
+    if (ids.length === 0) ids = ['home']
+    if (creationMode.value === 'simple') {
+      const csv = ids.join(', ')
+      if (simpleM.scenesCsv !== csv) simpleM.scenesCsv = csv
+      scheduleSimpleToJson()
+    } else {
+      patchManifestScenes(ids)
+    }
+  }
+
+  function migrateLegacySceneSetting(body: string): void {
+    const trimmed = body.trim()
+    if (!trimmed) return
+    syncSceneEntriesFromManifest()
+    const first = sceneEditorEntries.value[0]
+    if (first && !first.activitySetting.trim()) {
+      first.activitySetting = trimmed
+    }
+  }
+
+  function applySceneEditorEntries(entries: SceneEditorEntry[]): void {
+    syncingScenes = true
+    sceneEditorEntries.value = entries.length
+      ? entries.map((e) => ({ ...e }))
+      : mergeSceneEntriesForIds(['home'], [])
+    syncManifestScenesFromEntries()
+    syncingScenes = false
+  }
+
+  function applyKnowledgeBundle(files: KnowledgeMarkdownFile[], legacyWorldBody = ''): void {
+    const { texts, extraFiles, legacySceneSettingBody } = parseWorldKnowledgeFromFiles(files)
+    if (legacyWorldBody.trim() && !texts.dialogueWorldview.trim()) {
+      texts.dialogueWorldview = legacyWorldBody.trim()
+    }
+    worldKnowledgeTexts.value = texts
+    extraKnowledgeFiles.value = extraFiles
+    syncKnowledgeFilesFromWorldTexts()
+    if (legacySceneSettingBody.trim()) {
+      migrateLegacySceneSetting(legacySceneSettingBody)
+    }
+  }
 
   function packExtra(): Partial<PackExtraFiles> {
+    syncKnowledgeFilesFromWorldTexts()
     const docs = knowledgeMarkdownFiles.value.filter((d) => d.content.trim())
     const authorJson = buildAuthorJsonDisk({
       summary: authorSummary.value,
@@ -241,33 +344,35 @@ export function usePackEditor() {
         ? { portraitCatalogJson: buildPortraitCatalogJson(slotMap, extras) }
         : {}),
       ...(authorJson ? { authorJson } : {}),
+      sceneEditorEntries: sceneEditorEntries.value.map((e) => ({ ...e })),
     }
   }
 
-  function syncKnowledgeFilesFromWorldview(): void {
-    const world = worldviewMarkdown.value
-    const idx = knowledgeMarkdownFiles.value.findIndex((d) => d.path === 'knowledge/world.md')
-    if (!world.trim()) {
-      if (idx >= 0) {
-        const next = [...knowledgeMarkdownFiles.value]
-        next.splice(idx, 1)
-        knowledgeMarkdownFiles.value = next
-      }
-      return
-    }
-    if (idx >= 0) {
-      const next = [...knowledgeMarkdownFiles.value]
-      next[idx] = { ...next[idx], content: world }
-      knowledgeMarkdownFiles.value = next
-    } else {
-      knowledgeMarkdownFiles.value = [
-        { path: 'knowledge/world.md', content: world },
-        ...knowledgeMarkdownFiles.value,
-      ]
-    }
-  }
+  watch(sceneEditorEntries, () => {
+    if (syncingScenes) return
+    syncingScenes = true
+    syncManifestScenesFromEntries()
+    syncingScenes = false
+  }, { deep: true })
 
-  watch(worldviewMarkdown, syncKnowledgeFilesFromWorldview)
+  watch(
+    () => simpleM.scenesCsv,
+    () => {
+      if (creationMode.value !== 'simple' || syncingScenes) return
+      syncingScenes = true
+      syncSceneEntriesFromManifest()
+      syncingScenes = false
+    },
+  )
+
+  watch(manifestText, () => {
+    if (creationMode.value !== 'advanced' || syncingScenes) return
+    syncingScenes = true
+    syncSceneEntriesFromManifest()
+    syncingScenes = false
+  })
+
+  watch(worldKnowledgeTexts, syncKnowledgeFilesFromWorldTexts, { deep: true })
 
   watch(
     manifestText,
@@ -328,8 +433,16 @@ export function usePackEditor() {
 
     if (m.ok && s.ok) {
       const k = knowledgeFromPackRecords(m.value, s.value)
-      simpleM.knowledgeEnabled = k.enabled
-      simpleM.knowledgeGlob = k.glob
+      if (!worldKnowledgeHasContent(worldKnowledgeTexts.value)) {
+        simpleM.knowledgeEnabled = k.enabled
+        simpleM.knowledgeGlob = k.glob || 'knowledge/**/*.md'
+      }
+    }
+
+    if (m.ok && !syncingScenes) {
+      syncingScenes = true
+      syncSceneEntriesFromManifest()
+      syncingScenes = false
     }
 
     if (errs.length) syncFormWarning.value = errs.join(' ')
@@ -522,22 +635,38 @@ export function usePackEditor() {
 
   function clearPortraitSlots(): void {
     portraitSlotFiles.value = {}
-    portraitExtraEntries.value = []
-    emotionImageFiles.value = []
+    portraitExtraEntries.value = portraitExtraEntries.value.filter(
+      (e) => e.kind !== 'image',
+    )
+    syncEmotionFilesFromSlots()
   }
 
   function addPortraitExtraEntry(): void {
-    const n = portraitExtraEntries.value.length + 1
-    portraitExtraEntries.value = [
-      ...portraitExtraEntries.value,
+    const entry = buildExtraEntryFromUserChoices(
       {
-        id: `extra_${n}`,
-        path: '',
-        desc: '',
-        tags: [],
-        kind: 'image',
+        clusterMode: 'builtin',
+        clusterTag: 'happy',
+        customClusterLabel: '',
+        intensity: 'mild',
       },
-    ]
+      portraitExtraEntries.value.map((e) => e.id),
+    )
+    portraitExtraEntries.value = [...portraitExtraEntries.value, entry]
+  }
+
+  function applyPortraitExtraUserChoices(
+    index: number,
+    choices: ExtraEmotionUserChoices,
+    file?: File,
+  ): void {
+    const prev = portraitExtraEntries.value[index]
+    if (!prev) return
+    const built = buildExtraEntryFromUserChoices(
+      choices,
+      portraitExtraEntries.value.filter((_, i) => i !== index).map((e) => e.id),
+      file ?? prev.file,
+    )
+    updatePortraitExtraEntry(index, built)
   }
 
   function updatePortraitExtraEntry(index: number, patch: Partial<PortraitCatalogEntry>): void {
@@ -546,6 +675,7 @@ export function usePackEditor() {
     const next = [...portraitExtraEntries.value]
     const merged = { ...prev, ...patch }
     if (patch.file) {
+      merged.kind = 'image'
       merged.path = `assets/images/${patch.file.name}`
     }
     next[index] = merged
@@ -558,22 +688,6 @@ export function usePackEditor() {
     next.splice(index, 1)
     portraitExtraEntries.value = next
     syncEmotionFilesFromSlots()
-  }
-
-  function onPortraitExtraPick(index: number, e: Event): void {
-    const inp = e.target as HTMLInputElement
-    const f = inp.files?.[0]
-    if (!f) return
-    const prev = portraitExtraEntries.value[index]
-    const kind = prev?.kind ?? 'image'
-    const base =
-      kind === 'live2d'
-        ? 'assets/live2d/'
-        : kind === 'rig3d'
-          ? 'assets/rig3d/'
-          : 'assets/images/'
-    updatePortraitExtraEntry(index, { file: f, path: `${base}${f.name}` })
-    inp.value = ''
   }
 
   function addAuthorRecommendedRow(): void {
@@ -603,8 +717,7 @@ export function usePackEditor() {
     const content = patch.content !== undefined ? patch.content : prev.content
     const next = [...knowledgeMarkdownFiles.value]
     next[index] = { path, content }
-    knowledgeMarkdownFiles.value = next
-    if (path === 'knowledge/world.md') worldviewMarkdown.value = content
+    applyKnowledgeBundle(next)
   }
 
   function removeKnowledgeFile(index: number): void {
@@ -612,8 +725,7 @@ export function usePackEditor() {
     if (!prev) return
     const next = [...knowledgeMarkdownFiles.value]
     next.splice(index, 1)
-    knowledgeMarkdownFiles.value = next
-    if (prev.path === 'knowledge/world.md') worldviewMarkdown.value = ''
+    applyKnowledgeBundle(next)
   }
 
   /** 导出 zip / 写文件夹前：若尚未配置 `reply_quality_anchor`，询问是否并入编写器推荐文案。 */
@@ -657,7 +769,7 @@ export function usePackEditor() {
     if (!dirCheck.ok) {
       return {
         ok: false,
-        message: `导出目录校验未通过：\n${dirCheck.errors.join('\n')}`,
+        message: formatExportDirectoryBlockedMessage(dirCheck.errors),
       }
     }
     return payload
@@ -736,6 +848,8 @@ export function usePackEditor() {
     authorRecommendedRows,
     authorIncludeSuggestedUi,
     authorSuggestedBackendsJson,
+    applyKnowledgeBundle,
+    applySceneEditorEntries,
     syncFormsFromJson,
   }
 
@@ -750,12 +864,21 @@ export function usePackEditor() {
     if (writeOptions?.roleIdOverride?.trim()) {
       roleId = writeOptions.roleIdOverride.trim()
       manifest = { ...manifest, id: roleId }
+      const overrideErr = validateRoleIdForExport(roleId)
+      if (overrideErr) {
+        setFeedback(overrideErr, true)
+        return
+      }
     }
     settings = applyReplyQualityAnchorPrompt(settings)
     try {
       if (writeOptions?.rolesRootPath.trim()) {
+        const root = writeOptions.rolesRootPath.trim()
+        if (!(await confirmOverwriteExistingRoleDir(root, roleId))) {
+          return
+        }
         await writePackToRolesRootPath(
-          writeOptions.rolesRootPath.trim(),
+          root,
           roleId,
           manifest,
           settings,
@@ -824,6 +947,11 @@ export function usePackEditor() {
       manifestText: manifestText.value,
       settingsText: settingsText.value,
       corePersonalityText: corePersonalityText.value,
+      worldKnowledgeTexts: { ...worldKnowledgeTexts.value },
+      extraKnowledgeFiles: extraKnowledgeFiles.value.map((d) => ({
+        path: d.path,
+        content: d.content,
+      })),
       worldviewMarkdown: worldviewMarkdown.value,
       knowledgeMarkdownFiles: knowledgeMarkdownFiles.value.map((d) => ({
         path: d.path,
@@ -844,6 +972,7 @@ export function usePackEditor() {
       visualPresentationBackend: visualPresentationBackend.value,
       visualPresentationLive2dModel: visualPresentationLive2dModel.value,
       exportProfile: exportProfile.value,
+      sceneEditorEntries: sceneEditorEntries.value.map((e) => ({ ...e })),
     }
   }
 
@@ -852,11 +981,27 @@ export function usePackEditor() {
     manifestText.value = snapshot.manifestText
     settingsText.value = snapshot.settingsText
     corePersonalityText.value = snapshot.corePersonalityText
-    worldviewMarkdown.value = snapshot.worldviewMarkdown
-    knowledgeMarkdownFiles.value = snapshot.knowledgeMarkdownFiles.map((d) => ({
-      path: normalizeKnowledgePath(d.path),
-      content: d.content,
-    }))
+    if (snapshot.worldKnowledgeTexts) {
+      worldKnowledgeTexts.value = {
+        dialogueWorldview: snapshot.worldKnowledgeTexts.dialogueWorldview ?? '',
+        knowledgeBoundary: snapshot.worldKnowledgeTexts.knowledgeBoundary ?? '',
+      }
+      extraKnowledgeFiles.value = (snapshot.extraKnowledgeFiles ?? []).map((d) => ({
+        path: normalizeKnowledgePath(d.path),
+        content: d.content,
+      }))
+      syncKnowledgeFilesFromWorldTexts()
+      const legacyScene = (snapshot.worldKnowledgeTexts as { sceneSetting?: string }).sceneSetting
+      if (legacyScene?.trim()) migrateLegacySceneSetting(legacyScene)
+    } else {
+      applyKnowledgeBundle(
+        snapshot.knowledgeMarkdownFiles.map((d) => ({
+          path: normalizeKnowledgePath(d.path),
+          content: d.content,
+        })),
+        snapshot.worldviewMarkdown,
+      )
+    }
     emotionImageFiles.value = []
     const slotMeta = snapshot.portraitSlotMeta ?? {}
     const nextSlots: PortraitSlotFileMap = {}
@@ -894,6 +1039,11 @@ export function usePackEditor() {
     Object.assign(uiConfig, snapshot.uiConfig)
     creationMode.value = snapshot.creationMode
     advancedTab.value = snapshot.advancedTab
+    if (snapshot.sceneEditorEntries?.length) {
+      applySceneEditorEntries(snapshot.sceneEditorEntries)
+    } else {
+      syncSceneEntriesFromManifest()
+    }
     syncFormsFromJson()
     validationErrors.value = []
     validationLastUsedWasm.value = null
@@ -903,6 +1053,8 @@ export function usePackEditor() {
     manifestText,
     settingsText,
     corePersonalityText,
+    worldKnowledgeTexts,
+    sceneEditorEntries,
     worldviewMarkdown,
     knowledgeMarkdownFiles,
     emotionImageFiles,
@@ -943,9 +1095,8 @@ export function usePackEditor() {
     onPortraitSlotClear,
     clearPortraitSlots,
     addPortraitExtraEntry,
-    updatePortraitExtraEntry,
+    applyPortraitExtraUserChoices,
     removePortraitExtraEntry,
-    onPortraitExtraPick,
     addAuthorRecommendedRow,
     removeAuthorRecommendedRow,
     addKnowledgeFile,

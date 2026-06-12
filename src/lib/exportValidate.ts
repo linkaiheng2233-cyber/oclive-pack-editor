@@ -2,7 +2,7 @@ import { buildRolePackFiles, type ExportableManifest, type ExportableSettings, t
 import { HOST_RUNTIME_VERSION } from './hostRuntimeVersion'
 import { isTauriRuntime } from './exportFolder'
 import { parseConfigJson } from './portraitCatalog'
-
+import { humanizeExportValidateErrors } from './exportErrorMessages'
 const PLACEHOLDER_BYTES = '\u0000'
 
 /** Mirror disk paths referenced by catalog / VP so wasm `validate_portrait_catalog_files` passes. */
@@ -85,6 +85,7 @@ export async function validateExportPackDirectory(
     return { ok: true, errors: [], usedTauri: true }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
-    return { ok: false, errors: msg.split('\n').filter(Boolean), usedTauri: true }
+    const raw = msg.split('\n').filter(Boolean)
+    return { ok: false, errors: humanizeExportValidateErrors(raw, id), usedTauri: true }
   }
 }

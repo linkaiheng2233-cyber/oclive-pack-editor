@@ -9,6 +9,9 @@ import { setAppLocale, getLocalePreference, type AppLocale } from './i18n'
 import PackHeaderActions from './components/pack/PackHeaderActions.vue'
 import PackShellMenu from './components/pack/PackShellMenu.vue'
 import PackConfirmDialog from './components/pack/PackConfirmDialog.vue'
+import PackExportCreatorMessageDialog, {
+  type ExportCreatorMessageKind,
+} from './components/pack/PackExportCreatorMessageDialog.vue'
 import PackToastBar from './components/pack/PackToastBar.vue'
 import RolesWorkspacePanel from './components/pack/RolesWorkspacePanel.vue'
 import {
@@ -26,52 +29,31 @@ const {
   manifestText,
   settingsText,
   corePersonalityText,
-  worldviewMarkdown,
-  knowledgeMarkdownFiles,
+  worldKnowledgeTexts,
+  sceneEditorEntries,
   validationErrors,
-  validationLastUsedWasm,
   lastMessage,
   lastMessageIsError,
-  requireChecksBeforeExport,
   syncFormWarning,
   creationMode,
   advancedTab,
   simpleM,
   simpleS,
-  uiConfig,
-  multiRelationWarning,
   emotionImageSummary,
   portraitSlotFiles,
   portraitExtraEntries,
-  visualPresentationEnabled,
-  visualPresentationBackend,
-  visualPresentationLive2dModel,
-  exportProfile,
   creatorMessageToOthers,
   creatorMessageMode,
-  creatorMessageToDownloaderManifest,
-  authorSummary,
-  authorDetailMarkdown,
-  authorRecommendedRows,
-  authorIncludeSuggestedUi,
-  authorSuggestedBackendsJson,
-  addAuthorRecommendedRow,
-  removeAuthorRecommendedRow,
   folderExportOk,
   manifestRoleId,
-  lastExportedRolesRoot,
   runValidate,
   onImportPack,
   onPortraitSlotPick,
   onPortraitSlotClear,
   clearPortraitSlots,
   addPortraitExtraEntry,
-  updatePortraitExtraEntry,
+  applyPortraitExtraUserChoices,
   removePortraitExtraEntry,
-  onPortraitExtraPick,
-  addKnowledgeFile,
-  updateKnowledgeFile,
-  removeKnowledgeFile,
   exportZip,
   exportFolder,
   flushSimpleToJson,
@@ -126,6 +108,31 @@ const uiLocale = ref<AppLocale>(getLocalePreference())
 
 const writebackOpen = ref(false)
 let writebackResolve: ((v: 'overwrite' | 'saveAsNew' | 'cancel') => void) | null = null
+
+const exportCreatorOpen = ref(false)
+const pendingExportKind = ref<ExportCreatorMessageKind | null>(null)
+
+function beginExport(kind: ExportCreatorMessageKind): void {
+  flushSimpleToJson()
+  pendingExportKind.value = kind
+  exportCreatorOpen.value = true
+}
+
+function onExportCreatorCancel(): void {
+  exportCreatorOpen.value = false
+  pendingExportKind.value = null
+}
+
+async function onExportCreatorConfirm(payload: { enabled: boolean; message: string }): Promise<void> {
+  exportCreatorOpen.value = false
+  creatorMessageToOthers.value = payload.enabled ? payload.message.trim() : ''
+  creatorMessageMode.value = 'per_module'
+  const kind = pendingExportKind.value
+  pendingExportKind.value = null
+  if (!kind) return
+  if (kind === 'ocpak') await exportZip(true)
+  else await executeExportFolder()
+}
 
 function onLocaleChange(v: AppLocale) {
   uiLocale.value = v
@@ -188,6 +195,7 @@ async function onHeaderValidate(): Promise<void> {
 function onSaveDraft(showToast = true): void {
   flushSimpleToJson()
   const snapshot = captureDraftSnapshot()
+  snapshot.editorView = editorView.value
   saveDraftSnapshot(snapshot)
   refreshDraftMeta()
   if (showToast) {
@@ -221,7 +229,12 @@ function onContinueDraft(): void {
     t('packEditor.draft.continued', { name: draftMeta.value?.roleName ?? snapshot.manifestText.slice(0, 20) }),
   )
   lastMessageIsError.value = false
-  goEditorView(snapshot.creationMode)
+  if (snapshot.editorView === 'scenes' || snapshot.advancedTab === 'scenes') {
+    advancedTab.value = 'scenes'
+    goEditorView('advanced')
+  } else {
+    goEditorView(snapshot.editorView ?? snapshot.creationMode)
+  }
 }
 
 function onDiscardDraft(): void {
@@ -233,13 +246,7 @@ function onDiscardDraft(): void {
 }
 
 async function onExportOcpak(): Promise<void> {
-  flushSimpleToJson()
-  await exportZip(true)
-}
-
-async function onExportZip(): Promise<void> {
-  flushSimpleToJson()
-  await exportZip(false)
+  beginExport('ocpak')
 }
 
 function promptWriteback(): Promise<'overwrite' | 'saveAsNew' | 'cancel'> {
@@ -256,7 +263,10 @@ function closeWriteback(choice: 'overwrite' | 'saveAsNew' | 'cancel') {
 }
 
 async function onExportFolder(): Promise<void> {
-  flushSimpleToJson()
+  beginExport('folder')
+}
+
+async function executeExportFolder(): Promise<void> {
   const root = rolesRootPath.value.trim()
   if (packSession.value === 'loaded' && root) {
     const choice = await promptWriteback()
@@ -336,15 +346,11 @@ function onCreateNewPack() {
           </div>
           <div class="shell-header-tools" role="toolbar" :aria-label="String(t('packEditor.header.toolsAria'))">
             <PackHeaderActions
-              v-model:require-checks-before-export="requireChecksBeforeExport"
-              v-model:export-profile="exportProfile"
               :folder-export-ok="folderExportOk"
-              :validation-last-used-wasm="validationLastUsedWasm"
               :show-save-draft="showSaveDraft"
               @run-validate="onHeaderValidate"
               @save-draft="() => onSaveDraft()"
               @export-ocpak="onExportOcpak"
-              @export-zip="onExportZip"
               @export-folder="onExportFolder"
             />
             <PackShellMenu
@@ -406,31 +412,31 @@ function onCreateNewPack() {
         @cancel="closeWriteback('cancel')"
       />
 
+      <PackExportCreatorMessageDialog
+        :open="exportCreatorOpen"
+        :export-kind="pendingExportKind"
+        :initial-message="creatorMessageToOthers"
+        @confirm="onExportCreatorConfirm"
+        @cancel="onExportCreatorCancel"
+      />
+
       <!-- 简单创作 -->
       <div v-if="shouldMountView('simple')" v-show="editorView === 'simple'" class="view-stack">
         <SimpleCreationPanel
           v-model:core-personality="corePersonalityText"
-          v-model:worldview-markdown="worldviewMarkdown"
-          v-model:creator-message-to-others="creatorMessageToOthers"
-          v-model:creator-message-mode="creatorMessageMode"
-          v-model:ui-config="uiConfig"
-          v-model:author-summary="authorSummary"
-          v-model:author-detail-markdown="authorDetailMarkdown"
-          v-model:author-recommended-rows="authorRecommendedRows"
-          v-model:author-include-suggested-ui="authorIncludeSuggestedUi"
-          v-model:author-suggested-backends-json="authorSuggestedBackendsJson"
+          v-model:world-knowledge-texts="worldKnowledgeTexts"
           :simple-m="simpleM"
           :simple-s="simpleS"
-          :multi-relation-warning="multiRelationWarning"
           :sync-form-warning="syncFormWarning"
           :emotion-summary="emotionImageSummary"
           :portrait-slot-files="portraitSlotFiles"
-          :last-exported-roles-root="lastExportedRolesRoot"
+          :portrait-extra-entries="portraitExtraEntries"
           @portrait-slot-pick="onPortraitSlotPick"
           @portrait-slot-clear="onPortraitSlotClear"
           @portrait-clear-all="clearPortraitSlots"
-          @add-author-rec-row="addAuthorRecommendedRow"
-          @remove-author-rec-row="removeAuthorRecommendedRow"
+          @portrait-extra-add="addPortraitExtraEntry"
+          @portrait-extra-remove="removePortraitExtraEntry"
+          @portrait-extra-apply-choices="applyPortraitExtraUserChoices"
         />
       </div>
 
@@ -440,26 +446,17 @@ function onCreateNewPack() {
           v-model:manifest-text="manifestText"
           v-model:settings-text="settingsText"
           v-model:core-personality="corePersonalityText"
-          v-model:creator-message-to-others="creatorMessageToOthers"
-          v-model:creator-message-mode="creatorMessageMode"
-          v-model:creator-message-to-downloader-manifest="creatorMessageToDownloaderManifest"
-          v-model:knowledge-files="knowledgeMarkdownFiles"
+          v-model:world-knowledge-texts="worldKnowledgeTexts"
+          v-model:scene-editor-entries="sceneEditorEntries"
           v-model:advanced-tab="advancedTab"
-          v-model:visual-enabled="visualPresentationEnabled"
-          v-model:visual-backend="visualPresentationBackend"
-          v-model:live2d-model="visualPresentationLive2dModel"
           :manifest-role-id="manifestRoleId"
           :emotion-summary="emotionImageSummary"
           :portrait-slot-files="portraitSlotFiles"
           :portrait-extra-entries="portraitExtraEntries"
-          @add-knowledge-file="addKnowledgeFile"
-          @update-knowledge-file="updateKnowledgeFile"
-          @remove-knowledge-file="removeKnowledgeFile"
           @portrait-slot-pick="onPortraitSlotPick"
           @portrait-slot-clear="onPortraitSlotClear"
           @portrait-clear-all="clearPortraitSlots"
-          @portrait-extra-pick="onPortraitExtraPick"
-          @portrait-extra-update="updatePortraitExtraEntry"
+          @portrait-extra-apply-choices="applyPortraitExtraUserChoices"
           @portrait-extra-add="addPortraitExtraEntry"
           @portrait-extra-remove="removePortraitExtraEntry"
         />

@@ -14,22 +14,18 @@ describe('PackHeaderActions (Phase 1 header tools)', () => {
   it('renders check pack and export buttons', () => {
     const w = mount(PackHeaderActions, {
       props: {
-        requireChecksBeforeExport: true,
         folderExportOk: false,
-        validationLastUsedWasm: null,
       },
       global: { plugins: [i18n] },
     })
     expect(w.find('.pha-btn--check').text()).toContain('检查角色包')
-    expect(w.find('.pha-btn--export-main').exists()).toBe(true)
+    expect(w.find('.pha-btn--export-main').text()).toContain('导出 .ocpak')
   })
 
   it('emits runValidate when check is clicked', async () => {
     const w = mount(PackHeaderActions, {
       props: {
-        requireChecksBeforeExport: true,
         folderExportOk: false,
-        validationLastUsedWasm: null,
       },
       global: { plugins: [i18n] },
     })
@@ -40,9 +36,7 @@ describe('PackHeaderActions (Phase 1 header tools)', () => {
   it('emits exportOcpak from main export button', async () => {
     const w = mount(PackHeaderActions, {
       props: {
-        requireChecksBeforeExport: true,
         folderExportOk: false,
-        validationLastUsedWasm: null,
       },
       global: { plugins: [i18n] },
     })
@@ -50,32 +44,26 @@ describe('PackHeaderActions (Phase 1 header tools)', () => {
     expect(w.emitted('exportOcpak')).toHaveLength(1)
   })
 
+  it('emits exportFolder when folder export supported', async () => {
+    const w = mount(PackHeaderActions, {
+      props: {
+        folderExportOk: true,
+      },
+      global: { plugins: [i18n] },
+    })
+    await w.find('.pha-btn--export-folder').trigger('click')
+    expect(w.emitted('exportFolder')).toHaveLength(1)
+  })
+
   it('emits saveDraft when save button visible', async () => {
     const w = mount(PackHeaderActions, {
       props: {
-        requireChecksBeforeExport: true,
         folderExportOk: false,
-        validationLastUsedWasm: null,
         showSaveDraft: true,
       },
       global: { plugins: [i18n] },
     })
     await w.find('.pha-btn--save').trigger('click')
     expect(w.emitted('saveDraft')).toHaveLength(1)
-  })
-
-  it('teleports export menu to body', async () => {
-    const w = mount(PackHeaderActions, {
-      props: {
-        requireChecksBeforeExport: true,
-        folderExportOk: true,
-        validationLastUsedWasm: true,
-      },
-      attachTo: document.body,
-      global: { plugins: [i18n] },
-    })
-    await w.find('.pha-btn--export-toggle').trigger('click')
-    expect(document.querySelector('.pha-export-menu--teleport')).toBeTruthy()
-    w.unmount()
   })
 })

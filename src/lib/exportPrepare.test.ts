@@ -14,7 +14,16 @@ describe('prepareExportPayload', () => {
       '{}',
     )
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.message).toContain('manifest.id')
+    if (!r.ok) expect(r.message).toContain('角色 ID')
+  })
+
+  it('returns error when id has invalid characters', () => {
+    const r = prepareExportPayload(
+      JSON.stringify({ id: '小美', name: 'N' }),
+      '{}',
+    )
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.message).toContain('英文')
   })
 
   it('returns roleId and objects when valid', () => {

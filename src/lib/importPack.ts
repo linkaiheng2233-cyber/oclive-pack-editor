@@ -2,7 +2,12 @@
  * 从 .zip / .ocpak 导入角色包，用于编辑或另存为新包。
  */
 import JSZip from 'jszip'
+import { mergedSceneIds } from './exportPack'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
+import {
+  parseSceneFromDisk,
+  type SceneEditorEntry,
+} from './scenePackUser'
 import {
   blueprintToLegacyParts,
   isLegacyRolePackLayout,
@@ -30,6 +35,8 @@ export type ImportedRolePack = {
   uiJson: string
   /** roles/{id}/author.json（可选） */
   authorJson: string
+  /** 从 scenes/{id}/ 还原的用户场景编辑态 */
+  sceneEditorEntries: SceneEditorEntry[]
 }
 
 function normalizeZipPath(p: string): string {
@@ -164,6 +171,17 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
   const portraitCatalogJson = await readText('portrait_catalog.json')
   const configJson = await readText('config.json')
 
+  const sceneIds = mergedSceneIds(
+    Array.isArray(manifest.scenes) ? (manifest.scenes as string[]) : [],
+    [],
+  )
+  const sceneEditorEntries: SceneEditorEntry[] = []
+  for (const sid of sceneIds) {
+    const sceneJson = await readText(`scenes/${sid}/scene.json`)
+    const description = await readText(`scenes/${sid}/description.txt`)
+    sceneEditorEntries.push(parseSceneFromDisk(sid, sceneJson, description))
+  }
+
   const seenAssetNames = new Set(emotionImageFiles.map((f) => f.name))
   if (portraitCatalogJson.trim()) {
     try {
@@ -201,6 +219,7 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
     creatorMessage,
     uiJson,
     authorJson,
+    sceneEditorEntries,
   }
 }
 

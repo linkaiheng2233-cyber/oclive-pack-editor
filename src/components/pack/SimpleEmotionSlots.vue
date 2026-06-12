@@ -5,6 +5,7 @@ import {
   SIMPLE_PORTRAIT_SLOT_IDS,
   type PortraitSlotId,
 } from '../../lib/portraitCatalog'
+import { clusterLabelFromTag } from '../../lib/portraitExtraUser'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
@@ -19,6 +20,10 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+function slotLabel(id: PortraitSlotId): string {
+  return clusterLabelFromTag(PORTRAIT_SLOT_TAG[id])
+}
 </script>
 
 <template>
@@ -29,7 +34,7 @@ const { t } = useI18n()
     </div>
     <ul class="slot-grid" aria-label="portrait catalog slots">
       <li v-for="id in SIMPLE_PORTRAIT_SLOT_IDS" :key="id">
-        <span class="slot-id">{{ PORTRAIT_SLOT_TAG[id] }}</span>
+        <span class="slot-id">{{ slotLabel(id) }}</span>
         <span class="slot-state">{{ props.slotFiles[id]?.name ?? t('simpleCreation.portraitSlots.missing') }}</span>
         <label class="btn-lite">
           <input

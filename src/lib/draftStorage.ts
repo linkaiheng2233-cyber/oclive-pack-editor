@@ -3,6 +3,9 @@ import type { AuthorRecRow } from './authorPack'
 import type { KnowledgeMarkdownFile } from './knowledgeFiles'
 import type { UiConfig } from '../types/uiConfig'
 import type { ExportProfile, PortraitAssetKind, PortraitSlotId } from './portraitCatalog'
+import type { WorldKnowledgeTexts } from './worldKnowledgeUser'
+import type { SceneEditorEntry } from './scenePackUser'
+import type { EditorViewId } from '../composables/useEditorViewState'
 import { parseJson } from './packChecks'
 
 export const DRAFT_STORAGE_KEY = 'oclive-pack-editor-draft-v2'
@@ -28,7 +31,7 @@ export type PackDraftSnapshot = {
   version: 2
   savedAt: string
   creationMode: 'simple' | 'advanced'
-  advancedTab: 'manifest' | 'settings' | 'core' | 'world' | 'images'
+  advancedTab: 'manifest' | 'settings' | 'core' | 'world' | 'scenes' | 'images'
   manifestText: string
   settingsText: string
   corePersonalityText: string
@@ -46,6 +49,11 @@ export type PackDraftSnapshot = {
   /** Slot id → picked file name (no binary). */
   portraitSlotMeta?: Partial<Record<PortraitSlotId, PortraitSlotDraftMeta>>
   portraitExtraMeta?: PortraitExtraDraftMeta[]
+  worldKnowledgeTexts?: WorldKnowledgeTexts
+  extraKnowledgeFiles?: Array<{ path: string; content: string }>
+  sceneEditorEntries?: SceneEditorEntry[]
+  /** @deprecated 旧草稿曾用侧栏「场景」页；恢复时映射为 advanced + scenes 页签 */
+  editorView?: EditorViewId | 'scenes'
   visualPresentationEnabled?: boolean
   visualPresentationBackend?: string
   visualPresentationLive2dModel?: string

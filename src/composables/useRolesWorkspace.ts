@@ -20,6 +20,7 @@ import {
   DEFAULT_SETTINGS_JSON,
 } from '../defaults'
 import { emptyAuthorRecRow } from '../lib/authorPack'
+import { parseSceneFromDisk, type SceneEditorEntry } from '../lib/scenePackUser'
 
 const ROLES_ROOT_KEY = 'oclive-pack-editor-roles-root'
 const LEGACY_LAST_ROLES_ROOT_KEY = 'oclive-pack-editor-last-roles-root'
@@ -137,8 +138,8 @@ export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
     applyTargets.manifestText.value = DEFAULT_MANIFEST_JSON
     applyTargets.settingsText.value = DEFAULT_SETTINGS_JSON
     applyTargets.corePersonalityText.value = DEFAULT_CORE_PERSONALITY_TEXT
-    applyTargets.worldviewMarkdown.value = ''
-    applyTargets.knowledgeMarkdownFiles.value = []
+    applyTargets.applyKnowledgeBundle?.([], '')
+    applyTargets.applySceneEditorEntries?.([])
     applyTargets.emotionImageFiles.value = []
     applyTargets.portraitSlotFiles.value = {}
     applyTargets.portraitExtraEntries.value = []
@@ -190,6 +191,15 @@ export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
       const blueprintRaw = await readOptionalText(`${role.absPath}/pipeline.ocblueprint`)
       const catalogFiles = catalogAssetsToFiles(load.catalogAssets ?? [])
 
+      const sceneIds =
+        load.mergedSceneIds?.length > 0 ? load.mergedSceneIds : ['home']
+      const sceneEditorEntries: SceneEditorEntry[] = []
+      for (const sid of sceneIds) {
+        const sceneJson = await readOptionalText(`${role.absPath}/scenes/${sid}/scene.json`)
+        const description = await readOptionalText(`${role.absPath}/scenes/${sid}/description.txt`)
+        sceneEditorEntries.push(parseSceneFromDisk(sid, sceneJson, description))
+      }
+
       applyLoadedPackToEditor(
         {
           roleId: role.roleId,
@@ -202,6 +212,7 @@ export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
           portraitCatalogJson: load.portraitCatalogText ?? '',
           configJson: load.configText ?? '',
           emotionImageFiles: catalogFiles,
+          sceneEditorEntries,
         },
         applyTargets,
       )

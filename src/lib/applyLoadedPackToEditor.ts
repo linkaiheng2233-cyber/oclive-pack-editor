@@ -12,6 +12,7 @@ import {
 } from './portraitCatalog'
 import { parseUiConfigJson } from './uiConfig'
 import type { UiConfig } from '../types/uiConfig'
+import type { SceneEditorEntry } from '../lib/scenePackUser'
 
 export type ApplyLoadedPackInput = {
   roleId: string
@@ -26,6 +27,7 @@ export type ApplyLoadedPackInput = {
   creatorMessage?: string
   uiJson?: string
   authorJson?: string
+  sceneEditorEntries?: SceneEditorEntry[]
 }
 
 export type ApplyLoadedPackTargets = {
@@ -48,6 +50,8 @@ export type ApplyLoadedPackTargets = {
   authorRecommendedRows: { value: AuthorRecRow[] }
   authorIncludeSuggestedUi: { value: boolean }
   authorSuggestedBackendsJson: { value: string }
+  applyKnowledgeBundle?: (files: KnowledgeMarkdownFile[], legacyWorldBody?: string) => void
+  applySceneEditorEntries?: (entries: SceneEditorEntry[]) => void
   syncFormsFromJson: () => void
 }
 
@@ -65,6 +69,7 @@ export function importedPackToApplyInput(imp: ImportedRolePack): ApplyLoadedPack
     creatorMessage: imp.creatorMessage,
     uiJson: imp.uiJson,
     authorJson: imp.authorJson,
+    sceneEditorEntries: imp.sceneEditorEntries,
   }
 }
 
@@ -126,6 +131,17 @@ export function applyLoadedPackToEditor(input: ApplyLoadedPackInput, targets: Ap
     targets.authorRecommendedRows.value = [emptyAuthorRecRow()]
     targets.authorIncludeSuggestedUi.value = false
     targets.authorSuggestedBackendsJson.value = ''
+  }
+
+  if (targets.applyKnowledgeBundle) {
+    targets.applyKnowledgeBundle(
+      targets.knowledgeMarkdownFiles.value,
+      input.worldviewMarkdown ?? '',
+    )
+  }
+
+  if (targets.applySceneEditorEntries && input.sceneEditorEntries) {
+    targets.applySceneEditorEntries(input.sceneEditorEntries)
   }
 
   targets.syncFormsFromJson()

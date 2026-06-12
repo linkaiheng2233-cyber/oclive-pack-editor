@@ -287,12 +287,14 @@ export function validatePortraitCatalogState(
   const issues: PortraitCatalogValidationIssue[] = []
   const ids = new Set<string>()
 
+  /** 未选图的额外条目视为编辑中草稿，不参与导出校验。 */
+  const completeExtras = extraEntries.filter((e) => e.path.trim())
   const allEntries: PortraitCatalogEntry[] = [
     ...SIMPLE_PORTRAIT_SLOT_IDS.flatMap((id) => {
       const f = slotFiles[id]
       return f ? [entryFromSlot(id, f)] : []
     }),
-    ...extraEntries,
+    ...completeExtras,
   ]
 
   for (const e of allEntries) {

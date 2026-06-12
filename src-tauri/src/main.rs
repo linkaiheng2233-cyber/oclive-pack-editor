@@ -915,7 +915,16 @@ struct ValidateRolePackExportRequest {
 
 /// Write export-shaped files to a temp role dir and run full `pack validate` (v2 directory profile).
 #[tauri::command]
-fn validate_role_pack_export(req: ValidateRolePackExportRequest) -> Result<(), String> {
+fn validate_role_pack_export(
+    role_id: String,
+    files: Vec<RolePackExportFile>,
+    host_runtime_version: String,
+) -> Result<(), String> {
+    let req = ValidateRolePackExportRequest {
+        role_id,
+        files,
+        host_runtime_version,
+    };
     let role_id = req.role_id.trim();
     if role_id.is_empty() {
         return Err("role_id 不能为空".into());
@@ -952,6 +961,18 @@ fn validate_role_pack_export(req: ValidateRolePackExportRequest) -> Result<(), S
     let result = validate_role_pack_blueprint_v2_directory(&role_dir, host_version);
     let _ = std::fs::remove_dir_all(&root);
     result.map_err(|e| e.join("\n"))
+}
+
+/// Whether `{roles_root}/{role_id}` already exists (re-export / overwrite hint).
+#[tauri::command]
+fn role_pack_dir_exists(roles_root: String, role_id: String) -> Result<bool, String> {
+    use std::path::PathBuf;
+    let root = roles_root.trim();
+    let id = role_id.trim();
+    if root.is_empty() || id.is_empty() {
+        return Ok(false);
+    }
+    Ok(PathBuf::from(root).join(id).is_dir())
 }
 
 #[tauri::command]
@@ -1085,6 +1106,7 @@ fn main() {
             save_role_pack_editor,
             validate_blueprint_v2_json,
             validate_role_pack_export,
+            role_pack_dir_exists,
         ])
         .run(tauri::generate_context!())
         .expect("error while running oclive-pack-editor");

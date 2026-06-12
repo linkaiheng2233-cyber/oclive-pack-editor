@@ -1,4 +1,5 @@
 import { parsePackDocuments } from './packChecks'
+import { validateRoleIdForExport } from './exportErrorMessages'
 
 export type ExportPayload =
   | {
@@ -22,8 +23,9 @@ export function prepareExportPayload(
   }
   const { manifest, settings } = parsed
   const roleId = String(manifest.id ?? '').trim()
-  if (!roleId) {
-    return { ok: false, message: 'manifest.id 为空' }
+  const idErr = validateRoleIdForExport(roleId)
+  if (idErr) {
+    return { ok: false, message: idErr }
   }
   return { ok: true, roleId, manifest, settings }
 }

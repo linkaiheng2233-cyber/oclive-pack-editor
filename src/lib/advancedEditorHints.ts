@@ -299,19 +299,19 @@ export const KNOWLEDGE_FILE_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
 
 export const EMOTION_ASSET_SCOPE_GUIDE: readonly CreatorScopeRow[] = [
   {
-    field: '选择图片（覆盖）',
-    meaning: '用新选的文件列表替换当前列表。',
-    scope: '可反复选；导出时写入 assets/images/（与简单创作相同）。',
+    field: '七种基础表情',
+    meaning: '开心、难过、生气等，每种选一张代表图。',
+    scope: '可反复更换图片；导出后对话时按情绪切换。',
   },
   {
-    field: '追加图片',
-    meaning: '在现有列表后增加文件。',
-    scope: '适合分批添加表情；注意总大小。',
+    field: '同种情绪再多几张',
+    meaning: '同一种情绪下的变体，例如「开心但很克制」。',
+    scope: '点「再追加一张表情」，只回答：哪种情绪、有多强、选哪张图；不用自己写英文 id。',
   },
   {
     field: '清空列表',
-    meaning: '移除已选中的图片记录。',
-    scope: '仅影响编写器内列表；已导出到文件夹的文件不会自动删除。',
+    meaning: '去掉编写器里已选的表情记录。',
+    scope: '不会删除你电脑上已导出的文件夹里的文件。',
   },
 ]
 

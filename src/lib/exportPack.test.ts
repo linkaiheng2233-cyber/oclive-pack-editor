@@ -98,11 +98,25 @@ describe('buildRolePackFiles', () => {
     expect(bp.meta.preset_order).toBe(3)
   })
 
-  it('writes portrait_catalog.json when extra is set', () => {
-    const catalog = '{"schema_version":1,"assets":[]}\n'
+  it('writes user scene content from sceneEditorEntries extra', () => {
     const files = buildRolePackFiles('x', baseManifest, { schema_version: 1 }, {
-      portraitCatalogJson: catalog,
+      sceneEditorEntries: [
+        {
+          sceneId: 'home',
+          displayName: '家',
+          activitySetting: '18:00-23:00 在家',
+          scenePrompt: '语气放松',
+        },
+      ],
     })
-    expect(files.get('x/portrait_catalog.json')).toBe(catalog)
+    const sceneJson = JSON.parse(files.get('x/scenes/home/scene.json')!) as {
+      name: string
+      activity_setting: string
+      time_windows: Array<{ start: string; end: string }>
+    }
+    expect(sceneJson.name).toBe('家')
+    expect(sceneJson.activity_setting).toContain('18:00')
+    expect(sceneJson.time_windows[0]).toEqual({ start: '18:00', end: '23:00' })
+    expect(files.get('x/scenes/home/description.txt')).toBe('语气放松\n')
   })
 })
