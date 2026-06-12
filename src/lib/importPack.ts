@@ -164,6 +164,30 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
   const portraitCatalogJson = await readText('portrait_catalog.json')
   const configJson = await readText('config.json')
 
+  const seenAssetNames = new Set(emotionImageFiles.map((f) => f.name))
+  if (portraitCatalogJson.trim()) {
+    try {
+      const parsed = JSON.parse(portraitCatalogJson) as {
+        assets?: Array<{ path?: string }>
+      }
+      for (const a of parsed.assets ?? []) {
+        const rel = (a.path ?? '').trim()
+        if (!rel) continue
+        const full = `${roleId}/${rel}`.replace(/\/+/g, '/')
+        if (!isSafePathUnderRole(full, roleId)) continue
+        const base = rel.split('/').pop() ?? ''
+        if (!base || seenAssetNames.has(base)) continue
+        const entry = zip.file(full)
+        if (!entry) continue
+        const blob = await entry.async('blob')
+        emotionImageFiles.push(new File([blob], base, { type: blob.type || 'application/octet-stream' }))
+        seenAssetNames.add(base)
+      }
+    } catch {
+      /* ignore malformed catalog */
+    }
+  }
+
   return {
     roleId,
     manifestJson: manifestJson.endsWith('\n') ? manifestJson : `${manifestJson}\n`,

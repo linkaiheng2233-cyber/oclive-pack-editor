@@ -1,5 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { invokeLoadRolePackForEditor, invokeListRolePacksUnderRolesRoot, invokeSaveRolePackEditor } from './rolePackEditorApi'
+import {
+  catalogAssetsToFiles,
+  invokeLoadRolePackForEditor,
+  invokeListRolePacksUnderRolesRoot,
+  invokeSaveRolePackEditor,
+} from './rolePackEditorApi'
 
 vi.mock('@tauri-apps/api/tauri', () => ({
   invoke: vi.fn(),
@@ -42,5 +47,13 @@ describe('rolePackEditorApi (T05 tauri invoke mapping)', () => {
       configText: null,
       userIdentitiesIndexText: null,
     })
+  })
+
+  it('catalogAssetsToFiles decodes base64 payloads', () => {
+    const png = btoa('\x89PNG')
+    const files = catalogAssetsToFiles([{ fileName: 'happy.png', base64: png }])
+    expect(files).toHaveLength(1)
+    expect(files[0]?.name).toBe('happy.png')
+    expect(files[0]?.type).toBe('image/png')
   })
 })

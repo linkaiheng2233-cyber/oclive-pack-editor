@@ -29,3 +29,12 @@
 
 - wasm 全量 portrait 路径存在性（需真实导出二进制；当前 Tauri validate 用占位字节）
 - Live2D Cubism 实装（主仓 defer，见 `handoff/LIVE2D_CUBISM_DEFER.md`）
+
+## 2026-06-12 · roles 工作区 ↔ 第 3/4 设施
+
+| 链路 | 状态 |
+|------|------|
+| 导出 zip / 写 roles 文件夹 | `portrait_catalog.json` + `config.json`（`portrait_catalog.enabled` / `visual_presentation`） |
+| zip 导入 | catalog path 二进制（含 live2d）+ VP 配置回填 |
+| **roles 扫描加载** | `load_role_pack_for_editor` 返回 catalog 文本 + 磁盘 assets → 7 槽 / VP UI |
+| 主程序运行时 | `RoleStorage` 读 catalog + `materialize_directive`（主仓 ≥0.4） |

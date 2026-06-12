@@ -7,12 +7,38 @@ export type RolePackListEntry = {
   needsMigration: boolean
 }
 
+export type RolePackCatalogAssetPayload = {
+  fileName: string
+  base64: string
+}
+
 export type RolePackEditorLoadPayload = {
   manifestText: string
   settingsText?: string
   configText?: string
+  portraitCatalogText?: string
+  catalogAssets?: RolePackCatalogAssetPayload[]
   userIdentitiesIndexText?: string
   mergedSceneIds: string[]
+}
+
+/** Tauri 读盘 catalog / legacy assets → 与 zip 导入一致的 File[]。 */
+export function catalogAssetsToFiles(assets: RolePackCatalogAssetPayload[]): File[] {
+  return assets.map(({ fileName, base64 }) => {
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    const ext = fileName.split('.').pop()?.toLowerCase()
+    const mime =
+      ext === 'png'
+        ? 'image/png'
+        : ext === 'jpg' || ext === 'jpeg'
+          ? 'image/jpeg'
+          : ext === 'webp'
+            ? 'image/webp'
+            : 'application/octet-stream'
+    return new File([bytes], fileName, { type: mime })
+  })
 }
 
 export async function invokeListRolePacksUnderRolesRoot(

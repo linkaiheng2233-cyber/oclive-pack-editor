@@ -543,6 +543,13 @@ fn guess_default_roles_root() -> Option<String> {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RolePackCatalogAsset {
+    file_name: String,
+    base64: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RolePackEditorLoad {
     manifest_text: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -550,8 +557,97 @@ struct RolePackEditorLoad {
     #[serde(skip_serializing_if = "Option::is_none")]
     config_text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    portrait_catalog_text: Option<String>,
+    catalog_assets: Vec<RolePackCatalogAsset>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     user_identities_index_text: Option<String>,
     merged_scene_ids: Vec<String>,
+}
+
+fn is_safe_role_relative_path(rel: &str) -> bool {
+    let p = rel.trim().replace('\\', "/");
+    if p.is_empty() || p.starts_with('/') {
+        return false;
+    }
+    if p.contains("..") {
+        return false;
+    }
+    for part in p.split('/') {
+        if part.is_empty() || part == "." || part == ".." {
+            return false;
+        }
+    }
+    true
+}
+
+fn read_portrait_catalog_assets(
+    root: &std::path::Path,
+) -> (Option<String>, Vec<RolePackCatalogAsset>) {
+    use base64::Engine;
+    use std::collections::HashSet;
+    use std::fs;
+
+    let catalog_path = root.join("portrait_catalog.json");
+    let catalog_text = catalog_path
+        .is_file()
+        .then(|| fs::read_to_string(&catalog_path).ok())
+        .flatten();
+
+    let mut rel_paths: Vec<String> = Vec::new();
+    if let Some(ref text) = catalog_text {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(text) {
+            if let Some(arr) = v.get("assets").and_then(|a| a.as_array()) {
+                for item in arr {
+                    if let Some(p) = item.get("path").and_then(|x| x.as_str()) {
+                        let t = p.trim().to_string();
+                        if is_safe_role_relative_path(&t) {
+                            rel_paths.push(t);
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        let images_dir = root.join("assets/images");
+        if images_dir.is_dir() {
+            if let Ok(entries) = fs::read_dir(&images_dir) {
+                for entry in entries.flatten() {
+                    if entry.path().is_file() {
+                        if let Some(name) = entry.file_name().to_str() {
+                            rel_paths.push(format!("assets/images/{name}"));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut seen = HashSet::new();
+    let mut assets = Vec::new();
+    for rel in rel_paths {
+        if !seen.insert(rel.clone()) {
+            continue;
+        }
+        let abs = root.join(&rel);
+        if !abs.is_file() {
+            continue;
+        }
+        let bytes = match fs::read(&abs) {
+            Ok(b) => b,
+            Err(_) => continue,
+        };
+        let file_name = rel
+            .split('/')
+            .next_back()
+            .unwrap_or("asset")
+            .to_string();
+        assets.push(RolePackCatalogAsset {
+            file_name,
+            base64: base64::engine::general_purpose::STANDARD.encode(bytes),
+        });
+    }
+
+    (catalog_text, assets)
 }
 
 fn blueprint_to_legacy_parts(bp: &serde_json::Value) -> Result<(String, String), String> {
@@ -738,10 +834,13 @@ fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, Str
             .is_file()
             .then(|| fs::read_to_string(&ui_path).map_err(|e| e.to_string()))
             .transpose()?;
+        let (portrait_catalog_text, catalog_assets) = read_portrait_catalog_assets(&root);
         return Ok(RolePackEditorLoad {
             manifest_text,
             settings_text: Some(settings_text),
             config_text,
+            portrait_catalog_text,
+            catalog_assets,
             user_identities_index_text,
             merged_scene_ids,
         });

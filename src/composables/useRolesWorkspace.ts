@@ -8,6 +8,7 @@ import {
 } from '../lib/applyLoadedPackToEditor'
 import { isTauriRuntime } from '../lib/exportFolder'
 import {
+  catalogAssetsToFiles,
   invokeListRolePacksUnderRolesRoot,
   invokeLoadRolePackForEditor,
   type RolePackListEntry,
@@ -139,6 +140,11 @@ export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
     applyTargets.worldviewMarkdown.value = ''
     applyTargets.knowledgeMarkdownFiles.value = []
     applyTargets.emotionImageFiles.value = []
+    applyTargets.portraitSlotFiles.value = {}
+    applyTargets.portraitExtraEntries.value = []
+    applyTargets.visualPresentationEnabled.value = false
+    applyTargets.visualPresentationBackend.value = 'image'
+    applyTargets.visualPresentationLive2dModel.value = ''
     applyTargets.creatorMessageToOthers.value = ''
     applyTargets.authorSummary.value = ''
     applyTargets.authorDetailMarkdown.value = ''
@@ -182,6 +188,7 @@ export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
       const uiJson = await readOptionalText(`${role.absPath}/ui.json`)
       const authorJson = await readOptionalText(`${role.absPath}/author.json`)
       const blueprintRaw = await readOptionalText(`${role.absPath}/pipeline.ocblueprint`)
+      const catalogFiles = catalogAssetsToFiles(load.catalogAssets ?? [])
 
       applyLoadedPackToEditor(
         {
@@ -192,6 +199,9 @@ export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
           creatorMessage: creatorMessage.replace(/\r\n/g, '\n').replace(/\n+$/, ''),
           uiJson,
           authorJson,
+          portraitCatalogJson: load.portraitCatalogText ?? '',
+          configJson: load.configText ?? '',
+          emotionImageFiles: catalogFiles,
         },
         applyTargets,
       )

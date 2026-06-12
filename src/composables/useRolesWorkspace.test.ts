@@ -12,6 +12,7 @@ vi.mock('../lib/exportFolder', () => ({
 vi.mock('../lib/rolePackEditorApi', () => ({
   invokeListRolePacksUnderRolesRoot: vi.fn(),
   invokeLoadRolePackForEditor: vi.fn(),
+  catalogAssetsToFiles: vi.fn(() => []),
 }))
 
 describe('useRolesWorkspace', () => {
@@ -27,6 +28,11 @@ describe('useRolesWorkspace', () => {
       worldviewMarkdown: ref(''),
       knowledgeMarkdownFiles: ref([]),
       emotionImageFiles: ref([]),
+      portraitSlotFiles: ref({}),
+      portraitExtraEntries: ref([]),
+      visualPresentationEnabled: ref(false),
+      visualPresentationBackend: ref('image'),
+      visualPresentationLive2dModel: ref(''),
       creatorMessageToOthers: ref(''),
       creatorMessageMode: ref<'unified' | 'per_module'>('unified'),
       uiConfig: reactive(defaultUiConfig()),
