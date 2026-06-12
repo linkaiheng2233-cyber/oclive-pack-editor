@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { type EditorViewId, useEditorViewState } from './composables/useEditorViewState'
 import { usePackEditor } from './composables/usePackEditor'
@@ -11,6 +11,13 @@ import PackShellMenu from './components/pack/PackShellMenu.vue'
 import PackConfirmDialog from './components/pack/PackConfirmDialog.vue'
 import PackToastBar from './components/pack/PackToastBar.vue'
 import RolesWorkspacePanel from './components/pack/RolesWorkspacePanel.vue'
+import {
+  clearDraftSnapshot,
+  readDraftMeta,
+  readDraftSnapshot,
+  saveDraftSnapshot,
+  type PackDraftMeta,
+} from './lib/draftStorage'
 
 const AdvancedCreationPanel = defineAsyncComponent(() => import('./components/pack/AdvancedCreationPanel.vue'))
 const SimpleCreationPanel = defineAsyncComponent(() => import('./components/pack/SimpleCreationPanel.vue'))
@@ -62,6 +69,8 @@ const {
   applyMarketComposeJson,
   applyLoadedPackTargets,
   bindPackSession,
+  captureDraftSnapshot,
+  restoreDraftSnapshot,
 } = usePackEditor()
 
 const marketComposePaste = ref('')
@@ -84,6 +93,22 @@ const {
 } = useRolesWorkspace(applyLoadedPackTargets)
 
 bindPackSession(packSession)
+
+const draftMeta = ref<PackDraftMeta | null>(readDraftMeta())
+
+function refreshDraftMeta(): void {
+  draftMeta.value = readDraftMeta()
+}
+
+onMounted(() => {
+  refreshDraftMeta()
+})
+
+const showSaveDraft = computed(
+  () =>
+    packSession.value !== 'idle' &&
+    (editorView.value === 'simple' || editorView.value === 'advanced'),
+)
 
 const { themePreference, setTheme, bumpScale, scaleLabel } = usePackShellPreferences()
 
@@ -118,6 +143,12 @@ const editorNav = computed((): { id: EditorViewId; label: string; icon: string }
 ])
 
 function goEditorView(id: EditorViewId) {
+  if ((id === 'simple' || id === 'advanced') && packSession.value === 'idle') {
+    lastMessage.value = String(t('packEditor.draft.pickFirst'))
+    lastMessageIsError.value = true
+    editorView.value = 'start'
+    return
+  }
   editorView.value = id
   if (id === 'simple') creationMode.value = 'simple'
   if (id === 'advanced') creationMode.value = 'advanced'
@@ -135,6 +166,9 @@ const headerSubtitle = computed(() => {
   if (packSession.value === 'loaded' && loadedRoleName.value && editorView.value !== 'start') {
     return String(t('packEditor.shell.editingLoaded', { name: loadedRoleName.value }))
   }
+  if (packSession.value === 'new' && draftMeta.value && editorView.value !== 'start') {
+    return String(t('packEditor.shell.editingDraft', { name: draftMeta.value.roleName }))
+  }
   if (editorView.value === 'start') return String(t('packEditor.shell.startSub'))
   return String(t('packEditor.shell.subMuted'))
 })
@@ -142,6 +176,53 @@ const headerSubtitle = computed(() => {
 async function onHeaderValidate(): Promise<void> {
   flushSimpleToJson()
   await runValidate()
+}
+
+function onSaveDraft(showToast = true): void {
+  flushSimpleToJson()
+  const snapshot = captureDraftSnapshot()
+  saveDraftSnapshot(snapshot)
+  refreshDraftMeta()
+  if (showToast) {
+    lastMessage.value = String(t('packEditor.draft.saved', { name: draftMeta.value?.roleName ?? '' }))
+    lastMessageIsError.value = false
+  }
+}
+
+function autoSaveDraftOnLeaveEditView(prev: EditorViewId | undefined): void {
+  if (prev !== 'simple' && prev !== 'advanced') return
+  if (packSession.value === 'idle') return
+  onSaveDraft(false)
+}
+
+watch(editorView, (view, prev) => {
+  autoSaveDraftOnLeaveEditView(prev)
+})
+
+function onContinueDraft(): void {
+  const snapshot = readDraftSnapshot()
+  if (!snapshot) {
+    refreshDraftMeta()
+    lastMessage.value = String(t('packEditor.draft.missing'))
+    lastMessageIsError.value = true
+    return
+  }
+  restoreDraftSnapshot(snapshot)
+  packSession.value = 'new'
+  refreshDraftMeta()
+  lastMessage.value = String(
+    t('packEditor.draft.continued', { name: draftMeta.value?.roleName ?? snapshot.manifestText.slice(0, 20) }),
+  )
+  lastMessageIsError.value = false
+  goEditorView(snapshot.creationMode)
+}
+
+function onDiscardDraft(): void {
+  if (!window.confirm(String(t('packEditor.draft.discardConfirm')))) return
+  clearDraftSnapshot()
+  refreshDraftMeta()
+  lastMessage.value = String(t('packEditor.draft.discarded'))
+  lastMessageIsError.value = false
 }
 
 async function onExportOcpak(): Promise<void> {
@@ -203,17 +284,10 @@ async function onWorkspaceImportPack(e: Event) {
 
 function onCreateNewPack() {
   resetToNewPack()
+  packSession.value = 'new'
   lastMessage.value = String(t('packEditor.rolesWorkspace.createdNew'))
   lastMessageIsError.value = false
   goEditorView('simple')
-}
-
-function onGoSimpleFromStart() {
-  goEditorView('simple')
-}
-
-function onGoAdvancedFromStart() {
-  goEditorView('advanced')
 }
 </script>
 
@@ -258,7 +332,9 @@ function onGoAdvancedFromStart() {
               v-model:require-checks-before-export="requireChecksBeforeExport"
               :folder-export-ok="folderExportOk"
               :validation-last-used-wasm="validationLastUsedWasm"
+              :show-save-draft="showSaveDraft"
               @run-validate="onHeaderValidate"
+              @save-draft="() => onSaveDraft()"
               @export-ocpak="onExportOcpak"
               @export-zip="onExportZip"
               @export-folder="onExportFolder"
@@ -302,14 +378,15 @@ function onGoAdvancedFromStart() {
         :workspace-busy="workspaceBusy"
         :workspace-message="workspaceMessage"
         :workspace-message-is-error="workspaceMessageIsError"
+        :draft-meta="draftMeta"
         @pick-roles-root="pickRolesRoot"
         @scan-roles="scanRoles"
         @load-selected-role="onWorkspaceLoadRole"
         @create-new-pack="onCreateNewPack"
+        @continue-draft="onContinueDraft"
+        @discard-draft="onDiscardDraft"
         @import-pack="onWorkspaceImportPack"
         @apply-market-compose="onApplyMarketCompose"
-        @go-simple="onGoSimpleFromStart"
-        @go-advanced="onGoAdvancedFromStart"
       />
 
       <PackConfirmDialog

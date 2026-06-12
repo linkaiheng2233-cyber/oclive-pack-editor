@@ -53,6 +53,7 @@ import {
   type SimpleManifestForm,
   type SimpleSettingsForm,
 } from '../lib/simpleCreation'
+import type { PackDraftSnapshot } from '../lib/draftStorage'
 
 const STORAGE_REQUIRE_CHECKS = 'oclive-pack-editor-require-checks-before-export'
 const STORAGE_CREATION_MODE = 'oclive-pack-editor-creation-mode'
@@ -109,7 +110,7 @@ export function usePackEditor() {
   }
 
   const NO_ACTIVE_PACK_MSG =
-    '当前没有可检查的角色包：请从开始页加载角色、导入 zip，或点击「创建新角色包」。'
+    '当前没有可检查的角色包：请从开始页继续草稿、创建新包、加载 roles 或导入 zip。'
 
   const creationMode = ref<'simple' | 'advanced'>('simple')
   const advancedTab = ref<'manifest' | 'settings' | 'core' | 'world' | 'images'>('manifest')
@@ -645,6 +646,63 @@ export function usePackEditor() {
     }
   }
 
+  function captureDraftSnapshot(): PackDraftSnapshot {
+    flushSimpleToJson()
+    return {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      creationMode: creationMode.value,
+      advancedTab: advancedTab.value,
+      manifestText: manifestText.value,
+      settingsText: settingsText.value,
+      corePersonalityText: corePersonalityText.value,
+      worldviewMarkdown: worldviewMarkdown.value,
+      knowledgeMarkdownFiles: knowledgeMarkdownFiles.value.map((d) => ({
+        path: d.path,
+        content: d.content,
+      })),
+      creatorMessageToOthers: creatorMessageToOthers.value,
+      creatorMessageMode: creatorMessageMode.value,
+      creatorMessageToDownloaderManifest: creatorMessageToDownloaderManifest.value,
+      authorSummary: authorSummary.value,
+      authorDetailMarkdown: authorDetailMarkdown.value,
+      authorRecommendedRows: authorRecommendedRows.value.map((r) => ({ ...r })),
+      authorIncludeSuggestedUi: authorIncludeSuggestedUi.value,
+      authorSuggestedBackendsJson: authorSuggestedBackendsJson.value,
+      uiConfig: { ...uiConfig },
+    }
+  }
+
+  function restoreDraftSnapshot(snapshot: PackDraftSnapshot): void {
+    cancelDebouncedSimpleToJson()
+    manifestText.value = snapshot.manifestText
+    settingsText.value = snapshot.settingsText
+    corePersonalityText.value = snapshot.corePersonalityText
+    worldviewMarkdown.value = snapshot.worldviewMarkdown
+    knowledgeMarkdownFiles.value = snapshot.knowledgeMarkdownFiles.map((d) => ({
+      path: normalizeKnowledgePath(d.path),
+      content: d.content,
+    }))
+    emotionImageFiles.value = []
+    creatorMessageToOthers.value = snapshot.creatorMessageToOthers
+    creatorMessageMode.value = snapshot.creatorMessageMode
+    creatorMessageToDownloaderManifest.value = snapshot.creatorMessageToDownloaderManifest
+    authorSummary.value = snapshot.authorSummary
+    authorDetailMarkdown.value = snapshot.authorDetailMarkdown
+    authorRecommendedRows.value =
+      snapshot.authorRecommendedRows.length > 0
+        ? snapshot.authorRecommendedRows.map((r) => ({ ...r }))
+        : [emptyAuthorRecRow()]
+    authorIncludeSuggestedUi.value = snapshot.authorIncludeSuggestedUi
+    authorSuggestedBackendsJson.value = snapshot.authorSuggestedBackendsJson
+    Object.assign(uiConfig, snapshot.uiConfig)
+    creationMode.value = snapshot.creationMode
+    advancedTab.value = snapshot.advancedTab
+    syncFormsFromJson()
+    validationErrors.value = []
+    validationLastUsedWasm.value = null
+  }
+
   return {
     manifestText,
     settingsText,
@@ -694,5 +752,7 @@ export function usePackEditor() {
     /** 市场「模块组合」JSON → 合并进简单创作 */
     applyMarketComposeJson,
     applyLoadedPackTargets,
+    captureDraftSnapshot,
+    restoreDraftSnapshot,
   }
 }

@@ -10,10 +10,12 @@ defineProps<{
   folderExportOk: boolean
   /** 最近一次检查是否使用 wasm；未运行过检查时为 `null` */
   validationLastUsedWasm: boolean | null
+  showSaveDraft?: boolean
 }>()
 
 const emit = defineEmits<{
   runValidate: []
+  saveDraft: []
   exportOcpak: []
   exportZip: []
   exportFolder: []
@@ -89,6 +91,16 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="pack-header-actions" role="group" :aria-label="String(t('packEditor.headerActions.aria'))">
+    <button
+      v-if="showSaveDraft"
+      type="button"
+      class="pha-btn pha-btn--save"
+      :title="String(t('packEditor.headerActions.saveDraftTitle'))"
+      :aria-label="String(t('packEditor.headerActions.saveDraftAria'))"
+      @click="emit('saveDraft')"
+    >
+      {{ t('packEditor.headerActions.saveDraft') }}
+    </button>
     <button
       type="button"
       class="pha-btn pha-btn--check"
@@ -216,6 +228,10 @@ onBeforeUnmount(() => {
 
 .pha-btn--check {
   border-color: color-mix(in srgb, var(--fluent-accent) 35%, var(--pack-glass-border));
+}
+
+.pha-btn--save {
+  border-color: color-mix(in srgb, var(--rail-accent-editor) 35%, var(--pack-glass-border));
 }
 
 .pha-btn--export-main {

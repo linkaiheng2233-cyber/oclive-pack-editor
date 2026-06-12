@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isTauriRuntime } from '../../lib/exportFolder'
+import type { PackDraftMeta } from '../../lib/draftStorage'
 
 const props = defineProps<{
   rolesRootPath: string
@@ -12,6 +13,7 @@ const props = defineProps<{
   workspaceMessage: string
   workspaceMessageIsError: boolean
   marketComposePaste: string
+  draftMeta: PackDraftMeta | null
 }>()
 
 const selectedRoleId = defineModel<string>('selectedRoleId', { required: true })
@@ -22,10 +24,10 @@ const emit = defineEmits<{
   scanRoles: []
   loadSelectedRole: []
   createNewPack: []
+  continueDraft: []
+  discardDraft: []
   importPack: [e: Event]
   applyMarketCompose: []
-  goSimple: []
-  goAdvanced: []
 }>()
 
 const { t } = useI18n()
@@ -38,10 +40,50 @@ const roleSelectHint = computed(() => {
   if (!props.selectableRoles.length) return String(t('packEditor.rolesWorkspace.hints.onlyLegacy'))
   return ''
 })
+
+function formatDraftTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString()
+  } catch {
+    return iso
+  }
+}
 </script>
 
 <template>
   <div class="roles-workspace view-stack">
+    <section class="rw-card rw-entry-card" :aria-label="String(t('packEditor.draft.aria'))">
+      <p class="section-kicker">{{ t('packEditor.draft.kicker') }}</p>
+      <h2 class="rw-h2">{{ t('packEditor.draft.title') }}</h2>
+      <p class="rw-lead">{{ t('packEditor.draft.lead') }}</p>
+
+      <div v-if="draftMeta" class="rw-draft-box">
+        <div class="rw-draft-info">
+          <span class="rw-draft-name">{{ draftMeta.roleName }}</span>
+          <span class="rw-draft-meta">
+            {{ draftMeta.roleId }} · {{ formatDraftTime(draftMeta.savedAt) }} ·
+            {{ draftMeta.creationMode === 'simple' ? t('packEditor.nav.simple') : t('packEditor.nav.advanced') }}
+          </span>
+        </div>
+        <div class="rw-draft-actions">
+          <button type="button" class="rw-btn rw-btn--primary" @click="emit('continueDraft')">
+            {{ t('packEditor.draft.continue') }}
+          </button>
+          <button type="button" class="rw-btn" @click="emit('discardDraft')">
+            {{ t('packEditor.draft.discard') }}
+          </button>
+        </div>
+      </div>
+      <p v-else class="rw-hint rw-draft-empty">{{ t('packEditor.draft.empty') }}</p>
+
+      <div class="rw-entry-actions">
+        <button type="button" class="rw-btn rw-btn--accent rw-btn--wide" @click="emit('createNewPack')">
+          {{ t('packEditor.draft.createNew') }}
+        </button>
+      </div>
+      <p class="rw-hint rw-entry-note">{{ t('packEditor.draft.afterPick') }}</p>
+    </section>
+
     <section class="rw-card" :aria-label="String(t('packEditor.rolesWorkspace.aria'))">
       <p class="section-kicker">{{ t('packEditor.rolesWorkspace.kicker') }}</p>
       <h2 class="rw-h2">{{ t('packEditor.rolesWorkspace.title') }}</h2>
@@ -114,9 +156,6 @@ const roleSelectHint = computed(() => {
           />
           {{ t('packEditor.start.import.button') }}
         </label>
-        <button type="button" class="rw-btn rw-btn--accent" @click="emit('createNewPack')">
-          {{ t('packEditor.rolesWorkspace.createNew') }}
-        </button>
       </div>
     </section>
 
@@ -139,26 +178,6 @@ const roleSelectHint = computed(() => {
         </div>
       </section>
     </details>
-
-    <section class="quick-card" :aria-label="String(t('packEditor.start.quickNav.aria'))">
-      <p class="section-kicker">{{ t('packEditor.start.kickers.modes') }}</p>
-      <p class="quick-lead">
-        {{ t('packEditor.start.quickNav.leadPrefix') }}
-        <span class="quick-hint-ico" aria-hidden="true">?</span> {{ t('packEditor.start.quickNav.leadSuffix') }}
-      </p>
-      <div class="quick-actions">
-        <button type="button" class="quick-tile" @click="emit('goSimple')">
-          <span class="quick-tile-ico" aria-hidden="true">📝</span>
-          <span class="quick-tile-title">{{ t('packEditor.start.quickNav.tiles.simple.title') }}</span>
-          <span class="quick-tile-desc">{{ t('packEditor.start.quickNav.tiles.simple.desc') }}</span>
-        </button>
-        <button type="button" class="quick-tile" @click="emit('goAdvanced')">
-          <span class="quick-tile-ico" aria-hidden="true">⚙️</span>
-          <span class="quick-tile-title">{{ t('packEditor.start.quickNav.tiles.advanced.title') }}</span>
-          <span class="quick-tile-desc">{{ t('packEditor.start.quickNav.tiles.advanced.desc') }}</span>
-        </button>
-      </div>
-    </section>
   </div>
 </template>
 
@@ -258,6 +277,63 @@ const roleSelectHint = computed(() => {
   border-color: color-mix(in srgb, var(--rail-accent-editor) 40%, var(--pack-glass-border));
 }
 
+.rw-btn--wide {
+  width: 100%;
+  justify-content: center;
+}
+
+.rw-entry-card {
+  margin-bottom: 0.75rem;
+}
+
+.rw-draft-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--fluent-radius);
+  border: 1px solid var(--pack-glass-border);
+  background: var(--pack-glass-fill-subtle);
+}
+
+.rw-draft-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: min(100%, 12rem);
+}
+
+.rw-draft-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.rw-draft-meta {
+  font-size: 0.75rem;
+  color: var(--fluent-text-secondary);
+}
+
+.rw-draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.rw-draft-empty {
+  margin-bottom: 0.75rem;
+}
+
+.rw-entry-actions {
+  margin-bottom: 0.45rem;
+}
+
+.rw-entry-note {
+  margin-top: 0;
+}
+
 .rw-btn--file {
   cursor: pointer;
 }
@@ -341,49 +417,5 @@ const roleSelectHint = computed(() => {
   color: #fff;
   cursor: pointer;
   font-weight: 600;
-}
-
-.quick-card {
-  margin-top: 1rem;
-  padding: 1rem 1.15rem 1.2rem;
-  border-radius: var(--fluent-radius-lg);
-  border: 1px solid var(--fluent-border-stroke);
-  background: color-mix(in srgb, var(--fluent-bg-card) 82%, transparent);
-  box-shadow: var(--fluent-shadow-card);
-}
-
-.quick-lead {
-  margin: 0 0 1rem;
-  font-size: 0.875rem;
-  color: var(--fluent-text-secondary);
-}
-
-.quick-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  gap: 0.65rem;
-}
-
-.quick-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-  padding: 0.85rem 1rem;
-  border-radius: var(--fluent-radius-lg);
-  border: 1px solid var(--fluent-border-stroke);
-  background: var(--pack-glass-fill-subtle);
-  cursor: pointer;
-  text-align: left;
-}
-
-.quick-tile-title {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.quick-tile-desc {
-  font-size: 0.78rem;
-  color: var(--fluent-text-secondary);
 }
 </style>
