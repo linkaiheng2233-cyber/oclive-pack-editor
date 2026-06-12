@@ -44,6 +44,7 @@ import type { CreatorMessageExportMode } from '../../lib/rolePackCreatorMessage'
 import { pluginsForCapability, useDirectoryPlugins } from '../../composables/useDirectoryPlugins'
 import type { AuthorRecRow } from '../../lib/authorPack'
 import type { UiConfig } from '../../types/uiConfig'
+import type { PortraitSlotId } from '../../lib/portraitCatalog'
 
 const { t } = useI18n()
 
@@ -54,7 +55,7 @@ const props = defineProps<{
   syncFormWarning: string
   emotionSummary: string
   emotionFileNames?: string[]
-  portraitSlotFiles?: Partial<Record<string, File>>
+  portraitSlotFiles?: Partial<Record<PortraitSlotId, File>>
   /** 最近一次「写入文件夹」的 roles 根路径；用于定位同级 `plugins/` 扫描目录插件 */
   lastExportedRolesRoot: string
 }>()
@@ -215,8 +216,8 @@ function onSlotDrop(slot: SlotKey, i: number) {
 }
 
 const emit = defineEmits<{
-  portraitSlotPick: [id: string, e: Event]
-  portraitSlotClear: [id: string]
+  portraitSlotPick: [id: PortraitSlotId, e: Event]
+  portraitSlotClear: [id: PortraitSlotId]
   portraitClearAll: []
   addAuthorRecRow: []
   removeAuthorRecRow: [index: number]

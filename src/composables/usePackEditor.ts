@@ -17,7 +17,6 @@ import {
   importedPackToApplyInput,
   type ApplyLoadedPackTargets,
 } from '../lib/applyLoadedPackToEditor'
-import { filterEmotionImageFiles } from '../lib/emotionAssets'
 import { prepareExportPayload } from '../lib/exportPrepare'
 import { validateExportPackDirectory } from '../lib/exportValidate'
 import {
@@ -499,15 +498,6 @@ export function usePackEditor() {
     inp.value = ''
   }
 
-  function onEmotionFilesPick(e: Event): void {
-    const inp = e.target as HTMLInputElement
-    const fl = inp.files
-    if (!fl?.length) return
-    emotionImageFiles.value = filterEmotionImageFiles(fl)
-    portraitSlotFiles.value = slotFilesFromEmotionImages(emotionImageFiles.value)
-    inp.value = ''
-  }
-
   function onPortraitSlotPick(id: string, e: Event): void {
     if (!(SIMPLE_PORTRAIT_SLOT_IDS as readonly string[]).includes(id))
       return
@@ -584,25 +574,6 @@ export function usePackEditor() {
           : 'assets/images/'
     updatePortraitExtraEntry(index, { file: f, path: `${base}${f.name}` })
     inp.value = ''
-  }
-
-  function onEmotionFilesAppend(e: Event): void {
-    const inp = e.target as HTMLInputElement
-    const fl = inp.files
-    if (!fl?.length) return
-    const add = filterEmotionImageFiles(fl)
-    const names = new Set(emotionImageFiles.value.map((x) => x.name))
-    for (const f of add) {
-      if (!names.has(f.name)) {
-        emotionImageFiles.value = [...emotionImageFiles.value, f]
-        names.add(f.name)
-      }
-    }
-    inp.value = ''
-  }
-
-  function clearEmotionImages(): void {
-    clearPortraitSlots()
   }
 
   function addAuthorRecommendedRow(): void {
@@ -968,7 +939,6 @@ export function usePackEditor() {
     bindPackSession,
     runValidate,
     onImportPack,
-    onEmotionFilesPick,
     onPortraitSlotPick,
     onPortraitSlotClear,
     clearPortraitSlots,
@@ -976,8 +946,6 @@ export function usePackEditor() {
     updatePortraitExtraEntry,
     removePortraitExtraEntry,
     onPortraitExtraPick,
-    onEmotionFilesAppend,
-    clearEmotionImages,
     addAuthorRecommendedRow,
     removeAuthorRecommendedRow,
     addKnowledgeFile,
