@@ -1,8 +1,8 @@
 # oclive-pack-editor
 
-> **Deprecated — 请改用 [oclive-studio](https://github.com/oclive-app/oclive-studio)**（oclive 工作室）：角色包编辑、校验、试聊与导出已内置为工作室「创作模式」。新功能与修复仅在工作室维护；本仓保留只读归档与历史 Release 对照。
+> **Deprecated — 请改用 [oclive-studio](https://github.com/linkaiheng2233-cyber/oclive-studio)**（oclive 工作室）：角色包编辑、校验、试聊与导出已内置为工作室「创作模式」。新功能与修复仅在工作室维护；本仓保留只读归档与历史 Release 对照。
 
-[![CI](https://github.com/oclive-app/oclive-pack-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/oclive-app/oclive-pack-editor/actions/workflows/ci.yml)
+[![CI](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml)
 
 独立 **角色包编写器**（Vite + Vue 3 + TypeScript + 可选 **Tauri 1.x** 桌面壳）：编辑并导出与 **oclivenewnew** 运行时兼容的 **`roles/{角色id}/`** 目录树或 zip（`.zip` / `.ocpak`，均为 zip 格式）。**不包含**对话引擎或运行时源码；两应用的唯一纽带是磁盘上的角色包。
 
@@ -36,9 +36,9 @@
 - **插件市场条目（`type: "plugin" | "module" | "profile"`）**：由 `oclivenewnew` 的「插件与后端管理」负责同步索引、安装依赖插件、权限确认与应用后端覆盖。
 - **Profile（特征码/一键部署）**：属于运行时侧的「环境配置 + 依赖声明」能力；编写器不解析/不应用 Profile，只在角色包里提供 `plugin_backends` 等字段供运行时读取。
 
-**性格档案**：本编写器编辑包内 **核心性格档案**（`core_personality.txt`）与 **`evolution`**（含 **`personality_source`**、`max_change_per_event`）。若选用 **`profile`**，运行时的 **可变性格档案**由 oclive 在数据库中维护，**不可**在包内手写；设计说明见 oclivenewnew **[personality-archive-notes.md](https://github.com/oclive-app/oclivenewnew/blob/main/docs/personality-archive-notes.md)**，思路变化见 **[design-axis-evolution.md](https://github.com/oclive-app/oclivenewnew/blob/main/docs/design-axis-evolution.md)**。
+**性格档案**：本编写器编辑包内 **核心性格档案**（`core_personality.txt`）与 **`evolution`**（含 **`personality_source`**、`max_change_per_event`）。若选用 **`profile`**，运行时的 **可变性格档案**由 oclive 在数据库中维护，**不可**在包内手写；设计说明见 oclivenewnew **[personality-archive-notes.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/docs/personality-archive-notes.md)**，思路变化见 **[design-axis-evolution.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/docs/design-axis-evolution.md)**。
 
-**版本对齐**：`src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 应与 **oclivenewnew** `src-tauri/Cargo.toml` 的 **`version`** 一致；导出前校验会检查 **`meta.min_runtime_version`** 与 v2 蓝图契约（见 [PACK_VERSIONING.md](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/role-pack/PACK_VERSIONING.md)）。
+**版本对齐**：`src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 应与 **oclivenewnew** `src-tauri/Cargo.toml` 的 **`version`** 一致；导出前校验会检查 **`meta.min_runtime_version`** 与 v2 蓝图契约（见 [PACK_VERSIONING.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/role-pack/PACK_VERSIONING.md)）。
 
 **角色包编辑器**（桌面壳）：侧栏「角色包」可直接打开磁盘上的 v2 包目录，表单/JSON 双模式编辑、`validate_blueprint_v2_json` 校验、锚点预设；说明见 [creator-docs/ROLE_PACK_EDITOR.md](./creator-docs/ROLE_PACK_EDITOR.md)。
 
@@ -48,7 +48,7 @@
 创作者可在本编写器的 **试聊面板** 中点 **「查看反馈（半私密）」** 拉取并处理（标记已处理、写处理备注）。
 
 反馈协议与字段说明见：  
-- oclivenewnew 文档 **[ROLE_FEEDBACK_V1.md](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/role-pack/ROLE_FEEDBACK_V1.md)**
+- oclivenewnew 文档 **[ROLE_FEEDBACK_V1.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/role-pack/ROLE_FEEDBACK_V1.md)**
 
 路径约定（Windows 示例）：与 `oclivenewnew` **同级**放置本仓库，例如 `D:\oclive-pack-editor` 与 `D:\oclivenewnew`。
 
@@ -57,12 +57,12 @@
 | 步骤 | 说明 |
 |------|------|
 | 1 | 安装 **Node.js**，按需安装 **Ollama**（试聊 / 完整运行时需要）。 |
-| 2 | 同级克隆 **[oclivenewnew](https://github.com/oclive-app/oclivenewnew)**（A.I.Live 运行时）与本 **编写器**。 |
+| 2 | 同级克隆 **[oclivenewnew](https://github.com/linkaiheng2233-cyber/oclivenewnew)**（A.I.Live 运行时）与本 **编写器**。 |
 | 3 | 在本编写器中编辑或导入角色包，**导出 .zip / .ocpak** 或 **「写入文件夹」**，使 **`{角色id}/pipeline.ocblueprint`** 位于 **roles 根** 下；或将包目录放入 oclivenewnew 的 `roles/`，或设置环境变量 **`OCLIVE_ROLES_DIR`** 指向该根。 |
 | 4 | 启动 **oclivenewnew**（`npm run tauri:dev` 或 Release），加载角色并对话；编写器内试聊见下文。 |
 | 5 | （可选）在 **A.I.Live** 中配置专家路由与架构图分组，保存后回到编写器编辑人设时，扩展蓝图字段会被保留。 |
 
-权威说明：**[CREATOR_WORKFLOW.md](https://github.com/oclive-app/oclivenewnew/blob/main/creator-docs/getting-started/CREATOR_WORKFLOW.md)**。旧版 **oclive-launcher** 已退役，见 [启动器 README](https://github.com/oclive-app/oclive-launcher/blob/main/README.md)（归档只读）。
+权威说明：**[CREATOR_WORKFLOW.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/main/creator-docs/getting-started/CREATOR_WORKFLOW.md)**。旧版 **oclive-launcher** 已退役，见 [启动器 README](https://github.com/linkaiheng2233-cyber/oclive-launcher/blob/main/README.md)（归档只读）。
 
 界面风格参考 **Fluent Design**（与常见 Fluent 桌面工具如 **qfluentwidgets** 一脉：浅色页背景、卡片层次、主色强调按钮），在 `src/style.css` 中通过 CSS 变量统一，并支持系统深色偏好；日间为 **象牙/卡其暖色**，与 **oclive-launcher** 对齐以便跨应用习惯一致。
 
