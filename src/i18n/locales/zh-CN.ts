@@ -135,6 +135,8 @@ export default {
     portraits: {
       title: "情绪立绘",
       lead: "与高级模式「情绪立绘」页相同：七种基础表情各选一张，可按需追加更多表情图。",
+      placeholderWarning:
+        "当前立绘来自草稿占位（未含图片文件）。请重新选择图片后再导出，否则包内可能缺少有效立绘。",
     },
     creatorMessage: {
       title: "创作者公告（可选，仅在此编写）",
@@ -669,6 +671,27 @@ export default {
       saveDraftTitle: "保存当前简单/高级编辑内容到本机（不含情绪图片文件）",
       saveDraftAria: "保存本地草稿",
     },
+    feedback: {
+      noActivePack: "当前没有可检查的角色包：请从开始页继续草稿、创建新包、加载 roles 或导入 zip。",
+      validatePass: "角色包检查通过，未发现错误（非环境/Ollama 检测）。",
+      validateFail: "角色包有 {count} 处问题（非环境故障）。",
+      exportBlockedByChecks: "请先通过全部检查，或关闭顶栏「导出前校验包内容」后再导出。",
+      importSuccess: "已导入角色「{roleId}」。可继续编辑后导出。 {hint}",
+      importFail: "导入失败：{err}",
+      exportZipSuccess: "已下载 {name}。将解压出的「{roleId}」文件夹放入本机 oclive 的 roles 目录即可测试。",
+      exportZipFail: "导出 zip 失败：{err}",
+      exportFolderSuccessPath: "已写入 {roleId}/ 到 {root}（roles 根）。可直接启动 oclive 测试。",
+      exportFolderSuccessPick: "已写入 {roleId}/ 到所选目录（作为 roles 根）。可直接启动 oclive 测试。",
+      exportFolderFail: "写入失败：{err}",
+      marketComposeApplied: "已从市场模块组合合并到简单创作（追加到人设、世界观与身份提示）。请到「简单」页继续编辑并导出。",
+      marketComposeOk: "已应用。",
+      emotionSummaryNone: "未选择",
+      emotionSummarySelected: "已选 {n} 个文件（导出至 manifest.id 对应目录下的 assets/images/）",
+    },
+    replyQualityAnchorConfirm:
+      "是否在导出时写入推荐的「回复质量锚点」到 prompts/reply_quality_anchor.md？\n\n" +
+      "将写入 v2 推荐路径，含：禁止复述用户原句、简短确认时延续话题勿重复开场、按用户信息量调节篇幅（非固定字数）、不替用户拟定台词等（与 oclive 主程序默认一致）。\n\n" +
+      "确定 = 加入推荐内容\n取消 = 不加入，按当前 JSON 原样导出",
     draft: {
       aria: "进入创作",
       kicker: "进入创作",

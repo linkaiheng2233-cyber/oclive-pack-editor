@@ -50,6 +50,21 @@ describe('blueprint roundtrip', () => {
     expect(m2.scenes).toEqual(['a'])
     expect((s2.plugin_backends as { llm?: string }).llm).toBe('ollama')
   })
+
+  it('omits model from legacy settings when blueprint has no ollama_model', () => {
+    const manifest = {
+      id: 'x',
+      name: 'N',
+      scenes: ['a'],
+      user_relations: { f: { favor_multiplier: 1, initial_favorability: 40 } },
+      default_relation: 'f',
+    }
+    const settings = { schema_version: 1, plugin_backends: { llm: 'ollama' } }
+    const bp = buildBlueprintV2FromLegacy(manifest, settings)
+    const { settings: s2 } = blueprintToLegacyParts(bp)
+    expect(s2.model).toBeUndefined()
+    expect(bp.meta.ollama_model).toBeUndefined()
+  })
 })
 
 describe('parseBlueprintV2Json', () => {

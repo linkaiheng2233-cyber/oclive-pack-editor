@@ -1,4 +1,5 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, type Ref } from 'vue'
+import { i18n } from '../i18n'
 import {
   DEFAULT_CORE_PERSONALITY_TEXT,
   DEFAULT_MANIFEST_JSON,
@@ -181,7 +182,7 @@ export function usePackEditor() {
   const lastMessage = ref('')
   /** 与 lastMessage 配套：错误类文案为 true，成功提示为 false */
   const lastMessageIsError = ref(false)
-  const requireChecksBeforeExport = ref(true)
+  const requireChecksBeforeExport = ref(false)
   /** 简单模式表单与 JSON 不一致时（JSON 无法解析）提示 */
   const syncFormWarning = ref('')
   /** 最近一次「写入文件夹」的 roles 根路径（桌面版 Tauri），供试聊默认角色目录 */
@@ -198,8 +199,9 @@ export function usePackEditor() {
     return packSessionRef?.value === 'idle'
   }
 
-  const NO_ACTIVE_PACK_MSG =
-    '当前没有可检查的角色包：请从开始页继续草稿、创建新包、加载 roles 或导入 zip。'
+  function pe(key: string, params?: Record<string, unknown>): string {
+    return i18n.global.t(key, params ?? {})
+  }
 
   const creationMode = ref<'simple' | 'advanced'>('simple')
   const advancedTab = ref<'manifest' | 'settings' | 'core' | 'world' | 'scenes' | 'images'>('manifest')
@@ -214,9 +216,15 @@ export function usePackEditor() {
 
   const emotionImageSummary = computed(() => {
     const n = emotionImageFiles.value.length
-    return n === 0
-      ? '未选择'
-      : `已选 ${n} 个文件（导出至 manifest.id 对应目录下的 assets/images/）`
+    if (n === 0) return pe('packEditor.feedback.emotionSummaryNone')
+    return pe('packEditor.feedback.emotionSummarySelected', { n })
+  })
+
+  const hasPortraitPlaceholderFiles = computed(() => {
+    for (const f of Object.values(portraitSlotFiles.value)) {
+      if (f && f.size === 0) return true
+    }
+    return portraitExtraEntries.value.some((e) => e.file != null && e.file.size === 0)
   })
 
   /** 与 manifest 同步写入 settings.knowledge；运行时合并以 settings 为准 */
@@ -484,6 +492,7 @@ export function usePackEditor() {
     try {
       const v = localStorage.getItem(STORAGE_REQUIRE_CHECKS)
       if (v === 'false') requireChecksBeforeExport.value = false
+      else if (v === 'true') requireChecksBeforeExport.value = true
       const cm = localStorage.getItem(STORAGE_CREATION_MODE)
       if (cm === 'advanced' || cm === 'simple') creationMode.value = cm
       const em = localStorage.getItem(STORAGE_CREATOR_MSG_MODE)
@@ -563,27 +572,27 @@ export function usePackEditor() {
 
   async function runValidate(): Promise<void> {
     if (noActivePackForCheck()) {
-      validationErrors.value = [NO_ACTIVE_PACK_MSG]
+      validationErrors.value = [pe('packEditor.feedback.noActivePack')]
       validationLastUsedWasm.value = null
-      setFeedback(NO_ACTIVE_PACK_MSG, true)
+      setFeedback(pe('packEditor.feedback.noActivePack'), true)
       return
     }
     const v = await collectValidationState()
     validationErrors.value = v.errors
     validationLastUsedWasm.value = v.wasmUsed
     if (v.ok) {
-      setFeedback('角色包检查通过，未发现错误（非环境/Ollama 检测）。', false)
+      setFeedback(pe('packEditor.feedback.validatePass'), false)
     } else {
-      setFeedback(`角色包有 ${v.errors.length} 处问题（非环境故障）。`, true)
+      setFeedback(pe('packEditor.feedback.validateFail', { count: v.errors.length }), true)
     }
   }
 
   async function checksPassForExport(): Promise<boolean> {
     if (!requireChecksBeforeExport.value) return true
     if (noActivePackForCheck()) {
-      validationErrors.value = [NO_ACTIVE_PACK_MSG]
+      validationErrors.value = [pe('packEditor.feedback.noActivePack')]
       validationLastUsedWasm.value = null
-      setFeedback(NO_ACTIVE_PACK_MSG, true)
+      setFeedback(pe('packEditor.feedback.noActivePack'), true)
       return false
     }
     const v = await collectValidationState()
@@ -602,11 +611,19 @@ export function usePackEditor() {
       applyLoadedPackToEditor(importedPackToApplyInput(imp), applyLoadedPackTargets)
       applyPortraitSlotsFromImport(imp.portraitCatalogJson, imp.emotionImageFiles, imp.configJson)
       setFeedback(
-        `已导入角色「${imp.roleId}」。可继续编辑后导出。 ${importedPackBrainHint(imp.settingsJson)}`,
+        pe('packEditor.feedback.importSuccess', {
+          roleId: imp.roleId,
+          hint: importedPackBrainHint(imp.settingsJson),
+        }),
         false,
       )
     } catch (err) {
-      setFeedback(`导入失败：${err instanceof Error ? err.message : String(err)}`, true)
+      setFeedback(
+        pe('packEditor.feedback.importFail', {
+          err: err instanceof Error ? err.message : String(err),
+        }),
+        true,
+      )
     }
     inp.value = ''
   }
@@ -735,11 +752,7 @@ export function usePackEditor() {
     if (!shouldPromptReplyQualityAnchor(settings)) {
       return { ...settings }
     }
-    const include = window.confirm(
-      '是否在导出时写入推荐的「回复质量锚点」到 prompts/reply_quality_anchor.md？\n\n' +
-        '将写入 v2 推荐路径，含：禁止复述用户原句、简短确认时延续话题勿重复开场、按用户信息量调节篇幅（非固定字数）、不替用户拟定台词等（与 oclive 主程序默认一致）。\n\n' +
-        '确定 = 加入推荐内容\n取消 = 不加入，按当前 JSON 原样导出',
-    )
+    const include = window.confirm(pe('packEditor.replyQualityAnchorConfirm'))
     return mergeEditorReplyQualityAnchor(settings, include)
   }
 
@@ -755,7 +768,7 @@ export function usePackEditor() {
     if (!(await checksPassForExport())) {
       return {
         ok: false,
-        message: '请先通过全部检查，或关闭「导出前校验包内容」后再导出。',
+        message: pe('packEditor.feedback.exportBlockedByChecks'),
       }
     }
     const payload = prepareExportPayload(manifestText.value, settingsText.value)
@@ -799,11 +812,8 @@ export function usePackEditor() {
     simpleM.relationPromptHint = merged.relationPromptHint
     creationMode.value = 'simple'
     flushSimpleToJson()
-    setFeedback(
-      '已从市场模块组合合并到简单创作（追加到人设、世界观与身份提示）。请到「简单」页继续编辑并导出。',
-      false,
-    )
-    return { ok: true, message: '已应用。' }
+    setFeedback(pe('packEditor.feedback.marketComposeApplied'), false)
+    return { ok: true, message: pe('packEditor.feedback.marketComposeOk') }
   }
 
   async function exportZip(ocpak: boolean): Promise<void> {
@@ -819,12 +829,14 @@ export function usePackEditor() {
       const blob = await buildRolePackZipBlob(roleId, manifest, settings, packExtra())
       const name = suggestedZipName(roleId, ocpak)
       triggerDownload(blob, name)
-      setFeedback(
-        `已下载 ${name}。将解压出的「${roleId}」文件夹放入本机 oclive 的 roles 目录即可测试。`,
-        false,
-      )
+      setFeedback(pe('packEditor.feedback.exportZipSuccess', { name, roleId }), false)
     } catch (e) {
-      setFeedback(`导出 zip 失败：${e instanceof Error ? e.message : String(e)}`, true)
+      setFeedback(
+        pe('packEditor.feedback.exportZipFail', {
+          err: e instanceof Error ? e.message : String(e),
+        }),
+        true,
+      )
     }
   }
 
@@ -892,7 +904,10 @@ export function usePackEditor() {
           /* ignore */
         }
         setFeedback(
-          `已写入 ${roleId}/ 到 ${writeOptions.rolesRootPath.trim()}（roles 根）。可直接启动 oclive 测试。`,
+          pe('packEditor.feedback.exportFolderSuccessPath', {
+            roleId,
+            root: writeOptions.rolesRootPath.trim(),
+          }),
           false,
         )
         return
@@ -908,12 +923,14 @@ export function usePackEditor() {
           /* ignore */
         }
       }
-      setFeedback(
-        `已写入 ${roleId}/ 到所选目录（作为 roles 根）。可直接启动 oclive 测试。`,
-        false,
-      )
+      setFeedback(pe('packEditor.feedback.exportFolderSuccessPick', { roleId }), false)
     } catch (e) {
-      setFeedback(`写入失败：${e instanceof Error ? e.message : String(e)}`, true)
+      setFeedback(
+        pe('packEditor.feedback.exportFolderFail', {
+          err: e instanceof Error ? e.message : String(e),
+        }),
+        true,
+      )
     }
   }
 
@@ -1085,6 +1102,7 @@ export function usePackEditor() {
     simpleS,
     uiConfig,
     multiRelationWarning,
+    hasPortraitPlaceholderFiles,
     emotionImageSummary,
     folderExportOk,
     manifestRoleId,

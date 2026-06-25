@@ -26,7 +26,6 @@ export const DEFAULT_MANIFEST_JSON = `{
 
 export const DEFAULT_SETTINGS_JSON = `{
   "schema_version": 1,
-  "model": "qwen2.5:7b",
   "evolution": {
     "event_impact_factor": 1.0,
     "ai_analysis_interval": 15,

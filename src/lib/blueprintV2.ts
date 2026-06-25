@@ -180,7 +180,9 @@ export function buildBlueprintV2FromLegacy(
     knowledge: manifest.knowledge ?? settings.knowledge,
   }
 
-  if (mergedManifest.ollama_model != null) meta.ollama_model = mergedManifest.ollama_model
+  if (mergedManifest.ollama_model != null && String(mergedManifest.ollama_model).trim()) {
+    meta.ollama_model = mergedManifest.ollama_model
+  }
   if (manifest.min_runtime_version != null) meta.min_runtime_version = manifest.min_runtime_version
   if (manifest.life_trajectory != null) meta.life_trajectory = manifest.life_trajectory
   if (manifest.life_schedule != null) meta.life_schedule = manifest.life_schedule
@@ -242,12 +244,13 @@ export function blueprintToLegacyParts(bp: BlueprintV2): {
     featured: meta.featured,
     preset_order: meta.preset_order,
   }
-  if (meta.ollama_model != null) manifest.ollama_model = meta.ollama_model
+  if (meta.ollama_model != null && String(meta.ollama_model).trim()) {
+    manifest.ollama_model = meta.ollama_model
+  }
 
   const plugin_backends = slotRegistryToPluginBackends(bp.slot_registry)
   const settings: Record<string, unknown> = {
     schema_version: 1,
-    model: meta.ollama_model ?? 'qwen2.5:7b',
     identity_binding: meta.identity_binding ?? 'per_scene',
     interaction_mode: meta.interaction_mode ?? 'immersive',
     evolution: meta.evolution,

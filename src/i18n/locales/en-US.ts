@@ -144,6 +144,8 @@ export default {
     portraits: {
       title: "Emotion assets",
       lead: "Same as Advanced → Emotion assets: seven basic moods plus optional extra faces.",
+      placeholderWarning:
+        "Portrait files are draft placeholders (no image bytes). Re-select images before export or the pack may ship without valid assets.",
     },
     creatorMessage: {
       title: "Creator message (optional; edit here only)",
@@ -691,6 +693,31 @@ export default {
       saveDraftTitle: "Save current Simple/Advanced edits locally (emotion image files not included)",
       saveDraftAria: "Save local draft",
     },
+    feedback: {
+      noActivePack:
+        "No pack to check. Continue a draft, create a new pack, load from roles, or import a zip from the Start page.",
+      validatePass: "Pack check passed with no errors (not an Ollama or kernel environment probe).",
+      validateFail: "Pack has {count} issue(s) (not an environment failure).",
+      exportBlockedByChecks:
+        'Pass all checks first, or turn off "Require checks before export" in the header.',
+      importSuccess: 'Imported role "{roleId}". You can keep editing and export. {hint}',
+      importFail: "Import failed: {err}",
+      exportZipSuccess:
+        'Downloaded {name}. Unzip the "{roleId}" folder into your local oclive roles directory to test.',
+      exportZipFail: "Export zip failed: {err}",
+      exportFolderSuccessPath: "Wrote {roleId}/ to {root} (roles root). Launch oclive to test.",
+      exportFolderSuccessPick: "Wrote {roleId}/ to the chosen directory (as roles root). Launch oclive to test.",
+      exportFolderFail: "Write failed: {err}",
+      marketComposeApplied:
+        "Merged market module compose into Simple creation (persona, worldview, relation hint). Continue on the Simple tab and export.",
+      marketComposeOk: "Applied.",
+      emotionSummaryNone: "None selected",
+      emotionSummarySelected: "{n} file(s) selected (exported to assets/images/ under manifest.id)",
+    },
+    replyQualityAnchorConfirm:
+      "Include the recommended reply quality anchor in prompts/reply_quality_anchor.md on export?\n\n" +
+      "Writes the v2 recommended path: no parroting user lines, continue the topic on short acks, scale length to user input, do not put words in the user's mouth (aligned with oclive defaults).\n\n" +
+      "OK = include recommended content\nCancel = export JSON as-is",
     draft: {
       aria: "Start editing",
       kicker: "Start editing",

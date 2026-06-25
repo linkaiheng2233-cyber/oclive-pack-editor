@@ -6,6 +6,10 @@ defineProps<{
   showSaveDraft?: boolean
 }>()
 
+const requireChecksBeforeExport = defineModel<boolean>('requireChecksBeforeExport', {
+  default: false,
+})
+
 const emit = defineEmits<{
   runValidate: []
   saveDraft: []
@@ -55,6 +59,10 @@ const { t } = useI18n()
     >
       {{ t('packEditor.headerActions.exportFolder') }}
     </button>
+    <label class="pha-check" :title="String(t('packChecks.sub'))">
+      <input v-model="requireChecksBeforeExport" type="checkbox" />
+      <span>{{ t('packChecks.requireBeforeExport') }}</span>
+    </label>
   </div>
 </template>
 
@@ -125,5 +133,23 @@ const { t } = useI18n()
 
 .pha-btn--export-folder {
   border-color: color-mix(in srgb, var(--fluent-accent) 35%, var(--pack-glass-border));
+}
+
+.pha-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.15rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+  color: var(--fluent-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.pha-check input {
+  margin: 0;
+  accent-color: var(--fluent-accent);
 }
 </style>

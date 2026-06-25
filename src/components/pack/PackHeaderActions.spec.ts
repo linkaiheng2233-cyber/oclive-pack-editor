@@ -66,4 +66,18 @@ describe('PackHeaderActions (Phase 1 header tools)', () => {
     await w.find('.pha-btn--save').trigger('click')
     expect(w.emitted('saveDraft')).toHaveLength(1)
   })
+
+  it('toggles requireChecksBeforeExport via checkbox', async () => {
+    const w = mount(PackHeaderActions, {
+      props: {
+        folderExportOk: false,
+        requireChecksBeforeExport: false,
+      },
+      global: { plugins: [i18n] },
+    })
+    const input = w.find('.pha-check input')
+    expect((input.element as HTMLInputElement).checked).toBe(false)
+    await input.setValue(true)
+    expect(w.emitted('update:requireChecksBeforeExport')?.[0]).toEqual([true])
+  })
 })

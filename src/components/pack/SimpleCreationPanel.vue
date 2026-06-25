@@ -22,6 +22,8 @@ defineProps<{
   simpleM: SimpleManifestForm
   simpleS: SimpleSettingsForm
   syncFormWarning: string
+  multiRelationWarning: boolean
+  portraitPlaceholderWarning: boolean
   emotionSummary: string
   portraitSlotFiles: Partial<Record<PortraitSlotId, File>>
   portraitExtraEntries: PortraitCatalogEntry[]
@@ -44,6 +46,12 @@ const emit = defineEmits<{
   <div>
     <p v-if="syncFormWarning" class="sync-warn" role="status">
       {{ t('simpleCreation.syncWarning', { detail: syncFormWarning }) }}
+    </p>
+    <p v-if="multiRelationWarning" class="sync-warn" role="status">
+      {{ t('simpleCreation.manifest.multiRelationWarning') }}
+    </p>
+    <p v-if="portraitPlaceholderWarning" class="sync-warn" role="status">
+      {{ t('simpleCreation.portraits.placeholderWarning') }}
     </p>
 
     <section class="panel base-panel">

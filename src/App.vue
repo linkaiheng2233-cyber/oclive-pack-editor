@@ -34,12 +34,15 @@ const {
   validationErrors,
   lastMessage,
   lastMessageIsError,
+  requireChecksBeforeExport,
   syncFormWarning,
   creationMode,
   advancedTab,
   simpleM,
   simpleS,
   emotionImageSummary,
+  multiRelationWarning,
+  hasPortraitPlaceholderFiles,
   portraitSlotFiles,
   portraitExtraEntries,
   creatorMessageToOthers,
@@ -346,6 +349,7 @@ function onCreateNewPack() {
           </div>
           <div class="shell-header-tools" role="toolbar" :aria-label="String(t('packEditor.header.toolsAria'))">
             <PackHeaderActions
+              v-model:require-checks-before-export="requireChecksBeforeExport"
               :folder-export-ok="folderExportOk"
               :show-save-draft="showSaveDraft"
               @run-validate="onHeaderValidate"
@@ -428,6 +432,8 @@ function onCreateNewPack() {
           :simple-m="simpleM"
           :simple-s="simpleS"
           :sync-form-warning="syncFormWarning"
+          :multi-relation-warning="multiRelationWarning"
+          :portrait-placeholder-warning="hasPortraitPlaceholderFiles"
           :emotion-summary="emotionImageSummary"
           :portrait-slot-files="portraitSlotFiles"
           :portrait-extra-entries="portraitExtraEntries"

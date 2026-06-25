@@ -1,12 +1,10 @@
 # oclive-pack-editor
 
-> **Deprecated — 请改用 [oclive-studio](https://github.com/linkaiheng2233-cyber/oclive-studio)**（oclive 工作室）：角色包编辑、校验、试聊与导出已内置为工作室「创作模式」。新功能与修复仅在工作室维护；本仓保留只读归档与历史 Release 对照。
+独立 **角色包编写器**（Vite + Vue 3 + TypeScript + **Tauri 1.x** 桌面壳）：面向创作者的 **简单创作** 流程（人设、立绘、世界观 → 导出 `.ocpak` / 写入 `roles/`），并保留 **高级创作**（manifest / settings / 场景 JSON 等）。产物与 **oclivenewnew** 运行时兼容；**不包含**对话引擎源码。
 
 [![CI](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml)
 
-独立 **角色包编写器**（Vite + Vue 3 + TypeScript + 可选 **Tauri 1.x** 桌面壳）：编辑并导出与 **oclivenewnew** 运行时兼容的 **`roles/{角色id}/`** 目录树或 zip（`.zip` / `.ocpak`，均为 zip 格式）。**不包含**对话引擎或运行时源码；两应用的唯一纽带是磁盘上的角色包。
-
-**当前版本：0.2.0**（`package.json`、`src-tauri/tauri.conf.json`、`Cargo.toml` 已对齐）。
+**当前版本：0.4.0**（`package.json`、`src-tauri/tauri.conf.json`、`Cargo.toml` 已对齐）。
 
 **贡献与发版**（本地命令、`HOST_RUNTIME_VERSION`、`wasm:build`、顶层键对比脚本）：见 [CONTRIBUTING.md](./CONTRIBUTING.md)。**变更记录**：[CHANGELOG.md](./CHANGELOG.md)。
 
