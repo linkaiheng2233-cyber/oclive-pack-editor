@@ -57,7 +57,16 @@ function compareArrays(label, rustKeys, tsKeys) {
 
 const rustPath =
   process.env.OCLIVE_JSON_KEYS_RS ||
-  path.join(repoRoot, '..', 'oclivenewnew', 'crates', 'oclive_validation', 'src', 'json_keys.rs')
+  path.join(
+    repoRoot,
+    '..',
+    'oclivenewnew',
+    'kernel',
+    'crates',
+    'oclive_validation',
+    'src',
+    'json_keys.rs',
+  )
 const tsPath = process.env.OCLIVE_JSON_KEYS_TS || path.join(repoRoot, 'src', 'lib', 'jsonKeys.ts')
 
 if (!fs.existsSync(rustPath)) {
@@ -83,7 +92,9 @@ compareArrays('MANIFEST_KEYS', rm, tm)
 compareArrays('SETTINGS_KEYS', rs, ts)
 
 if (process.exitCode === 1) {
-  console.error('\n请同步修改 src/lib/jsonKeys.ts 与 oclivenewnew crates/oclive_validation/src/json_keys.rs\n')
+  console.error(
+    '\n请同步修改 src/lib/jsonKeys.ts 与 oclivenewnew kernel/crates/oclive_validation/src/json_keys.rs\n',
+  )
 } else {
   console.log('jsonKeys.ts 与 json_keys.rs 顶层键一致。')
 }
