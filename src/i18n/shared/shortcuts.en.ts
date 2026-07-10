@@ -3,6 +3,7 @@ export default {
   aria: 'Shortcuts',
   title: 'Shortcuts',
   rowOpenSettings: 'Open settings (advanced area, security, hotkeys, plugin config)',
+  voiceHoldToTalk: 'Hold to talk',
   rowCtrlLong: 'Open this shortcuts dialog',
   rowCtrlLongKeys: 'Ctrl (hold ~1s)',
   foot: 'More shortcuts will be added over time.',
@@ -10,6 +11,7 @@ export default {
   slotHeading: 'Plugin slot (launcher.palette)',
   slotEmbedAria: 'Launcher slot',
   ctrlShiftFSimple: 'Open installed plugins list',
+  ctrlShiftM: 'Open model management',
   ctrlShiftS: 'Open settings',
   ctrlShiftD: 'Toggle debug panel',
 }
