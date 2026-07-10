@@ -2,6 +2,24 @@
 
 本文件随 **Git 标签 / Release** 更新；维护者发版步骤见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
+## [0.5.0] - 2026-07-10
+
+### Changed
+
+- **`HOST_RUNTIME_VERSION`** 升至 **0.5.0**（与 oclivenewnew `distros/desktop-tauri/Cargo.toml` 对齐；catalog / 语音侧通道 `ui.json` 种子需主程序 ≥0.5）。
+
+### Added
+
+- **脚本**：新增 **`npm run check`**（`build` + `vitest` + **`contract:json-keys`**），与主仓发版前自检习惯对齐。
+- **界面**：全局 **暖色主题**（象牙/卡其，与 oclive-launcher 日间 token 对齐）；根字号公式与 **界面缩放** 行为保持不变。
+- **试聊 HTTP**：`runtimeApi` 的 `RuntimeChatMeta` 识别 oclive `--api` 回包 **`personality_source`**（`vector` | `profile`）；试聊消息条展示 **人格·七维 / 人格·档案** 芯片（有该字段时）。
+- **简单创作 / 契约文案**：`evolution.personality_source`、**`max_change_per_event`** 与 UI 提示对齐 oclivenewnew **性格档案**设计轴心（核心/可变档案、七维视图）；README、CHANGELOG 同步。
+- **文档**：README「与运行时的关系」补充 **`creator_message.txt`** 与启动器职责链接；补充 **性格档案**与 oclivenewnew `personality-archive-notes.md`、`design-axis-evolution.md` 链接；CONTRIBUTING **跨仓约定**（文件名与 oclive-launcher 同步）。
+
+## [Unreleased]
+
+(none)
+
 ## [0.4.0] - 2026-06-12
 
 ### Added
@@ -25,11 +43,7 @@
 
 ## [Unreleased]
 
-- **脚本**：新增 **`npm run check`**（`build` + `vitest` + **`contract:json-keys`**），与主仓发版前自检习惯对齐。
-- **界面**：全局 **暖色主题**（象牙/卡其，与 oclive-launcher 日间 token 对齐）；根字号公式与 **界面缩放** 行为保持不变。
-- **试聊 HTTP**：`runtimeApi` 的 `RuntimeChatMeta` 识别 oclive `--api` 回包 **`personality_source`**（`vector` | `profile`）；试聊消息条展示 **人格·七维 / 人格·档案** 芯片（有该字段时）。
-- **简单创作 / 契约文案**：`evolution.personality_source`、**`max_change_per_event`** 与 UI 提示对齐 oclivenewnew **性格档案**设计轴心（核心/可变档案、七维视图）；README、CHANGELOG 同步。
-- **文档**：README「与运行时的关系」补充 **`creator_message.txt`** 与启动器职责链接；补充 **性格档案**与 oclivenewnew `personality-archive-notes.md`、`design-axis-evolution.md` 链接；CONTRIBUTING **跨仓约定**（文件名与 oclive-launcher 同步）。
+(none)
 
 ## 0.2.0
 

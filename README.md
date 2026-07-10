@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml/badge.svg)](https://github.com/linkaiheng2233-cyber/oclive-pack-editor/actions/workflows/ci.yml)
 
-**当前版本：0.4.0**（`package.json`、`src-tauri/tauri.conf.json`、`Cargo.toml` 已对齐）。
+**当前版本：0.5.0**（`package.json`、`src-tauri/tauri.conf.json`、`Cargo.toml` 已对齐）。
 
 **贡献与发版**（本地命令、`HOST_RUNTIME_VERSION`、`wasm:build`、顶层键对比脚本）：见 [CONTRIBUTING.md](./CONTRIBUTING.md)。**变更记录**：[CHANGELOG.md](./CHANGELOG.md)。
 
