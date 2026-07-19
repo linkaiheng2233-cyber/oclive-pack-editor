@@ -1,5 +1,5 @@
 /**
- * 与 `oclivenewnew/crates/oclive_validation/src/json_keys.rs` 顶层键白名单保持一致。
+ * 与 `oclivenewnew/kernel/crates/oclive_validation/src/json_keys.rs` 顶层键白名单保持一致。
  */
 
 const MANIFEST_KEYS = new Set([

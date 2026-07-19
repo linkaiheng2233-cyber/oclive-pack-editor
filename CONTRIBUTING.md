@@ -1,13 +1,13 @@
 # 参与贡献与发版说明
 
-感谢关注 **oclive-pack-editor**。本仓库为独立 **角色包编写器**（Vite + Vue + TypeScript + 可选 Tauri 1.x 桌面壳），与 **oclivenewnew** 运行时通过磁盘上的角色包契约协作，无运行时源码嵌套。
+感谢关注 **oclive-pack-editor**。本仓库为独立 **角色包编写器**（Vite + Vue + TypeScript + 可选 Tauri 2 桌面壳），与 **oclivenewnew** 运行时通过磁盘上的角色包契约协作，无运行时源码嵌套。
 
 ## 日常开发
 
 - 环境：**Node.js**（建议 LTS）、**Rust**（桌面壳与 `wasm-pack` 构建）、Windows 上 **WebView2**。
-- 安装依赖：`npm ci` 或 `npm install`。
+- 安装依赖：**Node.js 20+**，然后执行 `npm ci` 或 `npm install`。
 - 开发：`npm run tauri:dev`（桌面）或 `npm run dev:browser`（浏览器）；详见 [README.md](README.md)。
-- 自检：`npm test`、`npm run build`；若改动桌面壳：`npm run cargo:build` 或 `npm run tauri:build`（与 CI 一致）。**`src-tauri` 依赖 `oclive_validation` 路径 `../../oclivenewnew/crates/oclive_validation`**，请在本编写器**上一级目录**克隆 **oclivenewnew**（与 CI `cd .. && git clone …` 布局一致），否则 `cargo build` 会报找不到 crate。
+- 自检：`npm test`、`npm run build`；若改动桌面壳：`npm run cargo:build` 或 `npm run tauri:build`（与 CI 一致）。**`src-tauri` 依赖 `oclive_validation` 路径 `../../oclivenewnew/kernel/crates/oclive_validation`**，请在本编写器**上一级目录**克隆 **oclivenewnew**（与 CI `cd .. && git clone …` 布局一致），否则 `cargo build` 会报找不到 crate。
 
 合并前请保证前端构建与单测通过；若改动导出或 Tauri 命令，建议在目标平台上实际跑一遍「导入 / 导出 / 写入文件夹」。**CI** 在 **Ubuntu 与 Windows** 上会各跑一遍 **Playwright 冒烟**（`npm run test:e2e`，需先同 job 内 `npm run build`）。
 
@@ -24,11 +24,11 @@
    - **Tauri**：`@tauri-apps/cli` / `@tauri-apps/api` 与 `src-tauri/Cargo.toml` 中 `tauri` 依赖保持项目约定的一致范围（见既有 `package.json`）。
 
 2. **与 oclive 运行时版本对齐（必做）**  
-   - `src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 必须与 **oclivenewnew** 仓库 **`src-tauri/Cargo.toml`** 顶层的 **`[package] version`** 一致。  
+   - `src/lib/hostRuntimeVersion.ts` 中的 **`HOST_RUNTIME_VERSION`** 必须与 **oclivenewnew** 仓库 **`distros/desktop-tauri/Cargo.toml`** 顶层的 **`[package] version`** 一致。
    - 每次 **bump oclive（oclivenewnew）发版** 时，在编写器侧同步更新 **`HOST_RUNTIME_VERSION`**，并跑一遍「运行全部检查」与导出前校验（含 `manifest.min_runtime_version` 语义）。
 
 3. **JSON 顶层键白名单（发版或 bump 上游后建议跑）**  
-   - 运行 `npm run contract:json-keys`：对比 `src/lib/jsonKeys.ts` 与 oclivenewnew **`crates/oclive_validation/src/json_keys.rs`**（默认读取相邻克隆路径 `../oclivenewnew/...`，可用环境变量覆盖，见脚本内说明）。  
+   - 运行 `npm run contract:json-keys`：对比 `src/lib/jsonKeys.ts` 与 oclivenewnew **`kernel/crates/oclive_validation/src/json_keys.rs`**（默认读取相邻克隆路径 `../oclivenewnew/...`，可用环境变量覆盖，见脚本内说明）。
    - 若上游新增或重命名键，请同步更新 `jsonKeys.ts`、相关校验测试，并视需要更新 README。
 
 4. **Wasm 校验（与 CI 一致）**  

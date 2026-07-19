@@ -4,15 +4,17 @@ export type EditorViewId = 'start' | 'simple' | 'advanced'
 
 export function useEditorViewState(onBeforeSwitch?: (id: EditorViewId) => void) {
   const editorView = ref<EditorViewId>('start')
-  const mountedViews = ref<Set<EditorViewId>>(new Set(['start']))
+  const mountedViews = ref<EditorViewId[]>(['start'])
 
   watch(editorView, (view) => {
-    mountedViews.value.add(view)
+    if (!mountedViews.value.includes(view)) {
+      mountedViews.value = [...mountedViews.value, view]
+    }
     onBeforeSwitch?.(view)
   })
 
   function shouldMountView(id: EditorViewId): boolean {
-    return mountedViews.value.has(id)
+    return mountedViews.value.includes(id)
   }
 
   return {

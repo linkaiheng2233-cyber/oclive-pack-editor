@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PIPELINE_BLUEPRINT_FILENAME, REPLY_QUALITY_ANCHOR_REL_PATH } from './blueprintV2'
-import { buildRolePackFiles } from './exportPack'
+import { buildRolePackFiles, buildRolePackZipBlob } from './exportPack'
 
 const baseManifest = {
   id: 'x',
@@ -86,6 +86,79 @@ describe('buildRolePackFiles', () => {
       userIdentitiesIndexJson: body,
     })
     expect(files.get('x/user_identities/index.json')).toBe(body)
+  })
+
+  it('writes memory seed and user identity templates independently', () => {
+    const memory = '{"schema_version":1,"memories":[],"extensions":{}}\n'
+    const files = buildRolePackFiles('x', baseManifest, { schema_version: 1 }, {
+      memorySeedJson: memory,
+      userIdentityFiles: [
+        { path: 'user_identities/friend.md', content: '# 好友\n自然相处。' },
+        { path: '../escape.md', content: 'must not escape' },
+      ],
+    })
+    expect(files.get('x/memory_seed.json')).toBe(memory)
+    expect(files.get('x/user_identities/friend.md')).toBe('# 好友\n自然相处。\n')
+    expect(files.has('x/../escape.md')).toBe(false)
+  })
+
+  it('preserves blueprint extensions supplied by an imported pack', () => {
+    const files = buildRolePackFiles('x', baseManifest, { schema_version: 1 }, {
+      preservedBlueprintFields: {
+        includes: [{ path: 'blueprint/includes/routes.json', mode: 'strict' }],
+        runtime_config: { interaction_mode: 'pure_chat' },
+      },
+    })
+    const blueprint = JSON.parse(files.get(`x/${PIPELINE_BLUEPRINT_FILENAME}`)!)
+    expect(blueprint.includes).toEqual([
+      { path: 'blueprint/includes/routes.json', mode: 'strict' },
+    ])
+    expect(blueprint.runtime_config).toEqual({ interaction_mode: 'pure_chat' })
+  })
+
+  it('preserves multi-instance slots and unknown meta fields when rebuilding', () => {
+    const files = buildRolePackFiles('x', baseManifest, { schema_version: 1 }, {
+      preservedBlueprintFields: {
+        meta: { custom_creator_field: { source: 'main-app' }, name: 'old name' },
+        slot_registry: {
+          memory_long: { type: 'memory', label: 'Long memory', backend: 'builtin', position: 0 },
+          memory_short: { type: 'memory', label: 'Short memory', backend: 'builtin', position: 1 },
+          llm_local: { type: 'llm', label: 'Local', backend: 'ollama', position: 0, model: 'qwen' },
+          llm_remote: { type: 'llm', label: 'Remote', backend: 'remote', position: 1, url: 'https://llm.invalid' },
+        },
+      },
+    })
+    const blueprint = JSON.parse(files.get('x/pipeline.ocblueprint')!)
+    expect(blueprint.meta.custom_creator_field).toEqual({ source: 'main-app' })
+    expect(Object.keys(blueprint.slot_registry)).toEqual(
+      expect.arrayContaining(['memory_long', 'memory_short', 'llm_local', 'llm_remote']),
+    )
+    expect(Object.keys(blueprint.slot_registry)).toHaveLength(9)
+    expect(blueprint.slot_registry.llm_local.model).toBe('qwen')
+    expect(blueprint.slot_registry.llm_remote.url).toBe('https://llm.invalid')
+  })
+
+  it('roundtrips safe preserved files into zip export', async () => {
+    const blob = await buildRolePackZipBlob('x', baseManifest, { schema_version: 1 }, {
+      preservedFiles: [
+        {
+          relPath: 'voice_profile.json',
+          file: new File(['{"schema_version":1}'], 'voice_profile.json'),
+        },
+        {
+          relPath: '../escape.txt',
+          file: new File(['escape'], 'escape.txt'),
+        },
+        {
+          relPath: 'core_personality.txt',
+          file: new File(['must not overwrite'], 'core_personality.txt'),
+        },
+      ],
+    })
+    const zip = await (await import('jszip')).default.loadAsync(blob)
+    expect(await zip.file('x/voice_profile.json')?.async('string')).toBe('{"schema_version":1}')
+    expect(zip.file('escape.txt')).toBeNull()
+    expect(await zip.file('x/core_personality.txt')?.async('string')).not.toBe('must not overwrite')
   })
 
   it('writes featured and preset_order into blueprint meta', () => {

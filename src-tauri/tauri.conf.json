@@ -1,41 +1,15 @@
 {
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "oclive-pack-editor",
+  "version": "0.5.0",
+  "identifier": "com.oclive.packeditor",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
-    "devPath": "http://localhost:5173",
-    "distDir": "../dist"
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
   },
-  "package": {
-    "productName": "oclive-pack-editor",
-    "version": "0.5.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "protocol": {
-        "asset": true,
-        "assetScope": ["**"]
-      },
-      "dialog": {
-        "open": true,
-        "confirm": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "targets": "all",
-      "identifier": "com.oclive.packeditor",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ]
-    },
-    "security": {
-      "csp": null
-    },
+  "app": {
     "windows": [
       {
         "title": "oclive 角色包编写器",
@@ -43,6 +17,26 @@
         "height": 720,
         "resizable": true
       }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http://localhost:5173 http://127.0.0.1:5173 http://127.0.0.1:8420 ws://127.0.0.1:8420; img-src 'self' asset: https://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'unsafe-eval'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "dialog": {
+      "open": true,
+      "confirm": true
+    }
   }
 }

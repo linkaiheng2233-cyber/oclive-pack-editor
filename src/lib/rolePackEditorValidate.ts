@@ -138,7 +138,7 @@ export async function validateRolePackEditorState(
 
   if (typeof window !== 'undefined' && '__TAURI__' in window) {
     try {
-      const { invoke } = await import('@tauri-apps/api/tauri')
+      const { invoke } = await import('@tauri-apps/api/core')
       const manifest = JSON.parse(manifestJson) as Record<string, unknown>
       await invoke('validate_blueprint_v2_json', {
         manifestText: manifestJson,

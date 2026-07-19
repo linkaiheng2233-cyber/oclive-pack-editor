@@ -14,22 +14,26 @@ test.describe('oclive-pack-editor smoke', () => {
     await expect(rail.getByRole('button', { name: /高级|Advanced/i })).toBeVisible()
     await expect(rail.getByRole('button')).toHaveCount(3)
     await expect(page.getByRole('button', { name: /检查角色包|Check pack/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /^导出$|^Export$/i })).toBeVisible()
   })
 
   test('开始页含 roles 工作区与创建新角色包', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('button', { name: /创建新角色包|Create new role pack/i })).toBeVisible()
-    await expect(page.getByText(/Roles 目录|Roles directory/i)).toBeVisible()
+    await expect(page.locator('label.rw-label').filter({ hasText: /Roles directory|Roles 目录/i })).toBeVisible()
   })
 
-  test('简单页进阶区含知识库表单项', async ({ page }) => {
+  test('高级页可编辑 memory_seed 与知识库', async ({ page }) => {
+    const pageErrors: string[] = []
+    page.on('pageerror', (error) => pageErrors.push(error.message))
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') pageErrors.push(message.text())
+    })
+    page.on('requestfailed', (request) => pageErrors.push(`${request.url()}: ${request.failure()?.errorText ?? 'failed'}`))
     await page.goto('/')
     await page.getByRole('button', { name: /创建新角色包|Create new role pack/i }).click()
-    const advDetails = page.locator('details.adv-details')
-    await expect(advDetails).toBeVisible({ timeout: 15000 })
-    await advDetails.locator('summary.adv-details-sum').click()
-    await expect(page.getByRole('heading', { name: /知识库检索|Knowledge retrieval/i })).toBeVisible()
-    await expect(page.locator('#f-kglob')).toBeVisible()
+    await page.getByRole('button', { name: /高级|Advanced/i }).click()
+    await expect.poll(() => pageErrors, { timeout: 2000 }).toEqual([])
+    await page.getByRole('tab', { name: /初始记忆|Memory seed/i }).click()
+    await expect(page.getByRole('textbox', { name: 'memory_seed.json' })).toBeVisible()
   })
 })

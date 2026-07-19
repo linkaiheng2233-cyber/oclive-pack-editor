@@ -29,6 +29,9 @@ const {
   manifestText,
   settingsText,
   corePersonalityText,
+  memorySeedJson,
+  userIdentityFiles,
+  userIdentitiesIndexJson,
   worldKnowledgeTexts,
   sceneEditorEntries,
   validationErrors,
@@ -452,6 +455,9 @@ function onCreateNewPack() {
           v-model:manifest-text="manifestText"
           v-model:settings-text="settingsText"
           v-model:core-personality="corePersonalityText"
+          v-model:memory-seed-json="memorySeedJson"
+          v-model:user-identity-files="userIdentityFiles"
+          v-model:user-identities-index-json="userIdentitiesIndexJson"
           v-model:world-knowledge-texts="worldKnowledgeTexts"
           v-model:scene-editor-entries="sceneEditorEntries"
           v-model:advanced-tab="advancedTab"

@@ -69,6 +69,12 @@ export async function validateExportPackDirectory(
     id,
     extra,
   )
+  for (const { relPath, file } of extra?.preservedFiles ?? []) {
+    const rel = relPath.replace(/\\/g, '/').replace(/^\/+/, '')
+    if (!rel || rel.split('/').some((part) => !part || part === '.' || part === '..')) continue
+    const key = `${id}/${rel}`
+    if (!files.has(key)) files.set(key, await file.text())
+  }
   const payload = [...files.entries()].map(([path, content]) => ({ path, content }))
 
   if (!isTauriRuntime()) {
@@ -76,7 +82,7 @@ export async function validateExportPackDirectory(
   }
 
   try {
-    const { invoke } = await import('@tauri-apps/api/tauri')
+    const { invoke } = await import('@tauri-apps/api/core')
     await invoke('validate_role_pack_export', {
       roleId: id,
       files: payload,

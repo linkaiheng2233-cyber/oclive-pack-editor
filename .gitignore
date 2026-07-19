@@ -30,6 +30,7 @@ dist-ssr
 
 # Tauri / Rust
 src-tauri/target
+src-tauri/gen
 
 # one-off icon source for `npx tauri icon` (optional)
 /app-icon.png

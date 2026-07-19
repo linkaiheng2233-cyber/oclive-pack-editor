@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/tauri'
-import { confirm, open } from '@tauri-apps/api/dialog'
+import { invoke } from '@tauri-apps/api/core'
+import { confirm, open } from '@tauri-apps/plugin-dialog'
 import {
   buildRolePackFiles,
   type ExportableManifest,
@@ -30,7 +30,7 @@ export async function confirmOverwriteExistingRoleDir(
   if (!exists) return true
   const message = duplicateRoleFolderConfirmMessage(roleId)
   if (isTauriRuntime()) {
-    return confirm(message, { title: '覆盖已有角色包？', type: 'warning' })
+    return confirm(message, { title: '覆盖已有角色包？' })
   }
   return window.confirm(message)
 }
@@ -45,20 +45,33 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary)
 }
 
+function binaryFilesForExport(extra?: Partial<PackExtraFiles>) {
+  const catalog = extra?.catalogAssets?.length
+    ? extra.catalogAssets
+    : (extra?.emotionImages ?? []).map((f) => ({
+        relPath: `assets/images/${f.name}`,
+        file: f,
+      }))
+  const out: { relPath: string; file: File }[] = []
+  const seen = new Set<string>()
+  for (const item of [...catalog, ...(extra?.preservedFiles ?? [])]) {
+    const relPath = item.relPath.replace(/\\/g, '/').replace(/^\/+/, '')
+    const parts = relPath.split('/')
+    if (!relPath || parts.some((part) => !part || part === '.' || part === '..')) continue
+    if (seen.has(relPath)) continue
+    seen.add(relPath)
+    out.push({ relPath, file: item.file })
+  }
+  return out
+}
+
 async function binaryPayloadForCatalogAssets(
   roleId: string,
   extra?: Partial<PackExtraFiles>,
 ): Promise<{ path: string; base64: string }[]> {
   const id = roleId.trim()
-  const assets =
-    extra?.catalogAssets?.length
-      ? extra.catalogAssets
-      : (extra?.emotionImages ?? []).map((f) => ({
-          relPath: `assets/images/${f.name}`,
-          file: f,
-        }))
   const out: { path: string; base64: string }[] = []
-  for (const { relPath, file } of assets) {
+  for (const { relPath, file } of binaryFilesForExport(extra)) {
     const buf = await file.arrayBuffer()
     out.push({
       path: `${id}/${relPath.replace(/\\/g, '/')}`,
@@ -91,14 +104,7 @@ export async function writePackToRolesRoot(
     await w.write(content)
     await w.close()
   }
-  const assets =
-    extra?.catalogAssets?.length
-      ? extra.catalogAssets
-      : (extra?.emotionImages ?? []).map((f) => ({
-          relPath: `assets/images/${f.name}`,
-          file: f,
-        }))
-  for (const { relPath, file } of assets) {
+  for (const { relPath, file } of binaryFilesForExport(extra)) {
     const rel = `${id}/${relPath.replace(/\\/g, '/')}`
     const parts = rel.split('/').filter(Boolean)
     let dir: FileSystemDirectoryHandle = rolesRoot

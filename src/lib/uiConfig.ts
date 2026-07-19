@@ -1,6 +1,6 @@
 import { isTauriRuntime } from './exportFolder'
 import { defaultUiConfig, type SlotConfig, type UiConfig } from '../types/uiConfig'
-import { invoke } from '@tauri-apps/api/tauri'
+import { invoke } from '@tauri-apps/api/core'
 
 type DiskSlotKey =
   | 'chat_toolbar'

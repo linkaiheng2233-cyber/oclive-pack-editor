@@ -65,6 +65,12 @@ describe('blueprint roundtrip', () => {
     expect(s2.model).toBeUndefined()
     expect(bp.meta.ollama_model).toBeUndefined()
   })
+
+  it('blocks v3 blueprints instead of silently downgrading them', () => {
+    expect(() => parseBlueprintV2Json('{"schema_version":3,"meta":{},"slot_registry":{}}')).toThrow(
+      /v3 \/ dual-core/,
+    )
+  })
 })
 
 describe('parseBlueprintV2Json', () => {

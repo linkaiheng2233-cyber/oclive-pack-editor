@@ -2,7 +2,11 @@
  * 从 .zip / .ocpak 导入角色包，用于编辑或另存为新包。
  */
 import JSZip from 'jszip'
-import { mergedSceneIds } from './exportPack'
+import {
+  mergedSceneIds,
+  type RolePackBinaryFile,
+  type RolePackTextFile,
+} from './exportPack'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
 import {
   parseSceneFromDisk,
@@ -13,6 +17,7 @@ import {
   isLegacyRolePackLayout,
   isV2RolePackLayout,
   parseBlueprintV2Json,
+  pickEditorPreservedBlueprintFields,
   PIPELINE_BLUEPRINT_FILENAME,
   REPLY_QUALITY_ANCHOR_REL_PATH,
 } from './blueprintV2'
@@ -35,6 +40,14 @@ export type ImportedRolePack = {
   uiJson: string
   /** roles/{id}/author.json（可选） */
   authorJson: string
+  /** roles/{id}/memory_seed.json（可选，只读初始记忆） */
+  memorySeedJson?: string
+  /** roles/{id}/user_identities/*.md 模板 */
+  userIdentityFiles?: RolePackTextFile[]
+  /** roles/{id}/user_identities/index.json */
+  userIdentitiesIndexJson?: string
+  preservedFiles?: RolePackBinaryFile[]
+  preservedBlueprintFields?: Record<string, unknown>
   /** 从 scenes/{id}/ 还原的用户场景编辑态 */
   sceneEditorEntries: SceneEditorEntry[]
 }
@@ -114,6 +127,7 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
   if (!blueprintRaw.trim()) throw new Error('pipeline.ocblueprint 为空')
 
   const bp = parseBlueprintV2Json(blueprintRaw)
+  const preservedBlueprintFields = pickEditorPreservedBlueprintFields(bp)
   const { manifest, settings } = blueprintToLegacyParts(bp)
   const anchorFromMeta =
     typeof settings.reply_quality_anchor === 'string'
@@ -135,6 +149,21 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
 
   const uiJson = (await readText('ui.json')).trim()
   const authorJson = (await readText('author.json')).trim()
+  const memorySeedJson = await readText('memory_seed.json')
+  const userIdentitiesIndexJson = await readText('user_identities/index.json')
+  const userIdentityFiles: RolePackTextFile[] = []
+  for (const n of names) {
+    const path = normalizeZipPath(n)
+    if (!path.startsWith(`${roleId}/user_identities/`) || !path.endsWith('.md')) continue
+    if (!isSafePathUnderRole(path, roleId)) continue
+    const entry = zip.file(path)
+    if (!entry) continue
+    userIdentityFiles.push({
+      path: path.slice(`${roleId}/`.length),
+      content: (await entry.async('string')) as string,
+    })
+  }
+  userIdentityFiles.sort((a, b) => a.path.localeCompare(b.path))
 
   const knowledgeMarkdownFiles: KnowledgeMarkdownFile[] = []
   for (const n of names) {
@@ -182,6 +211,42 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
     sceneEditorEntries.push(parseSceneFromDisk(sid, sceneJson, description))
   }
 
+  const knownExact = new Set([
+    PIPELINE_BLUEPRINT_FILENAME,
+    'core_personality.txt',
+    'memory_seed.json',
+    'creator_message.txt',
+    'ui.json',
+    'author.json',
+    'config.json',
+    'portrait_catalog.json',
+    'user_identities/index.json',
+    REPLY_QUALITY_ANCHOR_REL_PATH,
+  ])
+  const preservedFiles: RolePackBinaryFile[] = []
+  for (const n of names) {
+    const path = normalizeZipPath(n)
+    if (!isSafePathUnderRole(path, roleId)) continue
+    const rel = path.slice(`${roleId}/`.length)
+    if (
+      knownExact.has(rel) ||
+      rel.startsWith('knowledge/') ||
+      rel.startsWith('assets/images/') ||
+      rel.startsWith('scenes/') ||
+      rel.startsWith('user_identities/')
+    ) {
+      continue
+    }
+    const entry = zip.file(path)
+    if (!entry) continue
+    const blob = await entry.async('blob')
+    const base = rel.split('/').pop() ?? 'file'
+    preservedFiles.push({
+      relPath: rel,
+      file: new File([blob], base, { type: blob.type || 'application/octet-stream' }),
+    })
+  }
+
   const seenAssetNames = new Set(emotionImageFiles.map((f) => f.name))
   if (portraitCatalogJson.trim()) {
     try {
@@ -219,6 +284,11 @@ export async function importRolePackFromZip(file: File): Promise<ImportedRolePac
     creatorMessage,
     uiJson,
     authorJson,
+    memorySeedJson,
+    userIdentityFiles,
+    userIdentitiesIndexJson,
+    preservedFiles,
+    preservedBlueprintFields,
     sceneEditorEntries,
   }
 }

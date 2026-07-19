@@ -6,11 +6,11 @@ import {
   invokeSaveRolePackEditor,
 } from './rolePackEditorApi'
 
-vi.mock('@tauri-apps/api/tauri', () => ({
+vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }))
 
-import { invoke } from '@tauri-apps/api/tauri'
+import { invoke } from '@tauri-apps/api/core'
 
 describe('rolePackEditorApi (T05 tauri invoke mapping)', () => {
   beforeEach(() => {

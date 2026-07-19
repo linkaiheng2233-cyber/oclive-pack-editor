@@ -2,6 +2,7 @@ import { DEFAULT_CORE_PERSONALITY_TEXT } from '../defaults'
 import type { CreatorMessageExportMode } from './rolePackCreatorMessage'
 import { emptyAuthorRecRow, parseAuthorImport, type AuthorRecRow } from './authorPack'
 import type { ImportedRolePack } from './importPack'
+import type { RolePackBinaryFile, RolePackTextFile } from './exportPack'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
 import {
   parseConfigJson,
@@ -27,6 +28,11 @@ export type ApplyLoadedPackInput = {
   creatorMessage?: string
   uiJson?: string
   authorJson?: string
+  memorySeedJson?: string
+  userIdentityFiles?: RolePackTextFile[]
+  userIdentitiesIndexJson?: string
+  preservedFiles?: RolePackBinaryFile[]
+  preservedBlueprintFields?: Record<string, unknown>
   sceneEditorEntries?: SceneEditorEntry[]
 }
 
@@ -50,6 +56,11 @@ export type ApplyLoadedPackTargets = {
   authorRecommendedRows: { value: AuthorRecRow[] }
   authorIncludeSuggestedUi: { value: boolean }
   authorSuggestedBackendsJson: { value: string }
+  memorySeedJson?: { value: string }
+  userIdentityFiles?: { value: RolePackTextFile[] }
+  userIdentitiesIndexJson?: { value: string }
+  preservedFiles?: { value: RolePackBinaryFile[] }
+  preservedBlueprintFields?: { value: Record<string, unknown> }
   applyKnowledgeBundle?: (files: KnowledgeMarkdownFile[], legacyWorldBody?: string) => void
   applySceneEditorEntries?: (entries: SceneEditorEntry[]) => void
   syncFormsFromJson: () => void
@@ -69,6 +80,11 @@ export function importedPackToApplyInput(imp: ImportedRolePack): ApplyLoadedPack
     creatorMessage: imp.creatorMessage,
     uiJson: imp.uiJson,
     authorJson: imp.authorJson,
+    memorySeedJson: imp.memorySeedJson,
+    userIdentityFiles: imp.userIdentityFiles,
+    userIdentitiesIndexJson: imp.userIdentitiesIndexJson,
+    preservedFiles: imp.preservedFiles,
+    preservedBlueprintFields: imp.preservedBlueprintFields,
     sceneEditorEntries: imp.sceneEditorEntries,
   }
 }
@@ -80,6 +96,17 @@ export function applyLoadedPackToEditor(input: ApplyLoadedPackInput, targets: Ap
   targets.corePersonalityText.value =
     (input.corePersonality ?? '').trim() || DEFAULT_CORE_PERSONALITY_TEXT
   targets.worldviewMarkdown.value = input.worldviewMarkdown ?? ''
+  if (targets.memorySeedJson) targets.memorySeedJson.value = input.memorySeedJson ?? ''
+  if (targets.userIdentityFiles) {
+    targets.userIdentityFiles.value = (input.userIdentityFiles ?? []).map((f) => ({ ...f }))
+  }
+  if (targets.userIdentitiesIndexJson) {
+    targets.userIdentitiesIndexJson.value = input.userIdentitiesIndexJson ?? ''
+  }
+  if (targets.preservedFiles) targets.preservedFiles.value = input.preservedFiles ?? []
+  if (targets.preservedBlueprintFields) {
+    targets.preservedBlueprintFields.value = { ...(input.preservedBlueprintFields ?? {}) }
+  }
   targets.knowledgeMarkdownFiles.value = (input.knowledgeMarkdownFiles ?? []).map((d) => ({
     path: normalizeKnowledgePath(d.path),
     content: d.content,

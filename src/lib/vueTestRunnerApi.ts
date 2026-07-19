@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/tauri'
+import { invoke } from '@tauri-apps/api/core'
 
 export const VUE_TEST_RUNNER_PLUGIN_ID = 'com.oclive.official_vue_test_runner'
 

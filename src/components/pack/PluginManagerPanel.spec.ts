@@ -4,14 +4,14 @@ import { createI18n } from 'vue-i18n'
 import zhCN from '../../i18n/locales/zh-CN'
 import RolePackEditorPanel from './RolePackEditorPanel.vue'
 
-vi.mock('@tauri-apps/api/dialog', () => ({ open: vi.fn() }))
+vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }))
 vi.mock('../../lib/rolePackEditorApi', () => ({
   invokeLoadRolePackForEditor: vi.fn(),
   invokeSaveRolePackEditor: vi.fn(),
 }))
 vi.mock('../../lib/exportFolder', () => ({ isTauriRuntime: () => true }))
 
-import { open } from '@tauri-apps/api/dialog'
+import { open } from '@tauri-apps/plugin-dialog'
 import * as api from '../../lib/rolePackEditorApi'
 
 const manifestMinimal = {

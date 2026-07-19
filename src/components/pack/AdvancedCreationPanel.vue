@@ -7,6 +7,7 @@ import type { PortraitSlotId } from '../../lib/portraitCatalog'
 import type { ExtraEmotionUserChoices } from '../../lib/portraitExtraUser'
 import type { SceneEditorEntry } from '../../lib/scenePackUser'
 import type { WorldKnowledgeTexts } from '../../lib/worldKnowledgeUser'
+import type { RolePackTextFile } from '../../lib/exportPack'
 import {
   CORE_FAQ,
   IMAGES_FAQ,
@@ -35,10 +36,13 @@ const { t } = useI18n()
 const manifestText = defineModel<string>('manifestText', { required: true })
 const settingsText = defineModel<string>('settingsText', { required: true })
 const corePersonality = defineModel<string>('corePersonality', { required: true })
+const memorySeedJson = defineModel<string>('memorySeedJson', { required: true })
+const userIdentityFiles = defineModel<RolePackTextFile[]>('userIdentityFiles', { required: true })
+const userIdentitiesIndexJson = defineModel<string>('userIdentitiesIndexJson', { required: true })
 const worldKnowledgeTexts = defineModel<WorldKnowledgeTexts>('worldKnowledgeTexts', { required: true })
 const sceneEditorEntries = defineModel<SceneEditorEntry[]>('sceneEditorEntries', { required: true })
 const advancedTab = defineModel<
-  'manifest' | 'settings' | 'core' | 'world' | 'scenes' | 'images'
+  'manifest' | 'settings' | 'core' | 'memory' | 'identities' | 'world' | 'scenes' | 'images'
 >('advancedTab', {
   required: true,
 })
@@ -51,7 +55,10 @@ const emit = defineEmits<{
   portraitExtraRemove: [index: number]
 }>()
 
-const TAB_ORDER = ['manifest', 'settings', 'core', 'world', 'scenes', 'images'] as const
+const TAB_ORDER = ['manifest', 'settings', 'core', 'memory', 'identities', 'world', 'scenes', 'images'] as const
+const MEMORY_SEED_PLACEHOLDER = '{\n  "schema_version": 1,\n  "memories": [],\n  "extensions": {}\n}'
+const USER_IDENTITIES_INDEX_PLACEHOLDER =
+  '{\n  "schema_version": 1,\n  "default_identity_id": "friend",\n  "identities": {}\n}'
 
 defineProps<{
   emotionSummary: string
@@ -87,6 +94,18 @@ function onToolbarKeydown(e: KeyboardEvent): void {
     advancedTab.value = order[(i + 1) % order.length]!
   }
 }
+
+function addIdentityFile(): void {
+  const used = new Set(userIdentityFiles.value.map((f) => f.path))
+  let i = 1
+  let path = `user_identities/identity_${i}.md`
+  while (used.has(path)) path = `user_identities/identity_${++i}.md`
+  userIdentityFiles.value = [...userIdentityFiles.value, { path, content: '' }]
+}
+
+function removeIdentityFile(index: number): void {
+  userIdentityFiles.value = userIdentityFiles.value.filter((_, i) => i !== index)
+}
 </script>
 
 <template>
@@ -114,6 +133,30 @@ function onToolbarKeydown(e: KeyboardEvent): void {
         <span class="tab-stack">
           <span class="tab-title">{{ t("advancedCreation.tabs.manifest") }}</span>
           <span class="tab-file">{{ t('packEditor.rolePack.manifestCard') }}</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="advancedTab === 'identities'"
+        :class="{ on: advancedTab === 'identities' }"
+        @click="advancedTab = 'identities'"
+      >
+        <span class="tab-stack">
+          <span class="tab-title">{{ t("advancedCreation.tabs.identities") }}</span>
+          <span class="tab-file">user_identities/*.md</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="advancedTab === 'memory'"
+        :class="{ on: advancedTab === 'memory' }"
+        @click="advancedTab = 'memory'"
+      >
+        <span class="tab-stack">
+          <span class="tab-title">{{ t("advancedCreation.tabs.memory") }}</span>
+          <span class="tab-file">memory_seed.json</span>
         </span>
       </button>
       <button
@@ -237,6 +280,40 @@ function onToolbarKeydown(e: KeyboardEvent): void {
           </div>
         </details>
       </div>
+    </section>
+    <section v-show="advancedTab === 'memory'" class="panel adv-single">
+      <div class="adv-section-head">
+        <h2 class="adv-h2"><span>{{ t("advancedCreation.sections.memory.title") }}</span></h2>
+        <p class="adv-lead">{{ t("advancedCreation.sections.memory.lead") }}</p>
+      </div>
+      <textarea
+        v-model="memorySeedJson"
+        spellcheck="false"
+        class="ta"
+        aria-label="memory_seed.json"
+        :placeholder="MEMORY_SEED_PLACEHOLDER"
+      />
+    </section>
+    <section v-show="advancedTab === 'identities'" class="panel adv-single">
+      <div class="adv-section-head">
+        <h2 class="adv-h2"><span>{{ t("advancedCreation.sections.identities.title") }}</span></h2>
+        <p class="adv-lead">{{ t("advancedCreation.sections.identities.lead") }}</p>
+      </div>
+      <label class="adv-lead" for="user-identities-index">user_identities/index.json</label>
+      <textarea
+        id="user-identities-index"
+        v-model="userIdentitiesIndexJson"
+        class="ta"
+        spellcheck="false"
+        :placeholder="USER_IDENTITIES_INDEX_PLACEHOLDER"
+      />
+      <div v-if="userIdentityFiles.length === 0" class="adv-lead">{{ t("advancedCreation.sections.identities.empty") }}</div>
+      <div v-for="(file, index) in userIdentityFiles" :key="index" class="identity-editor-row">
+        <input v-model="file.path" class="text-input" :aria-label="t('advancedCreation.sections.identities.pathLabel')" />
+        <textarea v-model="file.content" class="ta" :aria-label="file.path" />
+        <button type="button" class="secondary-btn" @click="removeIdentityFile(index)">{{ t("advancedCreation.sections.identities.remove") }}</button>
+      </div>
+      <button type="button" class="secondary-btn" @click="addIdentityFile">{{ t("advancedCreation.sections.identities.add") }}</button>
     </section>
     <section v-show="advancedTab === 'settings'" class="panel adv-single">
       <div class="adv-section-head">

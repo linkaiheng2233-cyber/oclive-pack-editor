@@ -2,7 +2,7 @@
  * 调用本机 oclive HTTP API（`--api`）。桌面版走 Tauri `reqwest`；浏览器开发态用 `fetch`（需 oclive 已配置 CORS）。
  */
 
-import { invoke } from '@tauri-apps/api/tauri'
+import { invoke } from '@tauri-apps/api/core'
 import { isTauriRuntime } from './exportFolder'
 import {
   normalizeHttpBaseUrl,

@@ -356,6 +356,8 @@ export default {
       settings: "Chat & plugins",
       core: "Core profile & message",
       coreFile: "core / message",
+      memory: "Memory seed",
+      identities: "User identity templates",
       world: "World & knowledge",
       scenes: "Scenes",
       images: "Emotion assets",
@@ -439,6 +441,18 @@ export default {
           faqAria: "Player message FAQ",
           faqTitle: "FAQ · Player message (before / after examples)",
         },
+      },
+      memory: {
+        title: "Memory seed (memory_seed.json)",
+        lead: "Creator-provided read-only memories. This is separate from runtime long-term memory, short-term memory, and transient situation state.",
+      },
+      identities: {
+        title: "User identity templates (user_identities/*.md)",
+        lead: "These templates travel independently from core personality and memory, and are mapped to relations through index.json.",
+        empty: "No identity templates yet.",
+        pathLabel: "Identity template path",
+        add: "Add identity template",
+        remove: "Remove",
       },
       world: {
         title: "World & knowledge (Markdown)",
@@ -992,4 +1006,3 @@ export default {
     },
   },
 };
-

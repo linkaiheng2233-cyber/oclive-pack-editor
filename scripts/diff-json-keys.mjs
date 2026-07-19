@@ -1,5 +1,5 @@
 /**
- * 对比 `src/lib/jsonKeys.ts` 与 oclivenewnew `crates/oclive_validation/src/json_keys.rs` 中的顶层键白名单。
+ * 对比 `src/lib/jsonKeys.ts` 与 oclivenewnew `kernel/crates/oclive_validation/src/json_keys.rs` 中的顶层键白名单。
  * 用于发版或与上游契约对齐时的例行检查。
  *
  * 环境变量：

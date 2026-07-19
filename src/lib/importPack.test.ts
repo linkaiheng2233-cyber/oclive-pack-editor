@@ -79,6 +79,40 @@ describe('importRolePackFromZip', () => {
     expect(r.creatorMessage).toBe('a\nb')
   })
 
+  it('imports memory seed and user identity templates without mixing them', async () => {
+    const z = new JSZip()
+    z.file(`hero/${PIPELINE_BLUEPRINT_FILENAME}`, minimalBlueprintJsonForRole('hero'))
+    z.file('hero/core_personality.txt', 'persona')
+    z.file('hero/memory_seed.json', '{"schema_version":1,"memories":[]}\n')
+    z.file('hero/user_identities/friend.md', '# Friend\n')
+    z.file('hero/user_identities/learner.md', '# Learner\n')
+    const f = await zipToFile(z, 'p.zip')
+    const r = await importRolePackFromZip(f)
+    expect(r.corePersonality).toBe('persona')
+    expect(r.memorySeedJson).toContain('"memories"')
+    expect(r.userIdentityFiles).toEqual([
+      { path: 'user_identities/friend.md', content: '# Friend\n' },
+      { path: 'user_identities/learner.md', content: '# Learner\n' },
+    ])
+  })
+
+  it('preserves safe extension files and blueprint fields for re-export', async () => {
+    const z = new JSZip()
+    const blueprint = JSON.parse(minimalBlueprintJsonForRole('hero'))
+    blueprint.includes = [{ path: 'blueprint/includes/routes.json', mode: 'strict' }]
+    z.file(`hero/${PIPELINE_BLUEPRINT_FILENAME}`, JSON.stringify(blueprint))
+    z.file('hero/core_personality.txt', 'persona')
+    z.file('hero/voice_profile.json', '{"schema_version":1}')
+    z.file('hero/blueprint/includes/routes.json', '{"routes":[]}')
+    const f = await zipToFile(z, 'p.zip')
+    const r = await importRolePackFromZip(f)
+    expect(r.preservedBlueprintFields?.includes).toEqual(blueprint.includes)
+    expect(r.preservedFiles?.map((x) => x.relPath)).toEqual([
+      'voice_profile.json',
+      'blueprint/includes/routes.json',
+    ])
+  })
+
   it('loads emotion images under assets/images', async () => {
     const z = new JSZip()
     z.file(`hero/${PIPELINE_BLUEPRINT_FILENAME}`, minimalBlueprintJsonForRole('hero'))

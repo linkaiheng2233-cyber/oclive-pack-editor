@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/tauri'
+import { invoke } from '@tauri-apps/api/core'
 
 export type RolePackListEntry = {
   roleId: string
@@ -19,6 +19,8 @@ export type RolePackEditorLoadPayload = {
   portraitCatalogText?: string
   catalogAssets?: RolePackCatalogAssetPayload[]
   userIdentitiesIndexText?: string
+  memorySeedText?: string
+  userIdentityFiles?: Array<{ path: string; content: string }>
   mergedSceneIds: string[]
 }
 

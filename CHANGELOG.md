@@ -2,6 +2,18 @@
 
 本文件随 **Git 标签 / Release** 更新；维护者发版步骤见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
+## [Unreleased]
+
+### Added
+
+- 高级创作支持独立编辑与校验 `memory_seed.json`、`user_identities/index.json` 和身份模板 Markdown。
+- zip / ocpak 导入再导出会透传路径安全的未知卫星文件，并保留蓝图扩展字段。
+
+### Fixed
+
+- 修正相邻主仓校验 crate 与 wasm crate 路径；桌面端默认 roles 根对齐 `distros/chat-pro/roles`。
+- 修正编辑视图已访问集合的响应式更新，避免高级异步面板首次切换后保持空白。
+
 ## [0.5.0] - 2026-07-10
 
 ### Changed
@@ -15,10 +27,6 @@
 - **试聊 HTTP**：`runtimeApi` 的 `RuntimeChatMeta` 识别 oclive `--api` 回包 **`personality_source`**（`vector` | `profile`）；试聊消息条展示 **人格·七维 / 人格·档案** 芯片（有该字段时）。
 - **简单创作 / 契约文案**：`evolution.personality_source`、**`max_change_per_event`** 与 UI 提示对齐 oclivenewnew **性格档案**设计轴心（核心/可变档案、七维视图）；README、CHANGELOG 同步。
 - **文档**：README「与运行时的关系」补充 **`creator_message.txt`** 与启动器职责链接；补充 **性格档案**与 oclivenewnew `personality-archive-notes.md`、`design-axis-evolution.md` 链接；CONTRIBUTING **跨仓约定**（文件名与 oclive-launcher 同步）。
-
-## [Unreleased]
-
-(none)
 
 ## [0.4.0] - 2026-06-12
 
@@ -40,10 +48,6 @@
 
 - `vue-tsc` 编译：清理未使用的 emotion 批量 API 与 portrait slot 类型。
 - Live2D / rig3d 资源按 catalog `path` 写入 zip 与 roles 文件夹（不再一律落在 `assets/images/`）。
-
-## [Unreleased]
-
-(none)
 
 ## 0.2.0
 

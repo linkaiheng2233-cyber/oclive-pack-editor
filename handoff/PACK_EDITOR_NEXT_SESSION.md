@@ -1,6 +1,6 @@
-# 编写器 · 进度与下一步（更新 2026-06-12）
+# 编写器 · 进度与下一步（更新 2026-07-19）
 
-## 已完成（Sprint A–D + v0.4.0）
+## 已完成（Sprint A–D + v0.5.0）
 
 | 项 | 说明 |
 |----|------|
@@ -11,19 +11,22 @@
 | **Sprint A** | `PortraitCatalogEditor`（7 槽 + 额外条目 + live2d picker）；`visual_presentation` UI |
 | **Sprint D** | 分级导出 profile：`desktop-full` / `vscode-lite` / `theater` |
 | 导入 roundtrip | zip 导入恢复 `portrait_catalog` + `config.json` visual 字段 |
+| 人设 / 记忆解耦 | 高级编辑 `memory_seed.json` 与 `user_identities/`；zip 和磁盘加载均可回填 |
+| 无损再导出 | 保留蓝图 `includes` / `groups` / `expert_overlay` / `runtime_config` 与安全卫星文件 |
 | 遗留清理 | 删除 `EmotionAssetsControl.vue` |
 
-## 手测清单（v0.4.0）— 已验收
+## 自动化验收（v0.5.0）
 
 | # | 场景 | 结果 | 证据 |
 |---|------|------|------|
-| 1 | 简单 7 槽 → 导出 → roles 对话立绘 | ✅ | `npm test` 145/145 · `collectCatalogBinaryAssets` · 主仓 `portrait_catalog_fallback` |
+| 1 | 简单 7 槽 → 导出 → roles 对话立绘 | ✅ | `collectCatalogBinaryAssets` · 主仓 `portrait_catalog_fallback` |
 | 2 | 高级 `extra_*` + cluster → catalog >7 条 | ✅ | `buildPortraitCatalogJson` / `portrait_director_catalog` |
 | 3 | 分级导出 vscode-lite / theater | ✅ | `applyExportProfile` 单测 |
 | 4 | Tauri 检查含 catalog id 重复 | ✅ | `validatePortraitCatalogState` + Tauri export validate 占位路径 |
-| 5 | 双仓自动化 | ✅ | pack-editor `npm run build` · 主仓 portrait + invoke_hotpath 10/10 |
+| 5 | 双仓自动化 | ✅ | pack-editor `npm run build`；主仓结果以其 `AI_VERIFICATION_PROTOCOL.md` 与测试矩阵为准 |
+| 6 | 人设 / 记忆 / 卫星文件 roundtrip | ✅ | Vitest 导入导出与路径安全用例；Playwright 高级页 smoke |
 
-**主程序 E2E**：加载带 `portrait_catalog.json` 的包后，`visual_state_id` + `performance_directive` 由 OOCP **S16** 与 `invoke_hotpath_matrix` 断言；legacy mumu 无字段。
+**主程序 E2E**：加载带 `portrait_catalog.json` 的包后，`visual_state_id` + `performance_directive` 由主仓 OOCP 与 invoke 热路径矩阵负责断言；场景编号与条数以主仓测试 SSOT 为准。
 
 ## 下一步（非阻塞）
 

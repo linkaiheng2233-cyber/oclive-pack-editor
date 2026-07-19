@@ -48,6 +48,9 @@ import {
   readManifestCreatorMessageToDownloader,
 } from '../lib/manifestCreatorDownloader'
 import type { CreatorMessageExportMode } from '../lib/rolePackCreatorMessage'
+import type { RolePackBinaryFile, RolePackTextFile } from '../lib/exportPack'
+import { validateMemorySeedJson } from '../lib/memorySeed'
+import { validateUserIdentityBundle } from '../lib/userIdentities'
 import {
   applyExportProfile,
   buildPortraitCatalogJson,
@@ -111,6 +114,12 @@ export function usePackEditor() {
   const manifestText = ref(DEFAULT_MANIFEST_JSON)
   const settingsText = ref(DEFAULT_SETTINGS_JSON)
   const corePersonalityText = ref(DEFAULT_CORE_PERSONALITY_TEXT)
+  /** 创作者维护的只读初始记忆；与运行时 LTM/STM 分离。 */
+  const memorySeedJson = ref('')
+  const userIdentityFiles = ref<RolePackTextFile[]>([])
+  const userIdentitiesIndexJson = ref('')
+  const preservedFiles = ref<RolePackBinaryFile[]>([])
+  const preservedBlueprintFields = ref<Record<string, unknown>>({})
   const worldviewMarkdown = ref('')
   const worldKnowledgeTexts = ref<WorldKnowledgeTexts>(emptyWorldKnowledgeTexts())
   const extraKnowledgeFiles = ref<KnowledgeMarkdownFile[]>([])
@@ -204,7 +213,7 @@ export function usePackEditor() {
   }
 
   const creationMode = ref<'simple' | 'advanced'>('simple')
-  const advancedTab = ref<'manifest' | 'settings' | 'core' | 'world' | 'scenes' | 'images'>('manifest')
+  const advancedTab = ref<'manifest' | 'settings' | 'core' | 'memory' | 'identities' | 'world' | 'scenes' | 'images'>('manifest')
 
   const simpleM = reactive<SimpleManifestForm>(defaultSimpleManifestForm())
   const simpleS = reactive<SimpleSettingsForm>(defaultSimpleSettingsForm())
@@ -352,6 +361,15 @@ export function usePackEditor() {
         ? { portraitCatalogJson: buildPortraitCatalogJson(slotMap, extras) }
         : {}),
       ...(authorJson ? { authorJson } : {}),
+      ...(memorySeedJson.value.trim() ? { memorySeedJson: memorySeedJson.value } : {}),
+      ...(userIdentityFiles.value.length ? { userIdentityFiles: userIdentityFiles.value } : {}),
+      ...(userIdentitiesIndexJson.value.trim()
+        ? { userIdentitiesIndexJson: userIdentitiesIndexJson.value }
+        : {}),
+      ...(preservedFiles.value.length ? { preservedFiles: preservedFiles.value } : {}),
+      ...(Object.keys(preservedBlueprintFields.value).length
+        ? { preservedBlueprintFields: preservedBlueprintFields.value }
+        : {}),
       sceneEditorEntries: sceneEditorEntries.value.map((e) => ({ ...e })),
     }
   }
@@ -557,16 +575,26 @@ export function usePackEditor() {
     flushSimpleToJson()
     const r = await runAllPackChecks(manifestText.value, settingsText.value)
     const kErrs = validateKnowledgeFiles(knowledgeMarkdownFiles.value)
+    const memoryErrs = validateMemorySeedJson(memorySeedJson.value)
+    const identityErrs = validateUserIdentityBundle(
+      userIdentitiesIndexJson.value,
+      userIdentityFiles.value,
+    )
     const portrait = runPortraitCatalogChecks(
       portraitSlotFiles.value,
       portraitExtraEntries.value,
       Object.keys(portraitSlotFiles.value).length > 0,
     )
-    const errors = [...r.errors, ...kErrs, ...portrait.errors]
+    const errors = [...r.errors, ...kErrs, ...memoryErrs, ...identityErrs, ...portrait.errors]
     return {
       errors,
       wasmUsed: r.wasmUsed,
-      ok: r.ok && kErrs.length === 0 && portrait.errors.length === 0,
+      ok:
+        r.ok &&
+        kErrs.length === 0 &&
+        memoryErrs.length === 0 &&
+        identityErrs.length === 0 &&
+        portrait.errors.length === 0,
     }
   }
 
@@ -844,6 +872,11 @@ export function usePackEditor() {
     manifestText,
     settingsText,
     corePersonalityText,
+    memorySeedJson,
+    userIdentityFiles,
+    userIdentitiesIndexJson,
+    preservedFiles,
+    preservedBlueprintFields,
     worldviewMarkdown,
     knowledgeMarkdownFiles,
     emotionImageFiles,
@@ -964,6 +997,10 @@ export function usePackEditor() {
       manifestText: manifestText.value,
       settingsText: settingsText.value,
       corePersonalityText: corePersonalityText.value,
+      memorySeedJson: memorySeedJson.value,
+      userIdentityFiles: userIdentityFiles.value.map((f) => ({ ...f })),
+      userIdentitiesIndexJson: userIdentitiesIndexJson.value,
+      preservedBlueprintFields: { ...preservedBlueprintFields.value },
       worldKnowledgeTexts: { ...worldKnowledgeTexts.value },
       extraKnowledgeFiles: extraKnowledgeFiles.value.map((d) => ({
         path: d.path,
@@ -998,6 +1035,11 @@ export function usePackEditor() {
     manifestText.value = snapshot.manifestText
     settingsText.value = snapshot.settingsText
     corePersonalityText.value = snapshot.corePersonalityText
+    memorySeedJson.value = snapshot.memorySeedJson ?? ''
+    userIdentityFiles.value = (snapshot.userIdentityFiles ?? []).map((f) => ({ ...f }))
+    userIdentitiesIndexJson.value = snapshot.userIdentitiesIndexJson ?? ''
+    preservedFiles.value = []
+    preservedBlueprintFields.value = { ...(snapshot.preservedBlueprintFields ?? {}) }
     if (snapshot.worldKnowledgeTexts) {
       worldKnowledgeTexts.value = {
         dialogueWorldview: snapshot.worldKnowledgeTexts.dialogueWorldview ?? '',
@@ -1070,6 +1112,9 @@ export function usePackEditor() {
     manifestText,
     settingsText,
     corePersonalityText,
+    memorySeedJson,
+    userIdentityFiles,
+    userIdentitiesIndexJson,
     worldKnowledgeTexts,
     sceneEditorEntries,
     worldviewMarkdown,

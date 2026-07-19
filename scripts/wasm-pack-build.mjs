@@ -16,6 +16,7 @@ const defaultCrate = join(
   editorRoot,
   '..',
   'oclivenewnew',
+  'kernel',
   'crates',
   'oclive_validation_wasm',
 )

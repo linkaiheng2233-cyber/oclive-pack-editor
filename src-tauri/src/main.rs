@@ -7,6 +7,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 use std::time::Duration;
+use tauri::Manager;
 
 use oclive_validation::blueprint_migrate::build_blueprint_v2_from_legacy_dir;
 use oclive_validation::blueprint_v2::{
@@ -383,7 +384,7 @@ fn list_directory_plugins_for_roles_root(
                 collect_directory_plugins_from_root(Path::new(t), &mut map)?;
             }
         }
-        if let Some(ad) = app.path_resolver().app_data_dir() {
+        if let Ok(ad) = app.path().app_data_dir() {
             collect_directory_plugins_from_root(&ad.join("plugins"), &mut map)?;
         }
         collect_directory_plugins_from_root(&PathBuf::from("plugins"), &mut map)?;
@@ -463,10 +464,7 @@ fn read_display_name_from_blueprint(path: &std::path::Path) -> Option<String> {
     use std::fs;
     let text = fs::read_to_string(path).ok()?;
     let bp: serde_json::Value = serde_json::from_str(&text).ok()?;
-    bp.get("meta")?
-        .get("name")?
-        .as_str()
-        .map(str::to_string)
+    bp.get("meta")?.get("name")?.as_str().map(str::to_string)
 }
 
 /// 扫描 roles 根下一级子目录，纳入含 v2 蓝图的角色包；legacy manifest 标记需迁移。
@@ -500,7 +498,8 @@ fn list_role_packs_under_roles_root(roles_root: String) -> Result<Vec<RolePackLi
         let manifest_path = path.join("manifest.json");
 
         if blueprint_path.is_file() {
-            let display_name = read_display_name_from_blueprint(&blueprint_path).unwrap_or_else(|| role_id.clone());
+            let display_name = read_display_name_from_blueprint(&blueprint_path)
+                .unwrap_or_else(|| role_id.clone());
             out.push(RolePackListEntry {
                 role_id,
                 display_name,
@@ -520,18 +519,37 @@ fn list_role_packs_under_roles_root(roles_root: String) -> Result<Vec<RolePackLi
     Ok(out)
 }
 
-/// 首次启动时猜测默认 roles 根（OCLIVE_MONOREPO 或同级 oclivenewnew/roles）。
+/// 首次启动时猜测默认 roles 根（显式 OCLIVE_ROLES_DIR 优先）。
 #[tauri::command]
 fn guess_default_roles_root() -> Option<String> {
     use std::path::PathBuf;
 
-    if let Ok(monorepo) = std::env::var("OCLIVE_MONOREPO") {
-        let roles = PathBuf::from(monorepo.trim()).join("roles");
+    if let Ok(roles_root) = std::env::var("OCLIVE_ROLES_DIR") {
+        let roles = PathBuf::from(roles_root.trim());
         if roles.is_dir() {
-            return roles.canonicalize().ok().map(|p| p.to_string_lossy().to_string());
+            return roles
+                .canonicalize()
+                .ok()
+                .map(|p| p.to_string_lossy().to_string());
         }
     }
-    let sibling = PathBuf::from("..").join("oclivenewnew").join("roles");
+    if let Ok(monorepo) = std::env::var("OCLIVE_MONOREPO") {
+        let roles = PathBuf::from(monorepo.trim())
+            .join("distros")
+            .join("chat-pro")
+            .join("roles");
+        if roles.is_dir() {
+            return roles
+                .canonicalize()
+                .ok()
+                .map(|p| p.to_string_lossy().to_string());
+        }
+    }
+    let sibling = PathBuf::from("..")
+        .join("oclivenewnew")
+        .join("distros")
+        .join("chat-pro")
+        .join("roles");
     if sibling.is_dir() {
         return sibling
             .canonicalize()
@@ -550,6 +568,13 @@ struct RolePackCatalogAsset {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RolePackTextFile {
+    path: String,
+    content: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RolePackEditorLoad {
     manifest_text: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -561,6 +586,9 @@ struct RolePackEditorLoad {
     catalog_assets: Vec<RolePackCatalogAsset>,
     #[serde(skip_serializing_if = "Option::is_none")]
     user_identities_index_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    memory_seed_text: Option<String>,
+    user_identity_files: Vec<RolePackTextFile>,
     merged_scene_ids: Vec<String>,
 }
 
@@ -636,11 +664,7 @@ fn read_portrait_catalog_assets(
             Ok(b) => b,
             Err(_) => continue,
         };
-        let file_name = rel
-            .split('/')
-            .next_back()
-            .unwrap_or("asset")
-            .to_string();
+        let file_name = rel.split('/').next_back().unwrap_or("asset").to_string();
         assets.push(RolePackCatalogAsset {
             file_name,
             base64: base64::engine::general_purpose::STANDARD.encode(bytes),
@@ -648,6 +672,49 @@ fn read_portrait_catalog_assets(
     }
 
     (catalog_text, assets)
+}
+
+fn read_user_identity_files(root: &std::path::Path) -> Result<Vec<RolePackTextFile>, String> {
+    let dir = root.join("user_identities");
+    if !dir.is_dir() {
+        return Ok(Vec::new());
+    }
+    let mut files = Vec::new();
+    fn visit(
+        base: &std::path::Path,
+        current: &std::path::Path,
+        files: &mut Vec<RolePackTextFile>,
+    ) -> Result<(), String> {
+        use std::fs;
+        for entry in fs::read_dir(current).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let path = entry.path();
+            let metadata = fs::symlink_metadata(&path).map_err(|e| e.to_string())?;
+            if metadata.file_type().is_symlink() {
+                continue;
+            }
+            if metadata.is_dir() {
+                visit(base, &path, files)?;
+                continue;
+            }
+            if !metadata.is_file() || path.extension().and_then(|x| x.to_str()) != Some("md") {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(base)
+                .map_err(|e| e.to_string())?
+                .to_string_lossy()
+                .replace('\\', "/");
+            files.push(RolePackTextFile {
+                path: format!("user_identities/{rel}"),
+                content: fs::read_to_string(&path).map_err(|e| e.to_string())?,
+            });
+        }
+        Ok(())
+    }
+    visit(&dir, &dir, &mut files)?;
+    files.sort_by(|a, b| a.path.cmp(&b.path));
+    Ok(files)
 }
 
 fn blueprint_to_legacy_parts(bp: &serde_json::Value) -> Result<(String, String), String> {
@@ -712,7 +779,10 @@ fn blueprint_to_legacy_parts(bp: &serde_json::Value) -> Result<(String, String),
 
     let manifest_text = serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
     let settings_text = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
-    Ok((format!("{}\n", manifest_text), format!("{}\n", settings_text)))
+    Ok((
+        format!("{}\n", manifest_text),
+        format!("{}\n", settings_text),
+    ))
 }
 
 /// 保存时保留旧 `pipeline.ocblueprint` 中由主应用写入的扩展字段。
@@ -771,7 +841,8 @@ fn write_blueprint_from_legacy_parts(
                 if let Some(parent) = anchor_path.parent() {
                     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
                 }
-                fs::write(&anchor_path, format!("{}\n", anchor.trim())).map_err(|e| e.to_string())?;
+                fs::write(&anchor_path, format!("{}\n", anchor.trim()))
+                    .map_err(|e| e.to_string())?;
             }
         }
     }
@@ -834,6 +905,12 @@ fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, Str
             .is_file()
             .then(|| fs::read_to_string(&ui_path).map_err(|e| e.to_string()))
             .transpose()?;
+        let memory_seed_path = root.join("memory_seed.json");
+        let memory_seed_text = memory_seed_path
+            .is_file()
+            .then(|| fs::read_to_string(&memory_seed_path).map_err(|e| e.to_string()))
+            .transpose()?;
+        let user_identity_files = read_user_identity_files(&root)?;
         let (portrait_catalog_text, catalog_assets) = read_portrait_catalog_assets(&root);
         return Ok(RolePackEditorLoad {
             manifest_text,
@@ -842,6 +919,8 @@ fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, Str
             portrait_catalog_text,
             catalog_assets,
             user_identities_index_text,
+            memory_seed_text,
+            user_identity_files,
             merged_scene_ids,
         });
     }
@@ -881,7 +960,8 @@ fn save_role_pack_editor(
         } else {
             let _: serde_json::Value =
                 serde_json::from_str(trimmed).map_err(|e| format!("config.json 解析失败: {e}"))?;
-            std::fs::write(root.join("config.json"), format!("{trimmed}\n")).map_err(|e| e.to_string())?;
+            std::fs::write(root.join("config.json"), format!("{trimmed}\n"))
+                .map_err(|e| e.to_string())?;
         }
     }
     if let Some(text) = user_identities_index_text {
@@ -985,8 +1065,8 @@ fn validate_blueprint_v2_json(
 ) -> Result<(), String> {
     let mut disk: DiskRoleManifest =
         serde_json::from_str(&manifest_text).map_err(|e| format!("manifest 解析失败: {}", e))?;
-    let settings: DiskRoleSettings = serde_json::from_str(&settings_text)
-        .map_err(|e| format!("settings 解析失败: {}", e))?;
+    let settings: DiskRoleSettings =
+        serde_json::from_str(&settings_text).map_err(|e| format!("settings 解析失败: {}", e))?;
     settings.apply_to_manifest(&mut disk);
     let _ = merged_scene_ids;
 
@@ -995,8 +1075,10 @@ fn validate_blueprint_v2_json(
         std::process::id()
     ));
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    std::fs::write(dir.join("manifest.json"), manifest_text.as_bytes()).map_err(|e| e.to_string())?;
-    std::fs::write(dir.join("settings.json"), settings_text.as_bytes()).map_err(|e| e.to_string())?;
+    std::fs::write(dir.join("manifest.json"), manifest_text.as_bytes())
+        .map_err(|e| e.to_string())?;
+    std::fs::write(dir.join("settings.json"), settings_text.as_bytes())
+        .map_err(|e| e.to_string())?;
     let bp = build_blueprint_v2_from_legacy_dir(&dir).map_err(|e| e.join("\n"))?;
     let _ = std::fs::remove_dir_all(&dir);
 
@@ -1020,6 +1102,33 @@ fn validate_blueprint_v2_json(
         },
     )
     .map_err(|e| e.join("\n"))
+}
+
+fn main() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![
+            write_role_pack_files,
+            write_role_pack_binaries,
+            read_text_file,
+            write_text_file,
+            runtime_tcp_listening,
+            runtime_api_health,
+            runtime_api_chat,
+            read_role_manifest_scenes,
+            spawn_oclive_api,
+            list_directory_plugins_for_roles_root,
+            directory_plugin_jsonrpc_invoke,
+            list_role_packs_under_roles_root,
+            guess_default_roles_root,
+            load_role_pack_for_editor,
+            save_role_pack_editor,
+            validate_blueprint_v2_json,
+            validate_role_pack_export,
+            role_pack_dir_exists,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running oclive-pack-editor");
 }
 
 #[cfg(test)]
@@ -1073,7 +1182,9 @@ mod blueprint_save_tests {
 
         let list = list_role_packs_under_roles_root(root.to_string_lossy().to_string()).unwrap();
         assert_eq!(list.len(), 2);
-        assert!(list.iter().any(|e| e.role_id == "demo" && !e.needs_migration));
+        assert!(list
+            .iter()
+            .any(|e| e.role_id == "demo" && !e.needs_migration));
         assert!(list.iter().any(|e| e.role_id == "old" && e.needs_migration));
         let _ = fs::remove_dir_all(&root);
     }
@@ -1084,30 +1195,4 @@ mod blueprint_save_tests {
         merge_preserved_blueprint_fields(&mut new_bp, None);
         assert!(new_bp.get("includes").is_none());
     }
-}
-
-fn main() {
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![
-            write_role_pack_files,
-            write_role_pack_binaries,
-            read_text_file,
-            write_text_file,
-            runtime_tcp_listening,
-            runtime_api_health,
-            runtime_api_chat,
-            read_role_manifest_scenes,
-            spawn_oclive_api,
-            list_directory_plugins_for_roles_root,
-            directory_plugin_jsonrpc_invoke,
-            list_role_packs_under_roles_root,
-            guess_default_roles_root,
-            load_role_pack_for_editor,
-            save_role_pack_editor,
-            validate_blueprint_v2_json,
-            validate_role_pack_export,
-            role_pack_dir_exists,
-        ])
-        .run(tauri::generate_context!())
-        .expect("error while running oclive-pack-editor");
 }

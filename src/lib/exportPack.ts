@@ -8,6 +8,7 @@ import { mergedSceneIds, rolePackRelativePaths } from './packLayout'
 import { normalizeKnowledgePath, type KnowledgeMarkdownFile } from './knowledgeFiles'
 import {
   buildBlueprintV2FromLegacy,
+  mergeEditorPreservedBlueprintFields,
   PIPELINE_BLUEPRINT_FILENAME,
   REPLY_QUALITY_ANCHOR_REL_PATH,
   serializeBlueprintV2,
@@ -18,9 +19,12 @@ import {
   buildSceneJson,
   type SceneEditorEntry,
 } from './scenePackUser'
+import { normalizeUserIdentityTemplatePath } from './userIdentities'
 
 export type ExportableManifest = Record<string, unknown>
 export type ExportableSettings = Record<string, unknown>
+export type RolePackTextFile = { path: string; content: string }
+export type RolePackBinaryFile = { relPath: string; file: File }
 
 const KNOWLEDGE_PLACEHOLDER = `在此目录放置世界观 Markdown（可选）。
 运行时契约见 oclivenewnew 仓库 creator-docs/role-pack/WORLDVIEW_KNOWLEDGE.md
@@ -82,6 +86,14 @@ export type PackExtraFiles = {
   portraitCatalogJson?: string
   /** 可选：`roles/{id}/user_identities/index.json` 全文 */
   userIdentitiesIndexJson?: string
+  /** 可选：`roles/{id}/memory_seed.json` 全文；创作者维护、运行时只读 */
+  memorySeedJson?: string
+  /** 可选：`roles/{id}/user_identities/*.md` 模板全文 */
+  userIdentityFiles?: RolePackTextFile[]
+  /** 导入包中编写器不理解但路径安全的文件；再次导出时原样保留。 */
+  preservedFiles?: RolePackBinaryFile[]
+  /** 蓝图中不由编写器编辑的顶层字段。 */
+  preservedBlueprintFields?: Record<string, unknown>
   /** 用户场景编辑（scenes/{id}/scene.json + description.txt） */
   sceneEditorEntries?: SceneEditorEntry[]
 }
@@ -116,7 +128,10 @@ export function buildRolePackFiles(
     anchorFromSettings.trim() ||
     ''
 
-  const blueprint = buildBlueprintV2FromLegacy(m, settingsForBlueprint)
+  const blueprint = mergeEditorPreservedBlueprintFields(
+    buildBlueprintV2FromLegacy(m, settingsForBlueprint),
+    extra?.preservedBlueprintFields,
+  )
   blueprint.meta.id = id
   const files = new Map<string, string>()
 
@@ -162,6 +177,21 @@ export function buildRolePackFiles(
       `${id}/user_identities/index.json`,
       uiIndexRaw.endsWith('\n') ? uiIndexRaw : `${uiIndexRaw}\n`,
     )
+  }
+
+  const memorySeedRaw = extra?.memorySeedJson?.trim()
+  if (memorySeedRaw) {
+    files.set(
+      `${id}/memory_seed.json`,
+      memorySeedRaw.endsWith('\n') ? memorySeedRaw : `${memorySeedRaw}\n`,
+    )
+  }
+
+  for (const identity of extra?.userIdentityFiles ?? []) {
+    const rel = normalizeUserIdentityTemplatePath(identity.path)
+    if (!rel) continue
+    const content = identity.content.trimEnd()
+    if (content) files.set(`${id}/${rel}`, `${content}\n`)
   }
 
   const core = (extra?.corePersonality ?? '').trim()
@@ -228,6 +258,13 @@ export async function buildRolePackZipBlob(
   for (const { relPath, file } of assets) {
     const buf = await file.arrayBuffer()
     zip.file(`${id}/${relPath.replace(/\\/g, '/')}`, buf)
+  }
+  for (const { relPath, file } of extra?.preservedFiles ?? []) {
+    const rel = relPath.replace(/\\/g, '/').replace(/^\/+/, '')
+    if (!rel || rel.split('/').some((part) => !part || part === '.' || part === '..')) continue
+    const zipPath = `${id}/${rel}`
+    if (zip.file(zipPath)) continue
+    zip.file(zipPath, await file.arrayBuffer())
   }
   return zip.generateAsync({ type: 'blob' })
 }

@@ -1,6 +1,7 @@
 import type { CreatorMessageExportMode } from './rolePackCreatorMessage'
 import type { AuthorRecRow } from './authorPack'
 import type { KnowledgeMarkdownFile } from './knowledgeFiles'
+import type { RolePackTextFile } from './exportPack'
 import type { UiConfig } from '../types/uiConfig'
 import type { ExportProfile, PortraitAssetKind, PortraitSlotId } from './portraitCatalog'
 import type { WorldKnowledgeTexts } from './worldKnowledgeUser'
@@ -31,10 +32,14 @@ export type PackDraftSnapshot = {
   version: 2
   savedAt: string
   creationMode: 'simple' | 'advanced'
-  advancedTab: 'manifest' | 'settings' | 'core' | 'world' | 'scenes' | 'images'
+  advancedTab: 'manifest' | 'settings' | 'core' | 'memory' | 'identities' | 'world' | 'scenes' | 'images'
   manifestText: string
   settingsText: string
   corePersonalityText: string
+  memorySeedJson?: string
+  userIdentityFiles?: RolePackTextFile[]
+  userIdentitiesIndexJson?: string
+  preservedBlueprintFields?: Record<string, unknown>
   worldviewMarkdown: string
   knowledgeMarkdownFiles: KnowledgeMarkdownFile[]
   creatorMessageToOthers: string

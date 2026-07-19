@@ -34,6 +34,112 @@ export type BlueprintV2 = {
   runtime_config?: Record<string, unknown>
 }
 
+const EDITOR_PRESERVED_BLUEPRINT_KEYS = [
+  'meta',
+  'slot_registry',
+  'includes',
+  'groups',
+  'expert_overlay',
+  'runtime_config',
+] as const
+
+const EDITOR_MANAGED_META_KEYS = [
+  'id',
+  'name',
+  'version',
+  'author',
+  'description',
+  'personality',
+  'relations',
+  'default_relation',
+  'scenes',
+  'evolution',
+  'memory_config',
+  'identity_binding',
+  'dev_only',
+  'knowledge',
+  'ollama_model',
+  'min_runtime_version',
+  'life_trajectory',
+  'life_schedule',
+  'interaction_mode',
+  'remote_presence',
+  'autonomous_scene',
+  'reply_quality_anchor',
+  'featured',
+  'preset_order',
+  'creator_message_to_downloader',
+] as const
+
+export function pickEditorPreservedBlueprintFields(
+  blueprint: BlueprintV2,
+): Record<string, unknown> {
+  const source = blueprint as unknown as Record<string, unknown>
+  const result: Record<string, unknown> = {}
+  for (const key of EDITOR_PRESERVED_BLUEPRINT_KEYS) {
+    if (source[key] !== undefined && source[key] !== null) result[key] = source[key]
+  }
+  return result
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === 'object' && !Array.isArray(value)
+}
+
+/**
+ * Reapply fields the legacy-shaped editor does not model without discarding user edits.
+ * Multi-instance slot registries retain every original instance; the first instance of each
+ * editable type receives backend/plugin changes from the simple editor.
+ */
+export function mergeEditorPreservedBlueprintFields(
+  blueprint: BlueprintV2,
+  preserved?: Record<string, unknown>,
+): BlueprintV2 {
+  if (!preserved) return blueprint
+
+  if (isRecord(preserved.meta)) {
+    const mergedMeta: Record<string, unknown> = { ...preserved.meta }
+    for (const key of EDITOR_MANAGED_META_KEYS) {
+      const value = blueprint.meta[key]
+      if (value === undefined || value === null) delete mergedMeta[key]
+      else mergedMeta[key] = value
+    }
+    blueprint.meta = mergedMeta
+  }
+
+  if (isRecord(preserved.slot_registry)) {
+    const original = preserved.slot_registry as Record<string, BlueprintSlotEntry>
+    const merged: Record<string, BlueprintSlotEntry> = {}
+    for (const [key, value] of Object.entries(original)) {
+      if (isRecord(value)) merged[key] = { ...(value as BlueprintSlotEntry) }
+    }
+    for (const [generatedKey, generated] of Object.entries(blueprint.slot_registry)) {
+      const target = Object.entries(merged).find(([, entry]) => entry.type === generated.type)
+      if (!target) {
+        merged[generatedKey] = generated
+        continue
+      }
+      if (generated.type === 'complex_emotion') continue
+      const [targetKey, current] = target
+      merged[targetKey] = {
+        ...current,
+        backend: generated.backend,
+        plugin: generated.plugin,
+        local_memory_provider_id: generated.local_memory_provider_id,
+      }
+    }
+    blueprint.slot_registry = merged
+  }
+
+  for (const key of ['includes', 'groups', 'expert_overlay', 'runtime_config'] as const) {
+    const value = preserved[key]
+    if (value !== undefined && value !== null) {
+      ;(blueprint as unknown as Record<string, unknown>)[key] = value
+    }
+  }
+  return blueprint
+}
+
 export type BlueprintSlotEntry = {
   type: string
   label: string
@@ -126,12 +232,12 @@ function slotRegistryToPluginBackends(
   const dir: Record<string, string> = {}
   for (const [key, e] of Object.entries(reg)) {
     if (e.plugin?.trim()) {
-      if (e.type === 'memory') dir.memory = e.plugin
-      if (e.type === 'emotion') dir.emotion = e.plugin
-      if (e.type === 'event') dir.event = e.plugin
-      if (e.type === 'prompt') dir.prompt = e.plugin
-      if (e.type === 'llm') dir.llm = e.plugin
-      if (e.type === 'agent') dir.agent = e.plugin
+      if (e.type === 'memory' && !dir.memory) dir.memory = e.plugin
+      if (e.type === 'emotion' && !dir.emotion) dir.emotion = e.plugin
+      if (e.type === 'event' && !dir.event) dir.event = e.plugin
+      if (e.type === 'prompt' && !dir.prompt) dir.prompt = e.plugin
+      if (e.type === 'llm' && !dir.llm) dir.llm = e.plugin
+      if (e.type === 'agent' && !dir.agent) dir.agent = e.plugin
     }
     void key
   }
@@ -271,6 +377,11 @@ export function blueprintToLegacyParts(bp: BlueprintV2): {
 export function parseBlueprintV2Json(raw: string): BlueprintV2 {
   const v = JSON.parse(raw) as BlueprintV2
   if (v.schema_version !== 2) {
+    if (v.schema_version === 3) {
+      throw new Error(
+        '检测到 v3 / dual-core 蓝图；编写器当前仅支持 v2 编辑，请先在主程序完成 v3 集成配置。',
+      )
+    }
     throw new Error(`pipeline.ocblueprint schema_version 须为 2（当前 ${v.schema_version}）`)
   }
   if (!v.meta || typeof v.meta !== 'object') {

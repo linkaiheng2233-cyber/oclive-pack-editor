@@ -347,6 +347,8 @@ export default {
       settings: "对话与插件",
       core: "核心档案与寄语",
       coreFile: "core / 公告",
+      memory: "初始记忆",
+      identities: "用户身份模板",
       world: "世界观与知识",
       scenes: "场景",
       images: "情绪立绘",
@@ -426,6 +428,18 @@ export default {
           faqAria: "玩家寄语常见问题",
           faqTitle: "常见问题 · 玩家寄语（改进前 / 改进后对照）",
         },
+      },
+      memory: {
+        title: "初始记忆（memory_seed.json）",
+        lead: "这里是创作者预置的只读记忆；它独立于用户运行后产生的长期记忆、短期记忆和临时局面状态。",
+      },
+      identities: {
+        title: "用户身份模板（user_identities/*.md）",
+        lead: "这些模板独立于核心人设和记忆，随角色包一起搬运，并通过 index.json 映射到关系。",
+        empty: "当前没有身份模板。",
+        pathLabel: "身份模板路径",
+        add: "新增身份模板",
+        remove: "删除",
       },
       world: {
         title: "世界观与知识库（Markdown）",
@@ -964,4 +978,3 @@ export default {
     },
   },
 };
-

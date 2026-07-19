@@ -1,6 +1,6 @@
 import { computed, onMounted, ref } from 'vue'
-import { open } from '@tauri-apps/api/dialog'
-import { invoke } from '@tauri-apps/api/tauri'
+import { open } from '@tauri-apps/plugin-dialog'
+import { invoke } from '@tauri-apps/api/core'
 import {
   applyLoadedPackToEditor,
   blueprintHasEditorExtensions,
@@ -21,6 +21,7 @@ import {
 } from '../defaults'
 import { emptyAuthorRecRow } from '../lib/authorPack'
 import { parseSceneFromDisk, type SceneEditorEntry } from '../lib/scenePackUser'
+import { parseBlueprintV2Json, pickEditorPreservedBlueprintFields } from '../lib/blueprintV2'
 
 const ROLES_ROOT_KEY = 'oclive-pack-editor-roles-root'
 const LEGACY_LAST_ROLES_ROOT_KEY = 'oclive-pack-editor-last-roles-root'
@@ -138,6 +139,11 @@ export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
     applyTargets.manifestText.value = DEFAULT_MANIFEST_JSON
     applyTargets.settingsText.value = DEFAULT_SETTINGS_JSON
     applyTargets.corePersonalityText.value = DEFAULT_CORE_PERSONALITY_TEXT
+    if (applyTargets.memorySeedJson) applyTargets.memorySeedJson.value = ''
+    if (applyTargets.userIdentityFiles) applyTargets.userIdentityFiles.value = []
+    if (applyTargets.userIdentitiesIndexJson) applyTargets.userIdentitiesIndexJson.value = ''
+    if (applyTargets.preservedFiles) applyTargets.preservedFiles.value = []
+    if (applyTargets.preservedBlueprintFields) applyTargets.preservedBlueprintFields.value = {}
     applyTargets.applyKnowledgeBundle?.([], '')
     applyTargets.applySceneEditorEntries?.([])
     applyTargets.emotionImageFiles.value = []
@@ -209,6 +215,12 @@ export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
           creatorMessage: creatorMessage.replace(/\r\n/g, '\n').replace(/\n+$/, ''),
           uiJson,
           authorJson,
+          memorySeedJson: load.memorySeedText ?? '',
+          userIdentityFiles: load.userIdentityFiles ?? [],
+          userIdentitiesIndexJson: load.userIdentitiesIndexText ?? '',
+          preservedBlueprintFields: blueprintRaw.trim()
+            ? pickEditorPreservedBlueprintFields(parseBlueprintV2Json(blueprintRaw))
+            : {},
           portraitCatalogJson: load.portraitCatalogText ?? '',
           configJson: load.configText ?? '',
           emotionImageFiles: catalogFiles,
