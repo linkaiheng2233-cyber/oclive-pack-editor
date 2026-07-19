@@ -13,6 +13,7 @@ export type RolePackCatalogAssetPayload = {
 }
 
 export type RolePackEditorLoadPayload = {
+  blueprintText: string
   manifestText: string
   settingsText?: string
   configText?: string
@@ -20,8 +21,17 @@ export type RolePackEditorLoadPayload = {
   catalogAssets?: RolePackCatalogAssetPayload[]
   userIdentitiesIndexText?: string
   memorySeedText?: string
+  corePersonalityText?: string
+  creatorMessageText?: string
+  uiText?: string
+  authorText?: string
   userIdentityFiles?: Array<{ path: string; content: string }>
   mergedSceneIds: string[]
+  sceneFiles: Array<{
+    sceneId: string
+    sceneJsonText?: string
+    descriptionText?: string
+  }>
 }
 
 /** Tauri 读盘 catalog / legacy assets → 与 zip 导入一致的 File[]。 */

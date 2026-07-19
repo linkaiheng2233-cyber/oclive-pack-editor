@@ -1,7 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod plugin_rpc;
-
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -395,62 +393,6 @@ fn list_directory_plugins_for_roles_root(
     Ok(v)
 }
 
-/// 启动本机 oclive 可执行文件（`--api --port`），用于试聊前拉起运行时。
-#[tauri::command]
-fn spawn_oclive_api(exe_path: String, port: u16, host: String) -> Result<(), String> {
-    if exe_path.trim().is_empty() {
-        return Err("可执行文件路径不能为空".to_string());
-    }
-    let host = host.trim();
-    let host = if host.is_empty() { "127.0.0.1" } else { host };
-    if runtime_tcp_listening(host.to_string(), port) {
-        return Err(format!(
-            "端口 {} 已在监听。若已是 oclive API，请使用「检测 API」；否则请换端口或结束占用进程。",
-            port
-        ));
-    }
-    let mut cmd = std::process::Command::new(&exe_path);
-    cmd.arg("--api").arg("--port").arg(port.to_string());
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NEW_CONSOLE: u32 = 0x00000010;
-        cmd.creation_flags(CREATE_NEW_CONSOLE);
-    }
-    cmd.spawn().map_err(|e| format!("启动失败：{}", e))?;
-    Ok(())
-}
-
-#[tauri::command]
-fn read_text_file(path: String) -> Result<String, String> {
-    std::fs::read_to_string(path.trim()).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-fn write_text_file(path: String, content: String) -> Result<(), String> {
-    use std::fs;
-    use std::path::Path;
-    let p = Path::new(path.trim());
-    if let Some(parent) = p.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-    fs::write(p, content.as_bytes()).map_err(|e| e.to_string())
-}
-
-#[tauri::command]
-async fn directory_plugin_jsonrpc_invoke(
-    plugin_id: String,
-    method: String,
-    params: serde_json::Value,
-    search_roots: Vec<String>,
-) -> Result<serde_json::Value, String> {
-    tokio::task::spawn_blocking(move || {
-        plugin_rpc::invoke_directory_plugin_jsonrpc(plugin_id, method, params, search_roots)
-    })
-    .await
-    .map_err(|e| e.to_string())?
-}
-
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RolePackListEntry {
@@ -575,7 +517,18 @@ struct RolePackTextFile {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RolePackSceneFile {
+    scene_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    scene_json_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    description_text: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RolePackEditorLoad {
+    blueprint_text: String,
     manifest_text: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     settings_text: Option<String>,
@@ -588,8 +541,17 @@ struct RolePackEditorLoad {
     user_identities_index_text: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     memory_seed_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    core_personality_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    creator_message_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ui_text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    author_text: Option<String>,
     user_identity_files: Vec<RolePackTextFile>,
     merged_scene_ids: Vec<String>,
+    scene_files: Vec<RolePackSceneFile>,
 }
 
 fn is_safe_role_relative_path(rel: &str) -> bool {
@@ -895,6 +857,25 @@ fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, Str
             .unwrap_or_default();
         let merged_scene_ids =
             merge_role_pack_scene_ids(&root, &scenes_for_merge).map_err(|e| e.to_string())?;
+        let scene_files = merged_scene_ids
+            .iter()
+            .map(|scene_id| {
+                let dir = root.join("scenes").join(scene_id);
+                let scene_json_path = dir.join("scene.json");
+                let description_path = dir.join("description.txt");
+                Ok(RolePackSceneFile {
+                    scene_id: scene_id.clone(),
+                    scene_json_text: scene_json_path
+                        .is_file()
+                        .then(|| fs::read_to_string(&scene_json_path).map_err(|e| e.to_string()))
+                        .transpose()?,
+                    description_text: description_path
+                        .is_file()
+                        .then(|| fs::read_to_string(&description_path).map_err(|e| e.to_string()))
+                        .transpose()?,
+                })
+            })
+            .collect::<Result<Vec<_>, String>>()?;
         let config_path = root.join("config.json");
         let config_text = config_path
             .is_file()
@@ -910,9 +891,20 @@ fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, Str
             .is_file()
             .then(|| fs::read_to_string(&memory_seed_path).map_err(|e| e.to_string()))
             .transpose()?;
+        let read_optional_root_text = |name: &str| -> Result<Option<String>, String> {
+            let path = root.join(name);
+            path.is_file()
+                .then(|| fs::read_to_string(&path).map_err(|e| e.to_string()))
+                .transpose()
+        };
+        let core_personality_text = read_optional_root_text("core_personality.txt")?;
+        let creator_message_text = read_optional_root_text("creator_message.txt")?;
+        let ui_text = read_optional_root_text("ui.json")?;
+        let author_text = read_optional_root_text("author.json")?;
         let user_identity_files = read_user_identity_files(&root)?;
         let (portrait_catalog_text, catalog_assets) = read_portrait_catalog_assets(&root);
         return Ok(RolePackEditorLoad {
+            blueprint_text,
             manifest_text,
             settings_text: Some(settings_text),
             config_text,
@@ -920,8 +912,13 @@ fn load_role_pack_for_editor(role_dir: String) -> Result<RolePackEditorLoad, Str
             catalog_assets,
             user_identities_index_text,
             memory_seed_text,
+            core_personality_text,
+            creator_message_text,
+            ui_text,
+            author_text,
             user_identity_files,
             merged_scene_ids,
+            scene_files,
         });
     }
 
@@ -1110,15 +1107,11 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             write_role_pack_files,
             write_role_pack_binaries,
-            read_text_file,
-            write_text_file,
             runtime_tcp_listening,
             runtime_api_health,
             runtime_api_chat,
             read_role_manifest_scenes,
-            spawn_oclive_api,
             list_directory_plugins_for_roles_root,
-            directory_plugin_jsonrpc_invoke,
             list_role_packs_under_roles_root,
             guess_default_roles_root,
             load_role_pack_for_editor,
@@ -1194,5 +1187,38 @@ mod blueprint_save_tests {
         let mut new_bp = json!({ "schema_version": 2, "meta": { "id": "x" }, "slot_registry": {} });
         merge_preserved_blueprint_fields(&mut new_bp, None);
         assert!(new_bp.get("includes").is_none());
+    }
+
+    #[test]
+    fn load_role_pack_returns_only_known_role_files() {
+        use super::{load_role_pack_for_editor, PIPELINE_BLUEPRINT_FILENAME};
+        use std::fs;
+
+        let root = std::env::temp_dir().join(format!("oclive-pe-load-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("scenes/home")).unwrap();
+        fs::write(
+            root.join(PIPELINE_BLUEPRINT_FILENAME),
+            r#"{"schema_version":2,"meta":{"id":"demo","name":"Demo","scenes":["home"]},"slot_registry":{"llm":{"type":"llm","label":"LLM","backend":"ollama","position":0}}}"#,
+        )
+        .unwrap();
+        fs::write(root.join("core_personality.txt"), "core").unwrap();
+        fs::write(root.join("ui.json"), "{}").unwrap();
+        fs::write(root.join("author.json"), "{}").unwrap();
+        fs::write(root.join("scenes/home/scene.json"), r#"{"name":"Home"}"#).unwrap();
+        fs::write(root.join("scenes/home/description.txt"), "desc").unwrap();
+
+        let loaded = load_role_pack_for_editor(root.to_string_lossy().to_string()).unwrap();
+        assert!(loaded.blueprint_text.contains("\"schema_version\":2"));
+        assert_eq!(loaded.core_personality_text.as_deref(), Some("core"));
+        assert_eq!(loaded.ui_text.as_deref(), Some("{}"));
+        assert_eq!(loaded.author_text.as_deref(), Some("{}"));
+        assert_eq!(loaded.scene_files.len(), 1);
+        assert_eq!(loaded.scene_files[0].scene_id, "home");
+        assert_eq!(
+            loaded.scene_files[0].description_text.as_deref(),
+            Some("desc")
+        );
+        let _ = fs::remove_dir_all(&root);
     }
 }

@@ -1,6 +1,4 @@
-import { isTauriRuntime } from './exportFolder'
 import { defaultUiConfig, type SlotConfig, type UiConfig } from '../types/uiConfig'
-import { invoke } from '@tauri-apps/api/core'
 
 type DiskSlotKey =
   | 'chat_toolbar'
@@ -143,32 +141,4 @@ export function serializeUiConfig(c: UiConfig): string {
     },
   }
   return JSON.stringify(disk, null, 2) + '\n'
-}
-
-/**
- * 读取 `{rolePath}/ui.json`（Tauri）；不存在或失败时返回默认空配置。
- * 浏览器环境无直接读盘能力时返回默认配置。
- */
-export async function readUiConfig(rolePath: string): Promise<UiConfig> {
-  const base = rolePath.trim().replace(/[/\\]+$/, '')
-  if (!base || !isTauriRuntime()) {
-    return defaultUiConfig()
-  }
-  try {
-    const path = `${base.replace(/\\/g, '/')}/ui.json`
-    const text = await invoke<string>('read_text_file', { path })
-    return parseUiConfigJson(text)
-  } catch {
-    return defaultUiConfig()
-  }
-}
-
-/** 写入 `{rolePath}/ui.json`（Tauri）；浏览器环境为 no-op。 */
-export async function writeUiConfig(rolePath: string, config: UiConfig): Promise<void> {
-  const base = rolePath.trim().replace(/[/\\]+$/, '')
-  if (!base || !isTauriRuntime()) {
-    return
-  }
-  const path = `${base.replace(/\\/g, '/')}/ui.json`
-  await invoke('write_text_file', { path, content: serializeUiConfig(config) })
 }

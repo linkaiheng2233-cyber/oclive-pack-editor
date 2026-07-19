@@ -1,5 +1,3 @@
-import { invoke } from '@tauri-apps/api/core'
-
 export const VUE_TEST_RUNNER_PLUGIN_ID = 'com.oclive.official_vue_test_runner'
 
 const LS_WORKSPACE = 'oclive.packEditor.vueTestWorkspaceRoot'
@@ -28,18 +26,9 @@ export function saveVueTestWorkspaceRoot(path: string): void {
 }
 
 export async function directoryPluginJsonRpcInvoke(
-  method: string,
-  params: Record<string, unknown>,
-  searchRoots: string[],
+  _method: string,
+  _params: Record<string, unknown>,
+  _searchRoots: string[],
 ): Promise<unknown> {
-  const env = await invoke<JsonRpcEnvelope>('directory_plugin_jsonrpc_invoke', {
-    pluginId: VUE_TEST_RUNNER_PLUGIN_ID,
-    method,
-    params,
-    searchRoots,
-  })
-  if (env.error?.message) {
-    throw new Error(env.error.message)
-  }
-  return env.result
+  throw new Error('编写器已停用可执行目录插件的测试入口；请在隔离的 OCLive 运行时中测试插件')
 }

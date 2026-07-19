@@ -60,15 +60,6 @@ async function guessDefaultRolesRoot(): Promise<string | null> {
   }
 }
 
-async function readOptionalText(path: string): Promise<string> {
-  if (!isTauriRuntime()) return ''
-  try {
-    return await invoke<string>('read_text_file', { path })
-  } catch {
-    return ''
-  }
-}
-
 export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
   const rolesRootPath = ref('')
   const availableRoles = ref<RolePackListEntry[]>([])
@@ -190,21 +181,24 @@ export function useRolesWorkspace(applyTargets: ApplyLoadedPackTargets) {
             : `${load.settingsText}\n`
           : applyTargets.settingsText.value
 
-      const corePersonality = await readOptionalText(`${role.absPath}/core_personality.txt`)
-      const creatorMessage = await readOptionalText(`${role.absPath}/creator_message.txt`)
-      const uiJson = await readOptionalText(`${role.absPath}/ui.json`)
-      const authorJson = await readOptionalText(`${role.absPath}/author.json`)
-      const blueprintRaw = await readOptionalText(`${role.absPath}/pipeline.ocblueprint`)
+      const corePersonality = load.corePersonalityText ?? ''
+      const creatorMessage = load.creatorMessageText ?? ''
+      const uiJson = load.uiText ?? ''
+      const authorJson = load.authorText ?? ''
+      const blueprintRaw = load.blueprintText
       const catalogFiles = catalogAssetsToFiles(load.catalogAssets ?? [])
 
       const sceneIds =
         load.mergedSceneIds?.length > 0 ? load.mergedSceneIds : ['home']
-      const sceneEditorEntries: SceneEditorEntry[] = []
-      for (const sid of sceneIds) {
-        const sceneJson = await readOptionalText(`${role.absPath}/scenes/${sid}/scene.json`)
-        const description = await readOptionalText(`${role.absPath}/scenes/${sid}/description.txt`)
-        sceneEditorEntries.push(parseSceneFromDisk(sid, sceneJson, description))
-      }
+      const sceneFileById = new Map((load.sceneFiles ?? []).map((file) => [file.sceneId, file]))
+      const sceneEditorEntries: SceneEditorEntry[] = sceneIds.map((sid) => {
+        const file = sceneFileById.get(sid)
+        return parseSceneFromDisk(
+          sid,
+          file?.sceneJsonText ?? '',
+          file?.descriptionText ?? '',
+        )
+      })
 
       applyLoadedPackToEditor(
         {

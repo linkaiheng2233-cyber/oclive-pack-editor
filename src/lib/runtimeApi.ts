@@ -302,17 +302,9 @@ export async function readRoleManifestScenes(roleDir: string): Promise<string[]>
 }
 
 export async function spawnOcliveApi(
-  exePath: string,
-  port: number,
-  host = '127.0.0.1',
+  _exePath: string,
+  _port: number,
+  _host = '127.0.0.1',
 ): Promise<void> {
-  if (!isTauriRuntime()) {
-    throw new Error('自动启动仅支持桌面版编写器')
-  }
-  const p = Math.min(65535, Math.max(1, Math.floor(Number(port))))
-  await invoke('spawn_oclive_api', {
-    exe_path: exePath,
-    port: p,
-    host: host.trim() || '127.0.0.1',
-  })
+  throw new Error('编写器已停用任意可执行文件启动能力；请手动启动 OCLive API 后再连接')
 }

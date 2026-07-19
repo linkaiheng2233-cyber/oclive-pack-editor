@@ -3,6 +3,7 @@ import { HOST_RUNTIME_VERSION } from './hostRuntimeVersion'
 import { isTauriRuntime } from './exportFolder'
 import { parseConfigJson } from './portraitCatalog'
 import { humanizeExportValidateErrors } from './exportErrorMessages'
+import { invoke } from '@tauri-apps/api/core'
 const PLACEHOLDER_BYTES = '\u0000'
 
 /** Mirror disk paths referenced by catalog / VP so wasm `validate_portrait_catalog_files` passes. */
@@ -82,7 +83,6 @@ export async function validateExportPackDirectory(
   }
 
   try {
-    const { invoke } = await import('@tauri-apps/api/core')
     await invoke('validate_role_pack_export', {
       roleId: id,
       files: payload,
