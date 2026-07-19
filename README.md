@@ -61,7 +61,7 @@
 ## 离线范围
 
 - **核心能力**（编辑、运行全部检查、导出 zip、桌面版选择 **roles 根** 并写入完整目录树）**不依赖外网**；不内嵌 LLM 或对话引擎。
-- **桌面壳**为 **Tauri 2**（与 oclivenewnew 同大版本线），权限通过 `src-tauri/capabilities/main.json` 收敛；本地完整打包需安装 **Rust** 与对应平台依赖（见下）。
+- **桌面壳**为 **Tauri 2**（与 oclivenewnew 同大版本线），权限通过 `src-tauri/capabilities/main.json` 收敛；生产 CSP 不开放本地服务端口或 `unsafe-eval`，Vite 开发端点仅存在于 `devCsp`。本地完整打包需安装 **Rust** 与对应平台依赖（见下）。
 
 ## 环境依赖
 
