@@ -1,5 +1,5 @@
-# 打标签 push（v*）或手动运行时，在 Windows 上完整 wasm + 测试 + tauri build，并上传 bundle。
-# 需与 CI 相同：浅克隆 oclivenewnew 以构建校验 wasm。
+# 标签 push（v*）或手动运行时，在 Windows 完成 wasm、测试和 Tauri build，并上传 bundle。
+# 与 CI 共用 `.github/oclive-validation-ref` 锁定的校验 crate 版本。
 
 name: Release build
 
@@ -15,6 +15,9 @@ concurrency:
 
 permissions:
   contents: read
+
+env:
+  CARGO_TARGET_DIR: ${{ github.workspace }}/src-tauri/target
 
 jobs:
   windows:
@@ -42,10 +45,8 @@ jobs:
 
       - run: npm ci
 
-      - name: Clone oclivenewnew (validation crate)
-        run: |
-          cd "${{ github.workspace }}/.."
-          git clone --depth 1 https://github.com/linkaiheng2233-cyber/oclivenewnew.git oclivenewnew
+      - name: Checkout pinned oclivenewnew validation crates
+        run: node scripts/checkout-oclive-validation.mjs
 
       - run: npm run contract:json-keys
 

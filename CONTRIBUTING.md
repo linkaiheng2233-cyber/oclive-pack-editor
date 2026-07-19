@@ -32,7 +32,7 @@
    - 若上游新增或重命名键，请同步更新 `jsonKeys.ts`、相关校验测试，并视需要更新 README。
 
 4. **Wasm 校验（与 CI 一致）**  
-   - CI 会浅克隆 **oclivenewnew** 并执行 **`npm run wasm:build`**（需 **`wasm32-unknown-unknown`** 与 **wasm-pack**）。本地发版前若依赖 wasm 路径的「运行全部检查」，请先在同一环境执行 **`npm run wasm:build`**，再 **`npm test`**。  
+   - CI 按 **`.github/oclive-validation-ref`** 中的完整提交 SHA 检出 **oclivenewnew**，再执行 **`npm run wasm:build`**（需 **`wasm32-unknown-unknown`** 与 **wasm-pack**）。主仓校验契约升级时，应在同一 PR 中更新该 SHA 并跑完整门禁。本地发版前若依赖 wasm 路径的「运行全部检查」，请先在同一环境执行 **`npm run wasm:build`**，再 **`npm test`**。
    - 未构建 wasm 时编写器会回退到 TypeScript 校验；占位说明见 [README.md](README.md) 脚本表。
 
 5. **CHANGELOG**  

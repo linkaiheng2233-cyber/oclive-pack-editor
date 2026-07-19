@@ -14,6 +14,9 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  CARGO_TARGET_DIR: ${{ github.workspace }}/src-tauri/target
+
 jobs:
   build:
     strategy:
@@ -51,10 +54,8 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Clone oclivenewnew (validation crate for wasm-pack)
-        run: |
-          cd "${{ github.workspace }}/.."
-          git clone --depth 1 https://github.com/linkaiheng2233-cyber/oclivenewnew.git oclivenewnew
+      - name: Checkout pinned oclivenewnew validation crates
+        run: node scripts/checkout-oclive-validation.mjs
 
       - name: Check json keys vs oclivenewnew
         run: npm run contract:json-keys
@@ -68,7 +69,7 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      # Linux：安装系统依赖；Windows：仅拉取 Chromium 浏览器（与 smoke 一致）
+      # Linux 安装系统依赖；Windows 仅拉取 Chromium（两端使用同一 smoke 集）。
       - name: Install Playwright (Chromium, Linux)
         if: runner.os == 'Linux'
         run: npx playwright install --with-deps chromium
