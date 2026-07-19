@@ -142,7 +142,7 @@ export async function writePackToRolesRootPath(
   }
 }
 
-/** 选 roles 根并写入完整包；取消对话框时 `wrote: false`。成功时返回 `rolesRootPath` 供试聊等使用。 */
+/** 选 roles 根并写入完整包；取消对话框时 `wrote: false`。成功时返回 `rolesRootPath` 供后续写回使用。 */
 export async function pickRolesRootAndWritePack(
   roleId: string,
   manifest: ExportableManifest,

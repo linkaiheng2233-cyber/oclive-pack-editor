@@ -52,9 +52,9 @@
 - **简单创作**：`simpleCreation.ts` 与 `usePackEditor.ts` 中 manifest/settings 同步逻辑一致；`knowledge` 块在两侧写入且与 `knowledgeFromPackRecords`（settings 优先）一致。  
 - **校验**：改动 `jsonKeys` / 校验路径时运行 `npm test` 与 `npm run contract:json-keys`（需相邻 `oclivenewnew` 克隆或设置脚本中的路径变量）。  
 - **类型与导出**：`exportPrepare` / `exportPack` 若涉及新文件类型，补 Vitest 覆盖。  
-- **试聊**：若动到 `runtimeApi` / `ChatPanel`，确认本机 oclive `--api` 仍可连（见 README）。
+- **动态联调**：把导出包放入 A.I.Live 的 roles 根，由运行时 `load_role` 验证；编写器不启动运行时或插件进程。
 
 ## 相关文档
 
-- [README.md](README.md)：功能、命令、试聊、CI、校验策略。  
+- [README.md](README.md)：功能、命令、运行时联调、CI、校验策略。
 - oclivenewnew **`creator-docs/role-pack/PACK_VERSIONING.md`**：版本与包字段契约。

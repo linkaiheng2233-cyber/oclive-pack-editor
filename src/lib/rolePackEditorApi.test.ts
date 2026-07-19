@@ -3,7 +3,6 @@ import {
   catalogAssetsToFiles,
   invokeLoadRolePackForEditor,
   invokeListRolePacksUnderRolesRoot,
-  invokeSaveRolePackEditor,
 } from './rolePackEditorApi'
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -34,18 +33,6 @@ describe('rolePackEditorApi (T05 tauri invoke mapping)', () => {
     await invokeListRolePacksUnderRolesRoot('C:\\roles')
     expect(invoke).toHaveBeenCalledWith('list_role_packs_under_roles_root', {
       rolesRoot: 'C:\\roles',
-    })
-  })
-
-  it('save forwards manifest and settings text', async () => {
-    vi.mocked(invoke).mockResolvedValueOnce(undefined)
-    await invokeSaveRolePackEditor('C:\\roles\\demo', '{"id":"x"}', '{"schema_version":1}')
-    expect(invoke).toHaveBeenCalledWith('save_role_pack_editor', {
-      roleDir: 'C:\\roles\\demo',
-      manifestText: '{"id":"x"}',
-      settingsText: '{"schema_version":1}',
-      configText: null,
-      userIdentitiesIndexText: null,
     })
   })
 

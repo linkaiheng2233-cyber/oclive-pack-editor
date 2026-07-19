@@ -8,7 +8,7 @@
 
 | 目标 | 实施要点 |
 |------|----------|
-| 桌面小软件 | 使用 **Tauri 1.x**（与 oclivenewnew 对齐）将 Vue + Vite 包进本机窗口；`beforeDevCommand` / `beforeBuildCommand` 指向现有 `npm run dev` / `npm run build`，`distDir` 为 `dist/`。 |
+| 桌面小软件 | 使用 **Tauri 2.x** 将 Vue + Vite 包进本机窗口；`beforeDevCommand` / `beforeBuildCommand` 指向现有 `npm run dev` / `npm run build`，`frontendDist` 为 `../dist`。 |
 | 离线 | 核心路径不依赖外网：编辑、校验、选 **roles 根** 写盘、打 zip；**不**默认使用 CDN 字体/脚本；**不**内嵌对话/LLM。 |
 | 功能完整 | 在 oclivenewnew `creator-docs/roadmap/VISION_ROADMAP_MONTHLY.md` 第 2 月与契约文档约束下，manifest/settings、场景、知识等按里程碑逐项做 UI 与导出。 |
 | 角色包测试 | 见下「三层」；与运行时对齐以 **`load_role`** 或未来 **CLI 校验** 为准。 |
@@ -31,8 +31,8 @@
 
 ## 技术选型
 
-- **Tauri**：**1.x**（本仓库 `src-tauri` 与 oclivenewnew 同大版本线，降低维护差异）。  
-- **前端**：Vue 3 + Vite + TypeScript；`npm run build` → Tauri `distDir`。  
+- **Tauri**：**2.x**（权限由 capability 清单收敛）。
+- **前端**：Vue 3 + Vite + TypeScript；`npm run build` → Tauri `frontendDist`。
 - **文件**：桌面主路径为 **Tauri dialog + `invoke` 写盘**（`buildRolePackFiles` 与浏览器/File System Access 共用同一套相对路径语义）。
 
 ---
@@ -41,7 +41,7 @@
 
 - **Node.js**：`npm ci`、`npm test`、`npm run build`。  
 - **Rust**：`cargo build --manifest-path src-tauri/Cargo.toml`（CI 与本地）。  
-- **Linux CI**：安装 WebKitGTK / GTK 等与 [Tauri 1 Linux 依赖](https://v1.tauri.app/v1/guides/getting-started/prerequisites) 一致。  
+- **Linux CI**：安装 WebKitGTK 4.1 / GTK 等与 [Tauri 2 Linux 依赖](https://v2.tauri.app/start/prerequisites/) 一致。
 - **Windows 本地打包**：WebView2、MSVC 工具链；详见根 **README.md**。
 
 ---

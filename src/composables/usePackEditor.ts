@@ -194,7 +194,7 @@ export function usePackEditor() {
   const requireChecksBeforeExport = ref(false)
   /** 简单模式表单与 JSON 不一致时（JSON 无法解析）提示 */
   const syncFormWarning = ref('')
-  /** 最近一次「写入文件夹」的 roles 根路径（桌面版 Tauri），供试聊默认角色目录 */
+  /** 最近一次「写入文件夹」的 roles 根路径（桌面版 Tauri）。 */
   const lastExportedRolesRoot = ref('')
 
   /** 由 App 绑定：idle 时拒绝「检查角色包」 */
@@ -429,7 +429,7 @@ export function usePackEditor() {
 
   /**
    * 简单模式：立即将表单写入 manifest/settings 文本（并取消待执行的防抖）。
-   * 导出、运行检查、切到「检查/试聊」前应调用，避免读到未落盘的表单。
+   * 导出或运行检查前应调用，避免读到未落盘的表单。
    */
   function flushSimpleToJson(): void {
     cancelDebouncedSimpleToJson()
@@ -559,7 +559,7 @@ export function usePackEditor() {
 
   const folderExportOk = computed(() => isFolderExportSupported())
 
-  /** manifest.json 顶层 `id`，供试聊默认路径等 */
+  /** manifest 视图中的角色 id，供导出与工作区写回使用。 */
   const manifestRoleId = computed(() => {
     const m = parseJson<Record<string, unknown>>(manifestText.value, 'manifest.json')
     if (!m.ok) return ''

@@ -62,19 +62,3 @@ export async function invokeListRolePacksUnderRolesRoot(
 export async function invokeLoadRolePackForEditor(roleDir: string): Promise<RolePackEditorLoadPayload> {
   return invoke<RolePackEditorLoadPayload>('load_role_pack_for_editor', { roleDir })
 }
-
-export async function invokeSaveRolePackEditor(
-  roleDir: string,
-  manifestText: string,
-  settingsText: string,
-  configText?: string | null,
-  userIdentitiesIndexText?: string | null,
-): Promise<void> {
-  await invoke('save_role_pack_editor', {
-    roleDir,
-    manifestText,
-    settingsText,
-    configText: configText ?? null,
-    userIdentitiesIndexText: userIdentitiesIndexText ?? null,
-  })
-}
