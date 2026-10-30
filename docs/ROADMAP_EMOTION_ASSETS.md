@@ -30,6 +30,6 @@
 
 ## 参考
 
-- `oclivenewnew/handoff/archive/DEVELOPMENT_STANDARDS.md` §1.4
+- [历史记录：DEVELOPMENT_STANDARDS.md](https://github.com/linkaiheng2233-cyber/oclivenewnew/blob/925310c83c94d53dda66fda8eb0c0f1cd9f50de4/handoff/archive/DEVELOPMENT_STANDARDS.md) §1.4
 - `oclivenewnew/src/utils/emotion-assets.ts`
 - `oclive-pack-editor/src/lib/exportPack.ts` `emotionImages`

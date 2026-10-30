@@ -1,7 +1,7 @@
 # exportProfile: vscode-lite · 导出契约（0.5 立项）
 
 **状态**：设计 SSOT · **未实现**导出分叉代码  
-**关联**：[`ROADMAP_EMOTION_ASSETS.md`](./ROADMAP_EMOTION_ASSETS.md) M2 · [`WAVE5_ASSETS_ASSESSMENT.md`](../../oclive-vscode/docs/WAVE5_ASSETS_ASSESSMENT.md)
+**关联**：[`ROADMAP_EMOTION_ASSETS.md`](./ROADMAP_EMOTION_ASSETS.md) M2 · [[历史记录：WAVE5_ASSETS_ASSESSMENT.md](https://github.com/linkaiheng2233-cyber/oclive-vscode/blob/84e202caa9412b0443e1ad503538905b7c0f1253/docs/WAVE5_ASSETS_ASSESSMENT.md)](https://github.com/linkaiheng2233-cyber/oclive-vscode/blob/84e202caa9412b0443e1ad503538905b7c0f1253/docs/WAVE5_ASSETS_ASSESSMENT.md)
 
 ---
 
