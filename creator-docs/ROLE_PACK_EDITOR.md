@@ -13,6 +13,12 @@
 
 权威格式见主仓：`creator-docs/role-pack/ROLE_PACK_SPEC.md`。
 
+## 立绘与轻量导出
+
+简单立绘编辑使用七个情绪槽，支持已提供图片的导出；七槽不等于强制七张图片。槽位、额外条目和 VP 配置以 `src/lib/portraitCatalog.ts` 为实现来源。
+
+`vscode-lite` 已实现：保留简单槽文件，移除高级额外条目，关闭 VP；当前变换及测试入口见 [VSCODE_LITE_EXPORT](../docs/VSCODE_LITE_EXPORT.md)。早期“按 3–4 张裁剪”和情绪族扩展构想不是当前能力承诺；新增枚举或运行时识别规则须先对齐主仓契约。
+
 ## 专家路由配置
 
 - **运行时权威**：`roles/{id}/blueprint/includes/expert_routing.json`，由专家路由专用加载器读取；它不是蓝图通用 `includes[]` 的合法 target。
